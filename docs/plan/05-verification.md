@@ -1,0 +1,87 @@
+# Verification and release evidence
+
+These are required future checks, not results from this planning task. Each packet adds checks to one small native GDScript runner where a regression is meaningful. Avoid a new test framework, fixtures for every getter, or repeated testing without a changed condition.
+
+## Commands and entry points
+
+The following files are created by the named packets. Until then, do not report these commands as executed successfully.
+
+```powershell
+$beachGodot = 'C:\Users\Home\Downloads\Godot_v4.6.1-stable_mono_win64\Godot_v4.6.1-stable_mono_win64_console.exe'
+& $beachGodot --version
+& $beachGodot --headless --path 'C:\Users\Home\Documents\beach' --editor --import
+& $beachGodot --headless --path 'C:\Users\Home\Documents\beach' --script res://tests/run_checks.gd
+& $beachGodot --path 'C:\Users\Home\Documents\beach' res://tests/scenes/interaction_lab.tscn
+& $beachGodot --headless --path 'C:\Users\Home\Documents\beach' --export-release 'Windows Desktop' 'builds/windows/Beach.exe'
+```
+
+The test runner extends SceneTree, uses a tiny `check(condition, message)` helper, prints failed checks and exits nonzero if any fail. Do not depend on `assert()` alone for release-mode execution. Support `-- --case=<name>` to run a relevant case after a small change and `-- --all` for release verification; no case argument can default to all. Use temporary `user://test_runs/` saves, never a real player save. Fixed data fixtures can be constructed in the runner; author visual scenes only for effects/physics that need them.
+
+## Runnable checks and owners
+
+| Case | Owner | Exact evidence |
+|---|---|---|
+| `boot` | P00 | Boot scene loads, no script errors, application main scene assigned. |
+| `asset_closure` | P01 | Every staged reference resolves from root, repeated staging changes no content, no nested cache or source archive in runtime closure. |
+| `ownership` | P02 | Every fixture item is in exactly one record/list; duplicate/invalid transfers rejected without any mutation. |
+| `input_bindings` | P03 | Required actions exist, nonempty keyboard/controller bindings, persisted remap round-trip and reset. |
+| `manifest` | P06 | Same seed/version gives equal canonical manifest in separate fresh processes; different seed changes placement while maintaining 5,700 required / category / zone quotas. |
+| `manifest_constraints` | P06 | All required destinations/capacities valid; no impossible single family shelf claim; no unreachable or overlapping pickup anchors; fixed dirty/buried/rescue counts. |
+| `physics_recovery` | P07 | Out-of-bounds item returns with same ID and no completion/payment; throw/catch failure leaves item recoverable. |
+| `carry_lifo` | P09 | A then B then C collects to ordered bag; throws C then B. Full capacity rejects. Two small/one large hand cost respected. |
+| `slots` | P10 | Bucket claim rejects ball; removing last bucket clears claim; colour variants share family; dirty prop rejected; physical catch and click give same committed state. |
+| `dirt` | P11 | Dirty chair cannot complete until all patches cleaned; furniture count remains one; loose residue keeps its original waste ID and requires collection. |
+| `table` | P12 | Full-table unload rejected intact; drag/click share sort logic; correct→wrong→correct is reflected in final contents; exiting mid-drag loses nothing. |
+| `sealing` | P13 | 50 items auto-seal; manual 1-item seal works; zero fails; full output rack blocks safely; mismatched category container rejects bag. |
+| `payment` | P14 | 30 correct + 20 incorrect pays 80 and completes 50; repeat call pays zero; bag transport never pays. |
+| `purchases` | P15 | Insufficient money and missing prerequisite rejected; already purchased level cannot charge twice; loadout max two; upgrades recompute identically after load. |
+| `tool_filters` | P16 | Vacuum/sand cleaner respect range, occlusion, eligibility and bag free capacity; no hold-to-poke behavior. |
+| `buried` | P17 | Seed preserves reveal locations/rewards; hidden objects cannot be collected/scanned; optional valuable sold once, denominator unchanged. |
+| `faint` | P18 | Exactly all carried object refs drop once; equipment/wallet unchanged; nearest valid shore selected; repeat event cannot clone objects. |
+| `rescue` | P19 | Full bag drops removed attachment; last cut releases animal; no damage path; restored area still waits for attachment collection. |
+| `completion` | P20 | Pickup/sort/deposit do not count waste complete; truck does. Prop removal reverses current progress. Restoration/group payment/result receipt latch once. |
+| `discovery_scan` | P23 | Only unlocked definition/tag filters available; matching IDs include new locations; collected/sold items excluded; buried stays hidden until revealed. |
+| `save_roundtrip` | P24 | Snapshot with items in every state restores identical records, ordered inventory, money, claims, rewards and manifest. |
+| `save_recovery` | P24 | Truncated latest generation falls back; both corrupt show error without starting over; failed write keeps previous valid save and reports failure. |
+| `economy_reachability` | P26 | Starter-accessible base-only waste earnings fund all required tools/air without valuables, correct sorting or reward bonuses. |
+| `content_totals` | P26 | Per-zone and per-category matrix sums exactly; dirty60/buried300/attachments24/residue120 are subsets; optional40 excluded. |
+
+## State sequences that must be exercised together
+
+1. Collect 20 mixed waste → reject item 21 → throw last two → collect again → unload → sort wrong → correct before sealing → manually seal → carry → throw into matching container → call collection → buy cloth → clean chair → slot it → remove/re-slot it. Counts and money must match a written expected receipt at every stage.
+2. Fill all table cells/bin/rack/hand positions using fixtures. Try every transfer with no free space, then make one space and retry. No ID vanishes, duplicates or changes category just to fit.
+3. Collect a mix of surface/buried/rescue waste across multiple home sections into the same sealed bag. Truck collection credits each original section correctly.
+4. Enter water with a mixed trash bag, one held prop and one disposal bag. Faint with 0 air. Reload the resulting save, recover each item, finish the relevant section. No equipment loss or ghost hand reservations.
+5. Trigger collection, a group reward and habitat completion together. Save before and after the commit, interrupt presentation, and load either snapshot. Each snapshot must be internally before or after the transaction, never duplicate or partial payment.
+6. Finish the game, continue roaming, remove a chair, save and reload, replace the chair. Original finish receipt persists, current progress changes and returns, wildlife remains, no second reward.
+7. Start two runs from the same seed; complete tasks and buy gear in only one. Open the second run and confirm that it still starts fresh. Manual slots and autosave of the first run remain selectable.
+
+## Manual gameplay and controller gate
+
+Use a controller from launch through new run, tutorial prompts, movement, diving, sorting by focus, manual partial sealing, physical carrying, collection, shop, booklet, scanner filter selection, save/load and result-screen continuation. No mouse assistance is allowed during this pass. Repeat mouse play for click/drag sorting. Test controller disconnect/reconnect, UI focus restoration and bindings changed away from defaults.
+
+Check FOV range 70–110 (default 85), sensitivity, invert Y, sprint/crouch toggle, UI scale 100–150%, reduced motion, and clear labels/icons in all four waste categories. At 1280×720 and 1920×1080, HUD and sorting controls stay reachable and readable; at 4K, scaling does not leave microscopic text. Check modal closing cannot throw an item or poke through the menu.
+
+Visual feedback must show white hover outline and a nearby item name; no through-wall hover. A valid placement ghost must match the chosen slot and front orientation. Placement travels rather than popping. Pulses change only visual scale and return exactly to baseline. Group sweeps replay safely; restoration never reverses. Test bright sand, dark hut, water surface, submerged camera and overlapping thin objects.
+
+## Performance target and limits of evidence
+
+Target test: exported Windows release, 1920×1080 default settings, GTX 980-class GPU with 8 GB total system RAM. CPU was not specified by the user; record the actual test CPU, driver, OS, game build and GPU VRAM. No claim of target compliance from a stronger developer machine or a headless run.
+
+Default budget: approximately 16.7 ms per frame at 60 fps, 95th-percentile frame time ≤18 ms across the test route, and no recurring >50 ms gameplay stalls. Aim for ≤3 GB game process resident memory and ≤3 GB dedicated GPU memory to leave system headroom. These are initial engineering budgets, not guarantees from this plan. Profile CPU physics, draw calls, shader cost, loading and save spikes separately; adjust settings before redesigning systems.
+
+Measure a 5,700-object cold start, densest trash mountain, chair row interaction, 200-item table unload, maximum vacuum throughput, view down the full coastline, restored reef population, full-bag underwater faint, save/load, and almost-complete scanner pass. Repeat representative route after extended pickup/throw/save activity to catch accumulating nodes/materials/markers. Report maximum awake rigid bodies, visible item draws and instantiated mesh/material counts alongside frame time and memory.
+
+P07 records the early baseline. P28 may add per-cell batching or near-view promotion only if measurements identify the need. Any optimization reruns ownership, target selection, physical catch and save checks, so it cannot make far-away litter disappear logically. Missing target hardware is an explicit unverified release criterion, not an automatic pass.
+
+## Release checklist
+
+- P00–P29 acceptance evidence exists; P30 is optional and cannot block the required release.
+- All required assets either render correctly or remain honestly listed as placeholders awaiting the user. Do not label remaining cube wildlife as final art quality.
+- Required quotas and compatible storage verified across a default 100-seed suite, including empty-input-generated seed, Unicode seed, max-length seed and repeated seed. Reject too-long/control-character input cleanly.
+- At least one human-paced complete full run without debug collection proves pacing and recoverability. A fast fixture completion checks logic but cannot replace this.
+- Export boots on a machine without the Godot editor or .NET SDK. Game uses GDScript; do not bundle a .NET runtime because the local editor happens to be Mono.
+- Windows export template version matches 4.6.1. Exclude source package, conversion project, `.godot`, planning reference images, test fixtures and build tools; include every runtime catalog dependency explicitly.
+- Test a fresh user profile, first save, multiple runs, damaged latest autosave and failed-write UI. Keep existing saves during build updates.
+- No sounds, visitors, multiplayer lobby or fake online leaderboard has been added to fill perceived gaps. No Windows-specific runtime path is required.
+- Final handoff states actual check results and remaining gaps, with build path and exact version. Do not mark “release-ready” while known completion/save failures remain.
