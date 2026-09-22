@@ -32,8 +32,8 @@ art/synty/                            locally staged selected vendor dependencie
 art/placeholders/                     small project-owned coloured cube scenes
 shaders/                              project-owned effects only
 tools/stage_assets.gd                 explicit editor/offline staging script
-tests/run_checks.gd                   one headless test entry point
-tests/scenes/                         only needed visual/physics fixtures
+tests/run_checks.gd                   small native checks only where justified
+tests/scenes/                         optional shared scenes using real game state
 docs/handoffs/                        one completed handoff per packet
 ```
 

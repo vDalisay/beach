@@ -1,6 +1,10 @@
 # Verification and release evidence
 
-These are required future checks, not results from this planning task. Each packet adds checks to one small native GDScript runner where a regression is meaningful. Avoid a new test framework, fixtures for every getter, or repeated testing without a changed condition.
+These are behaviors to validate during implementation, not results from this planning task. **Working systems demonstrated in playable scenes with real game state take priority over the number or breadth of written tests.** Keep written checks to the minimum that provides useful confidence, following the [project rule](../../AGENTS.md).
+
+Use the running game or a shared development scene with the actual RunSession, components and gameplay flow. Record the starting state, actions and observed result in the handoff. A simple reproducible scene validation is sufficient when it demonstrates the behavior; a headless pass alone cannot establish that a feature works in play.
+
+Named cases and lab filenames below and in packets identify behaviors and possible evidence locations, not a requirement for one automated test or separate scene per case. Combine related checks in an existing scene or short script and reuse the result across packets. Keep small written validations for important ownership/payment/save invariants, deterministic generation, concrete regressions and edge cases that are difficult to reproduce in play. Do not build frameworks, mocks, fixture factories, test discovery, coverage targets or extensive suites. Do not add a written test merely to satisfy a packet template.
 
 ## Commands and entry points
 
@@ -15,11 +19,11 @@ $beachGodot = 'C:\Users\Home\Downloads\Godot_v4.6.1-stable_mono_win64\Godot_v4.6
 & $beachGodot --headless --path 'C:\Users\Home\Documents\beach' --export-release 'Windows Desktop' 'builds/windows/Beach.exe'
 ```
 
-The test runner extends SceneTree, uses a tiny `check(condition, message)` helper, prints failed checks and exits nonzero if any fail. Do not depend on `assert()` alone for release-mode execution. Support `-- --case=<name>` to run a relevant case after a small change and `-- --all` for release verification; no case argument can default to all. Use temporary `user://test_runs/` saves, never a real player save. Fixed data fixtures can be constructed in the runner; author visual scenes only for effects/physics that need them.
+Where written checks are justified, keep `tests/run_checks.gd` as a short SceneTree script with direct checks, a tiny `check(condition, message)` helper and a nonzero exit on failure. No case registry, discovery system or custom test command interface is required. Do not depend on `assert()` alone for release-mode execution. Use temporary `user://test_runs/` saves, never a real player save. Construct only the small amount of state needed by a check; prefer existing playable scenes for integrated behavior and add a development scene only when the game cannot conveniently expose the state needed.
 
-## Runnable checks and owners
+## Validation scenarios and owners
 
-| Case | Owner | Exact evidence |
+| Scenario | Owner | Behavior to demonstrate |
 |---|---|---|
 | `boot` | P00 | Boot scene loads, no script errors, application main scene assigned. |
 | `asset_closure` | P01 | Every staged reference resolves from root, repeated staging changes no content, no nested cache or source archive in runtime closure. |
@@ -49,7 +53,7 @@ The test runner extends SceneTree, uses a tiny `check(condition, message)` helpe
 ## State sequences that must be exercised together
 
 1. Collect 20 mixed waste → reject item 21 → throw last two → collect again → unload → sort wrong → correct before sealing → manually seal → carry → throw into matching container → call collection → buy cloth → clean chair → slot it → remove/re-slot it. Counts and money must match a written expected receipt at every stage.
-2. Fill all table cells/bin/rack/hand positions using fixtures. Try every transfer with no free space, then make one space and retry. No ID vanishes, duplicates or changes category just to fit.
+2. Fill table cells/bin/rack/hand positions in a development scene using real game state. Check each distinct capacity rule with no free space, then make one space and retry. No ID vanishes, duplicates or changes category just to fit; this does not require separate fixtures for every transfer permutation.
 3. Collect a mix of surface/buried/rescue waste across multiple home sections into the same sealed bag. Truck collection credits each original section correctly.
 4. Enter water with a mixed trash bag, one held prop and one disposal bag. Faint with 0 air. Reload the resulting save, recover each item, finish the relevant section. Recovery markers survive load, follow remaining WORLD members and disappear when emptied. Re-faint with recovered items; no duplicate membership, equipment loss or ghost hand reservations.
 5. Collect the final local waste to trigger collection and habitat restoration. Separately place the final required prop to trigger its group reward, section restoration and first run completion in one action. Save before the action and from its first public signal, interrupt presentation, and load either snapshot. Each snapshot must be internally before or after the entire commit, including rewards/flags/receipt, with one revision increment and no partial payment.
@@ -79,7 +83,7 @@ P07 records the early baseline. P28 may add per-cell batching or near-view promo
 
 - P00–P29 acceptance evidence exists; P30 is optional and cannot block the required release.
 - All required assets either render correctly or remain honestly listed as placeholders awaiting the user. Do not label remaining cube wildlife as final art quality.
-- Required quotas and compatible storage verified across a default 100-seed suite, including empty-input-generated seed, Unicode seed, max-length seed and repeated seed. Reject too-long/control-character input cleanly.
+- Required quotas and compatible storage verified with a simple loop over 100 seeds, including empty-input-generated seed, Unicode seed, max-length seed and repeated seed. Reuse the generator's validator; do not build a separate seed-testing system. Reject too-long/control-character input cleanly.
 - At least one human-paced complete full run without debug collection proves pacing and recoverability. A fast fixture completion checks logic but cannot replace this.
 - Export boots on a machine without the Godot editor or .NET SDK. Game uses GDScript; do not bundle a .NET runtime because the local editor happens to be Mono.
 - Windows export template version matches 4.6.1. Exclude source package, conversion project, `.godot`, planning reference images, test fixtures and build tools; include every runtime catalog dependency explicitly.

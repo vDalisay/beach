@@ -2,6 +2,8 @@
 
 The user's latest answer takes precedence: **full release only, no demo**. This document is the product authority for the work packets. Requirements use observable WHEN/IF/THEN statements where practical. Defaults fill gaps without reopening the completed question rounds.
 
+**General validation rule:** keep written tests to a minimum and prioritize validated working systems in playable scenes with real game state. Simple checks remain appropriate for important invariants and difficult edge cases; do not set up a testing framework or extensive test arrangements. This applies to every packet; [verification](05-verification.md) defines how to record sufficient evidence without requiring a separate automated test for every acceptance case.
+
 ## Locked requirements
 
 | ID | Required behavior |

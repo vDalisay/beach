@@ -8,7 +8,7 @@ Dependencies: P24, P26, P27, P28. Requirements: R01–R29; R30/R31 only their ag
 
 **Steps**
 
-1. Run every headless case and the 100-seed manifest suite with no script/import failures. Verify each dependency packet has a handoff and no unresolved completion or data-loss issue.
+1. Run the existing small written checks and the generator validator over 100 seeds with no script/import failures. Review scene-based evidence for the validation scenarios; do not create a separate automated suite to mirror the checklist. Verify each dependency packet has a handoff and no unresolved completion or data-loss issue.
 2. Perform the state-sequence matrix and at least one full human-paced 5,700-object run without debug completion. Document last-item recoverability, habitat events, controller sorting, economy, all required tools and post-results roaming.
 3. Validate fresh install/new run, multiple saves, same-seed independent runs, save-and-quit at table, corrupted latest autosave recovery and no-save-success-on-disk-failure. Preserve existing save files while testing updates.
 4. Create Windows x86_64 export using matching 4.6.1 templates and GDScript-only runtime. Include dynamic catalog dependencies explicitly; path strings alone may not establish export references. Exclude vendor archives/conversion project, caches, tools, tests and plan reference images.

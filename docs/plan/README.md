@@ -29,7 +29,7 @@ Each packet is a bounded handoff. Complete its prerequisites first. Packet numbe
 
 | Packet | Outcome | Dependencies |
 |---|---|---|
-| [P00](packets/P00-project.md) | Root project, boot scene, test entry point | — |
+| [P00](packets/P00-project.md) | Root project, boot scene, small validation script | — |
 | [P01](packets/P01-assets.md) | Reproducible asset staging and cube placeholders | P00 |
 | [P02](packets/P02-state.md) | Definitions, run state, validated state changes | P00 |
 | [P03](packets/P03-input.md) | Input actions, remapping, settings, UI focus | P00 |
@@ -69,7 +69,7 @@ P06 supplies the initial complete logical catalog and quota matrix used by P07's
 2. Implement only the named outcome, using typed GDScript, native Godot nodes/resources and existing project utilities. Do not install a gameplay framework, networking library, custom ECS, or test framework.
 3. Keep domain changes out of presentation callbacks. One logical item has one stable ID and one owner/location. Never decrement remaining counts just because a mesh disappeared.
 4. Missing art becomes a labelled coloured cube and an entry in the asset register. Preserve the feature. Do not fetch substitute art or quietly remove it.
-5. Add the smallest meaningful runnable check to `tests/run_checks.gd`, plus visual/manual checks where necessary. A headless pass cannot prove shader appearance or controller feel.
+5. Follow the [project validation rule](../../AGENTS.md): prioritize working systems demonstrated in playable scenes with real game state. Keep written tests minimal; add a small check only where it protects an important invariant or catches a regression that play validation would miss. No test is required merely because a packet or file changed, and no testing framework or extensive test setup should be built. Reuse scenes and existing checks; record the evidence.
 6. Update `docs/handoffs/Pxx.md`: outcome, files changed, commands and results, manual evidence, known gaps, and contract changes. Mark a packet done only when its acceptance checks pass; distinguish blocked art from completed logic.
 7. If implementation exposes a contradiction, resolve it against [requirements](01-requirements.md), document the concrete default used, and preserve all user-approved behavior. Do not change a locked rule to make a test pass.
 
