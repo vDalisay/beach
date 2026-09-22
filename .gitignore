@@ -18,3 +18,4 @@ mono_crash.*.json
 
 # Local platform exports
 /android/
+Assets/Synty
