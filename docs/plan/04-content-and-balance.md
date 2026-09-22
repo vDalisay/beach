@@ -16,7 +16,7 @@ All numbers here except the approved 20-item starter bag, 10/60/unlimited air an
 
 Within the 5,400 waste IDs include 300 buried metal waste (200 PMD packaging + 100 general scrap), 24 attached rescue pieces (12 rescues × 2 pieces), and 120 detached seagull-residue patches. These are subsets, not additional objects. Within the reusable props include 60 dirty chairs/loungers with 1–3 authored stain patches each. Definition variants, patches, reward fish, bags and tools never inflate the objective count.
 
-Default spatial proportions: roughly 60% singles/light clusters, 25% dense bin/food-area piles, 15% water/restoration points. These are art distribution guides; the immutable zone/category quotas are exact. Each section's authored quotas must reconcile both tables; produce a machine-readable matrix in P26 and validate row and column sums. Do not choose waste category randomly without preserving totals.
+Default spatial proportions: roughly 60% singles/light clusters, 25% dense bin/food-area piles, 15% water/restoration points. These are art distribution guides; the immutable zone/category quotas are exact. Each section's authored quotas must reconcile both tables; produce the initial machine-readable matrix and complete logical item catalog in P06, then tune and finalize them in P26. Validate row and column sums at both stages. Do not choose waste category randomly without preserving totals.
 
 | Category | Examples / explicit rules |
 |---|---|
@@ -86,6 +86,8 @@ Each logical prop-family group gives $15 the first time it completes; treat this
 
 Default total for all listed purchases is $5,300; mandatory access tools cloth + knife + detector + tank cost $490, or $1,190 including unlimited breathing. Ordinary exposed starter-accessible dry waste must fund the $490 route even if every item is mis-sorted; enforce at least 1,000 such waste IDs across accessible dry sections. Flippers make travel easier but are not a prerequisite to surface or return to land. Optional valuables and group bonuses are not required for this proof.
 
+The 1,000-item floor proves one affordable route, not freedom from spending dead ends. For example, vacuum + sand cleaner + scanner + Walking I + Bag 40 cost $990 and can exhaust that guaranteed income before the cloth is bought. P26 must also validate every reachable affordable purchase set against remaining base-only income accessible with its owned equipment. After collecting all currently reachable waste, each unfinished state must still have a sequence of affordable access purchases that unlocks the remaining objectives. Include air-limited routes and free rack re-equipping, and exclude bonuses/valuables. If this fails, adjust the existing tuning defaults (prices, optional-upgrade prerequisites or accessible content quotas) and repeat the proof; do not add respawning waste, mandatory correct sorting or an undisclosed bailout. Total end-of-run earnings alone cannot establish this invariant.
+
 Do not introduce an auto-poke or hold-to-poke upgrade. Extra bag capacity, reach, walking, sand cleaner and vacuum create efficiency. All prices/values live in Resources; never hardcode prices in button scripts. Upgrade values recompute from purchased levels to prevent repeated application after loads. No reselling purchased equipment is needed.
 
 ## Tool target matrix
@@ -103,7 +105,7 @@ Do not introduce an auto-poke or hold-to-poke upgrade. Extra bag capacity, reach
 
 Tool precedence: an aimed dirty furniture patch requires cloth; it must not start carrying on the same click. Reusable clean props can be picked up with any active tool and stow the tool; dirty furniture can be carried by an explicit alternate pickup prompt, then dropped for cleaning, but cannot snap until clean. This avoids making a dirty chair an immovable blocker.
 
-Sand cleaner processes up to available bag capacity, ordered by distance then ID, skipping ineligible/occluded targets. Vacuum uses the same collection API one item at a time and stops at full capacity. Neither gathers attachments, valuables, furniture, hidden items or residue. Knife has no damage action. Detector starts with 4 m radius; proximity meter highlights one nearest buried target, LMB reveals it when within 1.5 m and unobstructed. A free “lift from sand” presentation needs no separate purchasable shovel. Revealing never directly pays money.
+Sand cleaner processes up to available bag capacity, ordered by distance then ID, skipping ineligible/occluded targets. Vacuum uses the same collection API one item at a time and stops at full capacity. Neither gathers attachments, valuables, furniture, hidden items or residue. Knife has no damage action. Detector starts with 4 m radius; proximity meter highlights one nearest buried target, LMB reveals it when within 1.5 m of its authored dig-surface point and that point is visible. The covering sand is expected: test visibility to the surface, not to the hidden mesh below terrain. Buildings, rocks and intervening terrain still block digging. Reveal into a collision-clear authored surface pose. A free “lift from sand” presentation needs no separate purchasable shovel. Revealing never directly pays money.
 
 ## Movement, water and restoration defaults
 

@@ -61,7 +61,7 @@ Each packet is a bounded handoff. Complete its prerequisites first. Packet numbe
 | [P29](packets/P29-release.md) | Full completion audit and Windows export | P24, P26, P27, P28 |
 | [P30](packets/P30-optional-jetski.md) | Optional arcade jetski | P18, P24, P29; explicitly optional |
 
-P07 includes an early 5,700-item performance measurement; P28 is final profiling, not the first opportunity to discover scale problems. P02 defines snapshot-friendly state early; P24 implements disk persistence after all required states exist.
+P06 supplies the initial complete logical catalog and quota matrix used by P07's early 5,700-item performance measurement; P26 finalizes those same resources. P28 is final profiling, not the first opportunity to discover scale problems. P02 defines snapshot-friendly state and the action finalization boundary early; P24 implements disk persistence after all required states exist.
 
 ## Handoff rules for every packet
 
@@ -82,3 +82,9 @@ Use [verification](05-verification.md) for the evidence required before calling 
 ## Planning validation completed
 
 The planning pass checked all local Markdown links, balanced code fences, all 31 packet structures, dependency existence and absence of cycles, index-to-packet dependency agreement, and every named asset candidate against the 1,790-file inventory. Arithmetic checks confirmed 5,400 waste + 300 props, all zone/family column sums, and the $5,300 default purchase total. Six supplied reference images were copied into this package. Only documentation/reference files were added; the gameplay project, source assets and runtime settings were not modified.
+
+## Independent review — 22 September 2026
+
+Reviewed all contracts and packets against the empty root project and rechecked the installed engine version. Revisions close gaps in action/reward/save ordering, live physics snapshots, sealed-bag recovery, recovery markers, full-rack retry, buried-target visibility and scanner completion filtering. P06 now explicitly owns the initial catalog/quota data needed before P26, and seed streams have an unambiguous encoding. Economy acceptance now checks optional-first spending dead ends as well as the cheapest required-tool route. These are implementation requirements and regression cases, not claims that gameplay or performance checks have passed.
+
+Review validation passed: 37 Markdown files, 59 local links, all 31 packet structures and matching acyclic dependencies, zone/family/purchase arithmetic, 24 verification-case owners, 58 named asset candidates and all 1,790 indexed source files. `git diff --check` also passed. No gameplay or rendered-art tests were run for these documentation changes.

@@ -23,27 +23,27 @@ The test runner extends SceneTree, uses a tiny `check(condition, message)` helpe
 |---|---|---|
 | `boot` | P00 | Boot scene loads, no script errors, application main scene assigned. |
 | `asset_closure` | P01 | Every staged reference resolves from root, repeated staging changes no content, no nested cache or source archive in runtime closure. |
-| `ownership` | P02 | Every fixture item is in exactly one record/list; duplicate/invalid transfers rejected without any mutation. |
+| `ownership` | P02 | Every fixture item is in exactly one record/list; duplicate/invalid transfers rejected without any mutation; public signals expose only finalized revisions and defer reentrant actions. |
 | `input_bindings` | P03 | Required actions exist, nonempty keyboard/controller bindings, persisted remap round-trip and reset. |
-| `manifest` | P06 | Same seed/version gives equal canonical manifest in separate fresh processes; different seed changes placement while maintaining 5,700 required / category / zone quotas. |
+| `manifest` | P06 | Same seed/version gives equal canonical manifest in separate fresh processes; different seed changes placement while maintaining 5,700 required / category / zone quotas. Golden stream bytes/hash cover Unicode and punctuation seeds. |
 | `manifest_constraints` | P06 | All required destinations/capacities valid; no impossible single family shelf claim; no unreachable or overlapping pickup anchors; fixed dirty/buried/rescue counts. |
-| `physics_recovery` | P07 | Out-of-bounds item returns with same ID and no completion/payment; throw/catch failure leaves item recoverable. |
+| `physics_recovery` | P07 | Out-of-bounds item returns with same ID and no completion/payment; throw/catch failure leaves item recoverable; snapshot after flight/settling captures current pose/velocity rather than launch pose. |
 | `carry_lifo` | P09 | A then B then C collects to ordered bag; throws C then B. Full capacity rejects. Two small/one large hand cost respected. |
 | `slots` | P10 | Bucket claim rejects ball; removing last bucket clears claim; colour variants share family; dirty prop rejected; physical catch and click give same committed state. |
 | `dirt` | P11 | Dirty chair cannot complete until all patches cleaned; furniture count remains one; loose residue keeps its original waste ID and requires collection. |
 | `table` | P12 | Full-table unload rejected intact; drag/click share sort logic; correct→wrong→correct is reflected in final contents; exiting mid-drag loses nothing. |
-| `sealing` | P13 | 50 items auto-seal; manual 1-item seal works; zero fails; full output rack blocks safely; mismatched category container rejects bag. |
+| `sealing` | P13 | 50 items auto-seal; manual 1-item seal works; zero fails; full output rack blocks safely and retries waiting full bins when space returns; mismatched category container rejects bag; out-of-bounds bag recovers with the same SEALED contents. |
 | `payment` | P14 | 30 correct + 20 incorrect pays 80 and completes 50; repeat call pays zero; bag transport never pays. |
 | `purchases` | P15 | Insufficient money and missing prerequisite rejected; already purchased level cannot charge twice; loadout max two; upgrades recompute identically after load. |
 | `tool_filters` | P16 | Vacuum/sand cleaner respect range, occlusion, eligibility and bag free capacity; no hold-to-poke behavior. |
-| `buried` | P17 | Seed preserves reveal locations/rewards; hidden objects cannot be collected/scanned; optional valuable sold once, denominator unchanged. |
-| `faint` | P18 | Exactly all carried object refs drop once; equipment/wallet unchanged; nearest valid shore selected; repeat event cannot clone objects. |
+| `buried` | P17 | Seed preserves reveal locations/rewards; hidden objects cannot be collected/scanned; valid sand-surface dig succeeds while an intervening wall blocks it; optional valuable sold once, denominator unchanged. |
+| `faint` | P18 | Exactly all carried object refs drop once; equipment/wallet unchanged; nearest valid shore selected; repeat event cannot clone objects or recovery-pile membership. |
 | `rescue` | P19 | Full bag drops removed attachment; last cut releases animal; no damage path; restored area still waits for attachment collection. |
-| `completion` | P20 | Pickup/sort/deposit do not count waste complete; truck does. Prop removal reverses current progress. Restoration/group payment/result receipt latch once. |
-| `discovery_scan` | P23 | Only unlocked definition/tag filters available; matching IDs include new locations; collected/sold items excluded; buried stays hidden until revealed. |
-| `save_roundtrip` | P24 | Snapshot with items in every state restores identical records, ordered inventory, money, claims, rewards and manifest. |
-| `save_recovery` | P24 | Truncated latest generation falls back; both corrupt show error without starting over; failed write keeps previous valid save and reports failure. |
-| `economy_reachability` | P26 | Starter-accessible base-only waste earnings fund all required tools/air without valuables, correct sorting or reward bonuses. |
+| `completion` | P20 | Pickup/sort/deposit do not count waste complete; truck does. Prop removal reverses current progress. Restoration/group payment/result receipt latch once inside the triggering action's revision, before any observer snapshots it. |
+| `discovery_scan` | P23 | Only unlocked definition/tag filters available; matching IDs include new locations; collected/sold and clean SLOTTED props excluded; dropping a removed prop makes it eligible again; buried stays hidden until revealed. |
+| `save_roundtrip` | P24 | Every state restores identical records before physics resumes, including moving/resting WORLD item/bag poses, recovery markers, ordered inventory, money, claims, rewards and manifest; sorting loads at the player pose in world view. |
+| `save_recovery` | P24 | Truncated latest generation falls back; both corrupt preserve live run and files; failed write retains previous valid save; quit persists its own snapshot sequence even when movement has not changed the run revision. If background writes are added, overlapping requests preserve the latest snapshot. |
+| `economy_reachability` | P26 | All reachable affordable purchase sets retain a route to required tools/air using remaining accessible base-only waste income; optional-first spending cannot strand completion. A deliberately trapped $990-spend fixture fails. |
 | `content_totals` | P26 | Per-zone and per-category matrix sums exactly; dirty60/buried300/attachments24/residue120 are subsets; optional40 excluded. |
 
 ## State sequences that must be exercised together
@@ -51,10 +51,11 @@ The test runner extends SceneTree, uses a tiny `check(condition, message)` helpe
 1. Collect 20 mixed waste → reject item 21 → throw last two → collect again → unload → sort wrong → correct before sealing → manually seal → carry → throw into matching container → call collection → buy cloth → clean chair → slot it → remove/re-slot it. Counts and money must match a written expected receipt at every stage.
 2. Fill all table cells/bin/rack/hand positions using fixtures. Try every transfer with no free space, then make one space and retry. No ID vanishes, duplicates or changes category just to fit.
 3. Collect a mix of surface/buried/rescue waste across multiple home sections into the same sealed bag. Truck collection credits each original section correctly.
-4. Enter water with a mixed trash bag, one held prop and one disposal bag. Faint with 0 air. Reload the resulting save, recover each item, finish the relevant section. No equipment loss or ghost hand reservations.
-5. Trigger collection, a group reward and habitat completion together. Save before and after the commit, interrupt presentation, and load either snapshot. Each snapshot must be internally before or after the transaction, never duplicate or partial payment.
+4. Enter water with a mixed trash bag, one held prop and one disposal bag. Faint with 0 air. Reload the resulting save, recover each item, finish the relevant section. Recovery markers survive load, follow remaining WORLD members and disappear when emptied. Re-faint with recovered items; no duplicate membership, equipment loss or ghost hand reservations.
+5. Collect the final local waste to trigger collection and habitat restoration. Separately place the final required prop to trigger its group reward, section restoration and first run completion in one action. Save before the action and from its first public signal, interrupt presentation, and load either snapshot. Each snapshot must be internally before or after the entire commit, including rewards/flags/receipt, with one revision increment and no partial payment.
 6. Finish the game, continue roaming, remove a chair, save and reload, replace the chair. Original finish receipt persists, current progress changes and returns, wildlife remains, no second reward.
 7. Start two runs from the same seed; complete tasks and buy gear in only one. Open the second run and confirm that it still starts fresh. Manual slots and autosave of the first run remain selectable.
+8. Throw a loose item and a sealed bag; snapshot mid-flight, then again after settling. Reload each snapshot with simulation initially frozen and compare captured poses/velocities before continuing. Repeat from pause, and reject a corrupt load while keeping the current live run intact.
 
 ## Manual gameplay and controller gate
 

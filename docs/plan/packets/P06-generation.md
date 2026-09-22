@@ -4,14 +4,14 @@ Dependencies: P02, P05. Requirements: R02, R26. Read: [determinism contract](../
 
 **Outcome:** a reproducible full 5,700-object run definition, including dirt, buried finds and rescues, independent of scene spawn order.
 
-**Own files:** `scripts/world/{manifest_generator,manifest_validator}.gd`, `data/world/spawn_anchors.tres`, generation cases in `tests/run_checks.gd`.
+**Own files:** `scripts/world/{manifest_generator,manifest_validator}.gd`, `data/world/spawn_anchors.tres`, initial `data/items/*.tres` catalog and section/category quota resource, generation cases in `tests/run_checks.gd`. P26 refines these same resources after gameplay/art validation.
 
 **Steps**
 
-1. Implement bounded seed normalization and SHA-256-derived streams exactly as specified. Sort definition and anchor IDs explicitly. Put generator/content version into the manifest and digest.
-2. Allocate per-zone, per-section and per-category quotas before placing items. Select anchor poses from valid family pools; give each record an immutable home section and stable ordinal ID.
+1. Implement bounded seed normalization and SHA-256-derived streams exactly as specified, including the canonical JSON-array encoding and named `piles`/`valuables` streams. Sort definition and anchor IDs explicitly. Put generator/content version into the manifest and digest.
+2. Create the full logical catalog with required category/family/tool/collision tags and staged visuals or registered cubes; do not wait for P26 to define what P07 must instantiate. Allocate the initial machine-readable per-zone, per-section and per-category quotas before placing items. Select anchor poses from valid family pools; give each record an immutable home section and stable ordinal ID.
 3. Assign subsets: 300 buried ordinary waste, 24 rescue attachments, 120 standalone residue, 60 dirty props and 40 optional valuables. Make these explicit subsets of existing quotas except valuables. Ensure starter section requires no locked tool.
-4. Create stable layer patterns for piles and choose them using the pile stream. Starting transforms use authored supported poses; do not run physics to decide manifest output. Generation must fail visibly with a useful anchor/capacity error rather than emit fewer required items.
+4. Create stable layer patterns for piles and choose them using the `piles` stream. Starting transforms use authored supported poses; do not run physics to decide manifest output. Generation must fail visibly with a useful anchor/capacity error rather than emit fewer required items.
 5. Validate destination capacity, tool access, valid water depths and object clearances against authored metadata. Use offline geometry checks to establish valid anchors; final runtime generation does not rely on nondeterministic physics settling.
 6. Store canonical manifest/hash and instantiate records, not meshes, through RunSession. P07 handles views. Keep cosmetic wildlife randomness separate.
 
