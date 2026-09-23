@@ -536,7 +536,7 @@ func _on_player_pause_changed(paused: bool, player: BeachPlayer) -> void:
 func _sync_pause_menu(paused: bool, player: BeachPlayer) -> void:
 	if not is_instance_valid(run_root) or player != run_root.get_node_or_null("Player"):
 		return
-	if paused and not progression_view.visible and not sorting_view.visible and not results_view.visible and not settings_menu.visible:
+	if paused and not progression_view.visible and not results_view.visible and not settings_menu.visible:
 		pause_menu.open_menu()
 	else:
 		pause_menu.close_menu()
@@ -546,6 +546,8 @@ func _resume_run() -> void:
 	if is_instance_valid(run_root):
 		pause_menu.close_menu()
 		(run_root.get_node("Player") as BeachPlayer).set_paused(false)
+		if sorting_view.visible:
+			sorting_view.resume_from_pause()
 
 
 func _open_settings_from_title() -> void:
@@ -562,7 +564,7 @@ func _open_settings_from_pause() -> void:
 
 func _on_settings_closed() -> void:
 	if _settings_from_pause and is_instance_valid(run_root):
-		(run_root.get_node("Player") as BeachPlayer).set_input_enabled(true)
+		(run_root.get_node("Player") as BeachPlayer).set_input_enabled(not sorting_view.visible)
 		pause_menu.open_menu()
 		pause_menu.settings_button.grab_focus()
 	else:

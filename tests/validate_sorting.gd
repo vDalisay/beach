@@ -10,7 +10,7 @@ func _init() -> void:
 func _run() -> void:
 	var main := (load("res://scenes/main.tscn") as PackedScene).instantiate() as BeachMain
 	root.add_child(main)
-	main.save_service.save_root = "user://test_runs/legacy"
+	main.save_service.save_root = "user://test_runs/c02"
 	main.seed_input.text = "sorting-fixture"
 	var run_root := main.start_run() as RunSession
 	check(run_root != null, "full beach run starts")
@@ -48,14 +48,47 @@ func _run() -> void:
 	var blocked_world_throw := (player_record.trash_bag as Array).size()
 	player._physics_process(0.016)
 	check((player_record.trash_bag as Array).size() == blocked_world_throw, "world actions cannot consume bag contents in table context")
-	view.unload_button.pressed.emit()
+	view.focused_cell = 0
+	await _joy(JOY_BUTTON_DPAD_UP)
+	check(view.unload_button.has_focus(), "grid top edge gives native focus to Unload")
+	await _joy(JOY_BUTTON_A)
 	check(station.free_cell_count() == 220 and (player_record.trash_bag as Array).is_empty() and station.item_at(0) == candidates[0] and station.item_at(19) == candidates[19], "whole bag unloads in stable order into cells 000–019")
+	await _joy(JOY_BUTTON_START)
+	check(paused and main.pause_menu.visible and station.active and station.table_camera.current, "Start opens pause over the populated table")
+	var paused_time := run_root.state.elapsed_active_seconds
+	await process_frame
+	check(is_equal_approx(run_root.state.elapsed_active_seconds, paused_time), "the active run timer stops while sorting is paused")
+	await _joy(JOY_BUTTON_A)
+	check(not paused and station.active and station.table_camera.current and player.input_reader.context == InputReader.Context.TABLE and view.unload_button.has_focus(), "Resume returns to the table camera, input context and focused control")
+	await _joy(JOY_BUTTON_START)
+	main.pause_menu.settings_button.grab_focus()
+	await _joy(JOY_BUTTON_A)
+	check(main.settings_menu.visible and not player.input_enabled, "table pause opens Settings without enabling world input")
+	main.settings_menu.close_menu()
+	check(paused and main.pause_menu.visible and not player.input_enabled, "closing Settings returns to table pause with world input disabled")
+	main._resume_run()
+	check(not paused and player.input_reader.context == InputReader.Context.TABLE and not player.input_enabled, "resuming after Settings restores table controls")
 	if "--capture" in OS.get_cmdline_user_args():
 		await _capture("P12-table-20.png")
 	_collect(run_root, candidates.slice(20, 200))
 	await _physics_frames(2)
-	var second := station.try_unload(&"local")
-	check(second.ok and station.free_cell_count() == 40 and station.item_at(199) == candidates[199], "subsequent unload fills 200 distinct, persistent physical table cells")
+	var remapped_confirm := InputEventJoypadButton.new()
+	remapped_confirm.button_index = JOY_BUTTON_X
+	remapped_confirm.pressed = true
+	main.settings_store.rebind(&"ui_accept", remapped_confirm)
+	var remapped_back := InputEventJoypadButton.new()
+	remapped_back.button_index = JOY_BUTTON_BACK
+	remapped_back.pressed = true
+	main.settings_store.rebind(&"ui_cancel", remapped_back)
+	check(view.exit_button.text.contains(main.settings_store.binding_text(&"ui_cancel")), "table exit prompt follows the remapped controller back binding")
+	view.unload_button.grab_focus()
+	await _joy(JOY_BUTTON_X)
+	check(station.free_cell_count() == 40 and station.item_at(199) == candidates[199], "remapped controller confirm unloads into stable table cells")
+	view.grab_focus()
+	await _joy(JOY_BUTTON_BACK)
+	check(not station.active and player.input_enabled, "remapped controller back exits table without a world action")
+	station.enter()
+	main.settings_store.reset_all()
 	if "--capture" in OS.get_cmdline_user_args():
 		await _capture("P12-table-200.png")
 	_collect(run_root, candidates.slice(200, 241))
@@ -72,6 +105,7 @@ func _run() -> void:
 	check(station.try_unsort(first).ok and (run_root.state.items[first] as ItemRecord).location == ItemRecord.Location.TABLE, "bin item can return to first free cell before sealing")
 	var controller_item := station.item_at(1)
 	view.focused_cell = 0
+	view.grab_focus()
 	view._input(_action(&"table_focus_right"))
 	check(view.focused_cell == 1, "controller D-pad navigates stable table cells")
 	view._input(_action(&"table_bin_2"))
@@ -156,6 +190,48 @@ func _run() -> void:
 	check(station.try_sort(extra, &"glass").ok and (glass_bin.items as Array).size() == 1, "the next item enters the newly empty bin without losing its ID")
 	check(int(player_record.money) == 0 and run_root.state.required_total == 5700, "sorting and tray identification neither pay nor alter the required denominator")
 	check(run_root.state.validate_invariants(run_root.definitions).is_empty(), "sorting table, bins, bag and item records preserve unique ownership")
+	var run_id := run_root.state.run_id
+	var table_count := SortingStation.CELL_COUNT - station.free_cell_count()
+	var glass_count := (station.bin_record(&"glass").items as Array).size()
+	station.enter()
+	await _joy(JOY_BUTTON_START)
+	check(paused and main.pause_menu.visible, "Pause remains available after a full table and tray are populated")
+	main.pause_menu.save_quit_button.grab_focus()
+	await _joy(JOY_BUTTON_A)
+	check(not paused and not main.sorting_view.visible and main.menu_container.visible, "Save and quit from table returns to title without a world action")
+	var loaded := main.load_run(run_id, &"manual")
+	check(bool(loaded.ok), "table save loads from manual slot")
+	if bool(loaded.ok):
+		var resumed := main.run_root as RunSession
+		var resumed_station := resumed.sorting_stations[&"sorting:S1"] as SortingStation
+		check(not resumed_station.active and not main.sorting_view.visible and resumed_station.free_cell_count() == SortingStation.CELL_COUNT - table_count and (resumed_station.bin_record(&"glass").items as Array).size() == glass_count and valuable_id in (resumed_station.table_record().tray as Array) and resumed.state.validate_invariants(resumed.definitions).is_empty(), "load returns to world at station with table, bin and tray ownership intact")
+		resumed_station.enter()
+		view.tray_list.grab_focus()
+		await _joy(JOY_BUTTON_DPAD_DOWN)
+		check(view.selected_valuable == valuable_id, "controller selects the saved valuable in the native tray list")
+		view.sell_button.grab_focus()
+		await _joy(JOY_BUTTON_A)
+		check((resumed.state.valuable_sales as Array).size() == 1 and (resumed_station.table_record().tray as Array).is_empty(), "focused Sell activates once and pays for the original valuable")
+		view.bin_buttons[3].grab_focus()
+		await _joy(JOY_BUTTON_A)
+		var loaded_cell := -1
+		for index in range(SortingStation.CELL_COUNT):
+			if not resumed_station.item_at(index).is_empty():
+				loaded_cell = index
+				break
+		check(loaded_cell >= 0, "saved table retains a sortable cell")
+		if loaded_cell >= 0:
+			var loaded_item := resumed_station.item_at(loaded_cell)
+			view.focused_cell = loaded_cell
+			view.grab_focus()
+			await _joy(JOY_BUTTON_A)
+			check(resumed_station.item_at(loaded_cell).is_empty() and (resumed.state.items[loaded_item] as ItemRecord).location == ItemRecord.Location.BIN, "controller sorts a restored cell without leaving its saved owner behind")
+		view.seal_button.grab_focus()
+		await _joy(JOY_BUTTON_A)
+		check((resumed_station.bin_record(&"glass").items as Array).is_empty() and (resumed_station.rack_record().slots as Dictionary).size() == 2, "focused Seal creates a partial physical bag after reload")
+		view.exit_button.grab_focus()
+		await _joy(JOY_BUTTON_A)
+		check(not resumed_station.active and (resumed.get_node("Player") as BeachPlayer).input_enabled and resumed.state.validate_invariants(resumed.definitions).is_empty(), "controller Exit returns to world without duplicating table ownership")
 	print("P12_TABLE cells=20->200->240 unload=atomic sort=wrong/correct controller=sort/correct mouse=drag catch=physical bin=50->sealed tray=valuable failures=%d" % failures)
 	main.free()
 	quit(failures)
@@ -171,6 +247,18 @@ func _action(name: StringName) -> InputEventAction:
 	event.action = name
 	event.pressed = true
 	return event
+
+
+func _joy(button: int) -> void:
+	var event := InputEventJoypadButton.new()
+	event.button_index = button
+	event.pressed = true
+	Input.parse_input_event(event)
+	await process_frame
+	var released := event.duplicate() as InputEventJoypadButton
+	released.pressed = false
+	Input.parse_input_event(released)
+	await process_frame
 
 
 func _capture(filename: String) -> void:

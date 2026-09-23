@@ -144,8 +144,19 @@ static func from_snapshot(data: Dictionary) -> RunState:
 	for player_value in data.get("players", []):
 		var player := _player_from_snapshot(player_value as Dictionary)
 		state.players[player["player_id"]] = player
-	state.table_records = (data.get("table_records", {}) as Dictionary).duplicate(true)
-	state.bin_records = (data.get("bin_records", {}) as Dictionary).duplicate(true)
+	for station_key in data.get("table_records", {}):
+		var table := (data.table_records[station_key] as Dictionary).duplicate(true)
+		var cells := {}
+		for cell_key in table.get("cells", {}):
+			cells[StringName(str(cell_key))] = StringName(str(table.cells[cell_key]))
+		table["cells"] = cells
+		table["tray"] = _array_to_string_names(table.get("tray", []) as Array)
+		state.table_records[StringName(str(station_key))] = table
+	for bin_key in data.get("bin_records", {}):
+		var bin := (data.bin_records[bin_key] as Dictionary).duplicate(true)
+		bin["items"] = _array_to_string_names(bin.get("items", []) as Array)
+		bin["category"] = StringName(str(bin.get("category", "")))
+		state.bin_records[StringName(str(bin_key))] = bin
 	state.bag_records = (data.get("bag_records", {}) as Dictionary).duplicate(true)
 	state.container_records = (data.get("container_records", {}) as Dictionary).duplicate(true)
 	for container in state.container_records.values():

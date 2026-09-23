@@ -29,6 +29,7 @@ var dragging := false
 var panning := false
 var last_mouse := Vector2.ZERO
 var bin_buttons: Array[Button] = []
+var focus_before_pause: Control
 
 
 func _ready() -> void:
@@ -47,6 +48,18 @@ func _ready() -> void:
 	bin_list.item_selected.connect(_on_bin_item_selected)
 	for index in range(bin_buttons.size()):
 		bin_buttons[index].pressed.connect(_on_bin_pressed.bind(index))
+	focus_mode = Control.FOCUS_ALL
+	for button in [unload_button, seal_button, return_button, sell_button, bin_buttons[0]]:
+		button.focus_neighbor_left = button.get_path_to(self)
+	for button in [unload_button, exit_button] + bin_buttons:
+		button.focus_neighbor_bottom = button.get_path_to(self)
+	bin_buttons[3].focus_neighbor_right = bin_buttons[3].get_path_to(bin_list)
+	for control in [bin_list, tray_list]:
+		control.focus_neighbor_left = control.get_path_to(self)
+	bin_list.focus_neighbor_bottom = bin_list.get_path_to(seal_button)
+	seal_button.focus_neighbor_bottom = seal_button.get_path_to(return_button)
+	return_button.focus_neighbor_bottom = return_button.get_path_to(tray_list)
+	tray_list.focus_neighbor_bottom = tray_list.get_path_to(sell_button)
 	set_process(false)
 
 
@@ -63,7 +76,7 @@ func open(active_station: SortingStation) -> void:
 	set_process(true)
 	_refresh()
 	_refresh_prompts()
-	_say("Select a bin, then click or drag an item. %s inspects and corrects bin contents." % settings.binding_text(&"table_inspect_bin"))
+	grab_focus()
 
 
 func _on_prompt_device_changed(_device: SettingsStore.PromptDevice) -> void:
@@ -75,7 +88,20 @@ func _refresh_prompts() -> void:
 		return
 	var settings := station.player.settings_store
 	exit_button.text = "Exit [%s]" % settings.binding_text(&"ui_cancel")
-	sell_button.text = "Sell selected valuable [%s]" % settings.binding_text(&"interact")
+	sell_button.text = "Sell selected valuable [%s]" % settings.binding_text(&"ui_accept")
+	hint.text = "Select a bin; click or drag an item. Grid: %s move · %s select · %s/%s bin · %s inspect. Grid edge opens controls. %s pauses." % [settings.binding_text(&"table_focus_right"), settings.binding_text(&"table_select"), settings.binding_text(&"table_bin_previous"), settings.binding_text(&"table_bin_next"), settings.binding_text(&"table_inspect_bin"), settings.binding_text(&"pause")]
+
+
+func resume_from_pause() -> void:
+	if station == null:
+		return
+	station.player.input_reader.set_context(InputReader.Context.TABLE)
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	if is_instance_valid(focus_before_pause) and focus_before_pause.is_visible_in_tree():
+		focus_before_pause.grab_focus()
+	else:
+		grab_focus()
+	focus_before_pause = null
 
 
 func close() -> void:
@@ -85,6 +111,7 @@ func close() -> void:
 	selected_bin_item = &""
 	selected_valuable = &""
 	inspecting_bin = false
+	focus_before_pause = null
 	hide()
 	set_process(false)
 	station = null
@@ -100,7 +127,7 @@ func _process(delta: float) -> void:
 
 
 func _input(event: InputEvent) -> void:
-	if not visible or station == null:
+	if not visible or station == null or get_tree().paused:
 		return
 	if event is InputEventMouseButton:
 		var mouse := event as InputEventMouseButton
@@ -119,6 +146,7 @@ func _input(event: InputEvent) -> void:
 				pressed_cell = _cell_at(mouse.position)
 				press_position = mouse.position
 				if pressed_cell >= 0:
+					grab_focus()
 					focused_cell = pressed_cell
 					_show_item(station.item_at(pressed_cell))
 			else:
@@ -142,9 +170,14 @@ func _input(event: InputEvent) -> void:
 			_zoom(0.25)
 	if not event.is_pressed() or event.is_echo():
 		return
-	if event.is_action_pressed(&"ui_cancel"):
+	if event.is_action_pressed(&"pause"):
+		focus_before_pause = get_viewport().gui_get_focus_owner()
+		_cancel_drag()
+		station.player.set_paused(true)
+	elif event.is_action_pressed(&"ui_cancel"):
 		_back()
 	elif event.is_action_pressed(&"table_inspect_bin"):
+		grab_focus()
 		inspecting_bin = not inspecting_bin
 		selected_bin_item = &""
 		bin_focus = 0
@@ -162,18 +195,25 @@ func _input(event: InputEvent) -> void:
 	elif event.is_action_pressed(&"table_bin_4"):
 		_select_category(3)
 	elif event.is_action_pressed(&"table_focus_left"):
+		if not has_focus():
+			return
 		_move_focus(-1, 0)
 	elif event.is_action_pressed(&"table_focus_right"):
+		if not has_focus():
+			return
 		_move_focus(1, 0)
 	elif event.is_action_pressed(&"table_focus_up"):
+		if not has_focus():
+			return
 		_move_focus(0, -1)
 	elif event.is_action_pressed(&"table_focus_down"):
+		if not has_focus():
+			return
 		_move_focus(0, 1)
 	elif event.is_action_pressed(&"table_select"):
-		if sell_button.has_focus() or tray_list.has_focus():
-			_sell_selected()
-		else:
-			_select_focused()
+		if not has_focus():
+			return
+		_select_focused()
 	elif event.is_action_pressed(&"interact") and not selected_valuable.is_empty():
 		_sell_selected()
 	else:
@@ -182,7 +222,7 @@ func _input(event: InputEvent) -> void:
 
 
 func _draw() -> void:
-	if station == null or not visible or inspecting_bin:
+	if station == null or not visible or inspecting_bin or not has_focus():
 		return
 	var center := _cell_screen(focused_cell)
 	var radius := clampf(0.22 * size.y / station.table_camera.size * 0.48, 10.0, 26.0)
@@ -202,9 +242,7 @@ func _exit() -> void:
 
 func _back() -> void:
 	if pressed_cell >= 0:
-		pressed_cell = -1
-		dragging = false
-		drag_preview.hide()
+		_cancel_drag()
 	elif not selected_bin_item.is_empty():
 		_return_selected()
 	elif inspecting_bin:
@@ -212,6 +250,12 @@ func _back() -> void:
 		_refresh()
 	else:
 		_exit()
+
+
+func _cancel_drag() -> void:
+	pressed_cell = -1
+	dragging = false
+	drag_preview.hide()
 
 
 func _mouse_release(point: Vector2) -> void:
@@ -315,6 +359,18 @@ func _move_focus(dx: int, dy: int) -> void:
 		return
 	var column := clampi(focused_cell % SortingStation.CELL_COLUMNS + dx, 0, SortingStation.CELL_COLUMNS - 1)
 	var row := clampi(focused_cell / SortingStation.CELL_COLUMNS + dy, 0, SortingStation.CELL_ROWS - 1)
+	if dy < 0 and focused_cell / SortingStation.CELL_COLUMNS == 0:
+		unload_button.grab_focus()
+		return
+	if dx < 0 and focused_cell % SortingStation.CELL_COLUMNS == 0:
+		bin_buttons[selected_category].grab_focus()
+		return
+	if dx > 0 and focused_cell % SortingStation.CELL_COLUMNS == SortingStation.CELL_COLUMNS - 1:
+		bin_list.grab_focus()
+		return
+	if dy > 0 and focused_cell / SortingStation.CELL_COLUMNS == SortingStation.CELL_ROWS - 1:
+		tray_list.grab_focus()
+		return
 	focused_cell = row * SortingStation.CELL_COLUMNS + column
 	_show_item(station.item_at(focused_cell))
 	queue_redraw()
@@ -329,7 +385,7 @@ func _select_focused() -> void:
 				return
 			selected_bin_item = StringName(str(contents[clampi(bin_focus, 0, contents.size() - 1)]))
 			_show_item(selected_bin_item)
-			_say("LB/RB selects destination; A moves, B returns to table")
+			_say("%s/%s selects destination; %s moves; %s returns to table" % [station.player.settings_store.binding_text(&"table_bin_previous"), station.player.settings_store.binding_text(&"table_bin_next"), station.player.settings_store.binding_text(&"table_select"), station.player.settings_store.binding_text(&"ui_cancel")])
 		else:
 			_sort(selected_bin_item, selected_category)
 		return
@@ -382,7 +438,7 @@ func _show_item(item_id: StringName) -> void:
 		return
 	var record := station.session.state.items[item_id] as ItemRecord
 	var definition := station.session.definitions[record.definition_id] as ItemDefinition
-	selected_item_label.text = "%s\nID: %s" % [definition.display_name, item_id]
+	selected_item_label.text = definition.display_name
 
 
 func _name_of(item_id: StringName) -> String:

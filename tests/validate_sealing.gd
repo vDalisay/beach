@@ -39,7 +39,8 @@ func _run() -> void:
 	check(station.try_sort(candidates[0], &"pmd").ok, "one table item enters a bin")
 	station.enter()
 	check(main.sorting_view.seal_button.visible and not main.sorting_view.seal_button.disabled, "visible Seal button enables for a nonempty bin")
-	main.sorting_view.seal_button.pressed.emit()
+	main.sorting_view.seal_button.grab_focus()
+	await _joy(JOY_BUTTON_A)
 	station.exit()
 	var bag_one := &"bag:000001"
 	check(session.state.bag_records.has(bag_one) and (session.state.bag_records[bag_one] as Dictionary).item_ids == [candidates[0]] and (session.state.items[candidates[0]] as ItemRecord).location == ItemRecord.Location.SEALED and station.bag_view_for(bag_one) != null, "one-item UI seal preserves original ID in a physical rack bag")
@@ -167,6 +168,18 @@ func _capture(filename: String) -> void:
 func _physics_frames(count: int) -> void:
 	for _index in range(count):
 		await physics_frame
+
+
+func _joy(button: int) -> void:
+	var event := InputEventJoypadButton.new()
+	event.button_index = button
+	event.pressed = true
+	Input.parse_input_event(event)
+	await process_frame
+	var released := event.duplicate() as InputEventJoypadButton
+	released.pressed = false
+	Input.parse_input_event(released)
+	await process_frame
 
 
 func check(condition: bool, message: String) -> void:
