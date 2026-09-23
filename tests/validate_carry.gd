@@ -54,9 +54,7 @@ func _run() -> void:
 	var full_context := {"target_id": "waste:d", "visible": true, "distance": 1.0, "reach": 2.5}
 	var full_result := session.item_store.try_collect(&"local", &"waste:d", full_context)
 	check(not full_result.ok and full_result.reason == ActionResult.Reason.CAPACITY and (state.items[&"waste:d"] as ItemRecord).location == ItemRecord.Location.WORLD, "full shared bag rejects waste without mutation")
-	player_record.equipped_handheld_ids = [&"detector"] as Array[StringName]
-	if &"detector" not in player_record.owned_tools:
-		(player_record.owned_tools as Array[StringName]).append(&"detector")
+	player_record.equipped_handheld_ids = [&"stick"] as Array[StringName]
 	var valuable_context := {"target_id": "valuable", "visible": true, "distance": 1.0, "reach": 2.5}
 	var valuable_result := session.item_store.try_collect(&"local", &"valuable", valuable_context)
 	check(not valuable_result.ok and valuable_result.reason == ActionResult.Reason.CAPACITY and (state.items[&"valuable"] as ItemRecord).location == ItemRecord.Location.WORLD, "optional valuables share the same capacity limit")

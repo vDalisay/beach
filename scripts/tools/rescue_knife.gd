@@ -40,7 +40,7 @@ func try_click() -> ActionResult:
 		feedback_requested.emit("Aim at an animal attachment")
 		return ActionResult.rejected(ActionResult.Reason.BLOCKED_TARGET, "Aim at an animal attachment")
 	var result := try_cut(item_id)
-	feedback_requested.emit("Animal freed; attached litter retained for collection" if result.ok and bool(result.receipt.get("animal_freed", false)) else ("Attachment cut into bag" if result.ok and str(result.receipt.destination) == "bag" else ("Bag full — attachment dropped beside animal" if result.ok else result.message)))
+	feedback_requested.emit("Animal freed; attached litter retained for collection" if result.ok and bool(result.receipt.get("animal_freed", false)) else ("Attachment cut into bag" if result.ok and str(result.receipt.destination) == "bag" else ("Bag full — switch to stick to collect dropped attachment" if result.ok else result.message)))
 	return result
 
 

@@ -57,7 +57,7 @@ func try_click() -> ActionResult:
 	var result := finds.try_reveal(&"local", nearest_find.item_id)
 	if result.ok:
 		var revealed := session.definitions[nearest_find.definition_id] as ItemDefinition
-		feedback_requested.emit("Uncovered %s" % revealed.display_name)
+		feedback_requested.emit("Uncovered %s · switch to stick to collect" % revealed.display_name)
 		nearest_find = null
 		_scan_elapsed = 1.0
 	else:
@@ -83,7 +83,7 @@ func _physics_process(delta: float) -> void:
 		return
 	var distance := player.global_position.distance_to(nearest_find.dig_surface_position)
 	var strength := clampf(1.0 - distance / definition.range, 0.0, 1.0)
-	distance_label.text = "BURIED SIGNAL  %.1f m  ·  %s" % [distance, "LMB: uncover" if distance <= BuriedFind.DIG_REACH else "move closer"]
+	distance_label.text = "BURIED SIGNAL  %.1f m  ·  %s" % [distance, "%s: uncover" % player.interactor.binding_text(&"primary") if distance <= BuriedFind.DIG_REACH else "move closer"]
 	strength_bar.value = strength * 100.0
 	marker.global_position = nearest_find.dig_surface_position + Vector3.UP * 0.045
 	marker.visible = true

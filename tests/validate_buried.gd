@@ -49,7 +49,18 @@ func _run() -> void:
 	if waste != null:
 		await physics_frame
 		check(session.item_view_manager.view_for(waste.item_id) != null and not finds.try_reveal(&"local", waste.item_id).ok, "one reveal spawns Synty world item and cannot repeat")
-		check(session.item_store.try_collect(&"local", waste.item_id).ok, "revealed waste follows normal bag flow")
+		check(not session.item_store.try_collect(&"local", waste.item_id).ok, "detector cannot bag a revealed find before switching to stick")
+		var checked_occupied := false
+		for value in state.items.values():
+			var prop := value as ItemRecord
+			if prop.definition_id == &"prop_bucket" and prop.location == ItemRecord.Location.WORLD and prop.dirty_patches_remaining.is_empty():
+				var pose := prop.last_world_transform
+				check(session.item_store.try_hold(&"local", prop.item_id).ok and not detector.is_active() and not session.item_store.try_collect(&"local", waste.item_id).ok, "occupied hands do not bypass revealed-find stick requirement")
+				check(session.item_store.try_throw(&"local", pose, Vector3.ZERO).ok, "staged prop returns to world")
+				checked_occupied = true
+				break
+		check(checked_occupied, "clean prop was available for occupied-hands check")
+		check(await _click_collect_with_stick(session, player, waste), "revealed waste follows aimed stick input into the bag")
 		check(station.try_unload(&"local").ok, "required waste reaches normal sorting table")
 	var valuable := await _reveal_first(state, player, finds, session.definitions, ItemDefinition.Kind.VALUABLE)
 	check(valuable != null, "reachable valuable surface reveals fixed keys")
@@ -58,12 +69,12 @@ func _run() -> void:
 		if "--capture" in OS.get_cmdline_user_args():
 			await _capture("P17-buried-keys.png")
 		var value := (session.definitions[valuable.definition_id] as ItemDefinition).base_sale_value
-		check(session.item_store.try_collect(&"local", valuable.item_id).ok and valuable.item_id in state.optional_finds, "collected find records optional discovery")
+		check(await _click_collect_with_stick(session, player, valuable) and valuable.item_id in state.optional_finds, "aimed stick pickup records optional discovery")
 		var throw_pose := Transform3D(Basis.IDENTITY, player.global_position + Vector3.UP * 1.0)
 		check(session.item_store.try_throw(&"local", throw_pose, Vector3.ZERO).ok and valuable.location == ItemRecord.Location.WORLD and (session.definitions[valuable.definition_id] as ItemDefinition).base_sale_value == value, "thrown valuable keeps same ID and value")
 		valuable.last_world_transform.origin = Vector3(400, -20, 400)
 		check(session.item_view_manager.recovery_bounds.recover_item(valuable.item_id) and valuable.location == ItemRecord.Location.WORLD, "world-bound recovery preserves valuable")
-		check(session.item_store.try_collect(&"local", valuable.item_id).ok, "recovered valuable can be collected again")
+		check(progression.try_switch_tool(&"local").ok and session.item_store.try_collect(&"local", valuable.item_id).ok and progression.try_switch_tool(&"local").ok, "recovered valuable can be collected again with the stick")
 		check(station.try_unload(&"local").ok and valuable.item_id in (station.table_record().tray as Array) and station.tray_items.get_child_count() == 1, "real sorting station unloads Synty keys to physical side-table tray")
 		station.enter()
 		main.sorting_view._on_tray_item_selected(0)
@@ -75,7 +86,7 @@ func _run() -> void:
 		station.exit()
 		check(not station.try_sell_valuable(&"local", valuable.item_id).ok and int(player_record.money) == value, "repeat sale cannot pay again")
 	var bagged_valuable := await _reveal_first(state, player, finds, session.definitions, ItemDefinition.Kind.VALUABLE)
-	check(bagged_valuable != null and session.item_store.try_collect(&"local", bagged_valuable.item_id).ok, "second valuable remains bagged for save fixture")
+	check(bagged_valuable != null and progression.try_switch_tool(&"local").ok and session.item_store.try_collect(&"local", bagged_valuable.item_id).ok and progression.try_switch_tool(&"local").ok, "second valuable remains bagged for save fixture")
 	var world_revealed := await _detector_click_first(state, player, detector, finds, session.definitions)
 	check(world_revealed != null and world_revealed.location == ItemRecord.Location.WORLD and not world_revealed.buried, "active detector click reveals a find through the player tool flow")
 	var roundtrip := RunState.from_snapshot(state.to_snapshot())
@@ -138,6 +149,31 @@ func _detector_click_first(state: RunState, player: BeachPlayer, detector: Metal
 		if detector.nearest_find == record and detector.try_click().ok:
 			return record
 	return null
+
+
+func _click_collect_with_stick(session: RunSession, player: BeachPlayer, item: ItemRecord) -> bool:
+	if not session.progression.try_switch_tool(&"local").ok:
+		return false
+	var view := session.item_view_manager.view_for(item.item_id)
+	if view == null:
+		return false
+	player.global_position = view.global_position + Vector3(0, 0, 1.0)
+	player.camera.look_at(view.global_position + Vector3.UP * 0.08)
+	await physics_frame
+	var target := player.interactor.update_target()
+	check(str(target.get("id", "")) == str(item.item_id) and (target.get("actions", PackedStringArray()) as PackedStringArray).has("collect"), "revealed find offers real stick pickup")
+	var click := InputEventMouseButton.new()
+	click.button_index = MOUSE_BUTTON_LEFT
+	click.pressed = true
+	Input.parse_input_event(click)
+	for _index in range(3):
+		await physics_frame
+	click.pressed = false
+	Input.parse_input_event(click)
+	await physics_frame
+	var collected := item.location == ItemRecord.Location.BAG
+	check(session.progression.try_switch_tool(&"local").ok, "detector can be reselected after pickup")
+	return collected
 
 
 func _capture(filename: String) -> void:

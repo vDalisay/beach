@@ -116,9 +116,12 @@ func _run() -> void:
 	var station := session.sorting_stations[&"sorting:S1"] as SortingStation
 	var category_index := (session.definitions[(state.items[first_item_id] as ItemRecord).definition_id] as ItemDefinition).waste_category
 	var category := SortingStation.CATEGORIES[category_index] as StringName
+	player_record.bag_capacity = 2
+	check(session.progression.try_switch_tool(&"local").ok and await _click_world_item(player, session, second_item_id), "full-bag cut can be collected through aimed stick input after making room")
 	check(station.try_unload(&"local").ok and (state.items[first_item_id] as ItemRecord).location == ItemRecord.Location.TABLE, "rescued ring unloads at the real sorting table")
-	check(session.item_store.try_collect(&"local", second_item_id).ok and StringName("definition:%s" % (state.items[second_item_id] as ItemRecord).definition_id) in (player_record.discoveries as Array[StringName]), "collecting dropped attachment later unlocks its scanner type")
-	check(session.item_store.try_throw(&"local", (state.items[second_item_id] as ItemRecord).last_world_transform, Vector3.ZERO).ok, "collected attachment can be returned to world without duplicate ownership")
+	var later_detached_id := StringName(str(((state.rescue_states[StringName(ids[1])] as Dictionary).attachment_ids as Array)[0]))
+	check(session.item_store.try_collect(&"local", later_detached_id).ok and StringName("definition:%s" % (state.items[later_detached_id] as ItemRecord).definition_id) in (player_record.discoveries as Array[StringName]), "stick collection of later dropped attachment unlocks its scanner type")
+	check(session.item_store.try_throw(&"local", (state.items[later_detached_id] as ItemRecord).last_world_transform, Vector3.ZERO).ok, "collected attachment can be returned to world without duplicate ownership")
 	check(station.try_sort(first_item_id, category).ok, "rescued ring sorts under its original category")
 	var seal := station.try_seal(category)
 	check(seal.ok, "rescued ring seals as ordinary waste")
@@ -147,6 +150,38 @@ func _aim(player: BeachPlayer, area: Area3D) -> bool:
 			player.interactor.update_target()
 			return true
 	return false
+
+
+func _click_world_item(player: BeachPlayer, session: RunSession, item_id: StringName) -> bool:
+	var view := session.item_view_manager.view_for(item_id)
+	if view == null:
+		return false
+	var aimed := false
+	for offset in [Vector3(0, 0, 1.0), Vector3(0, 0, -1.0), Vector3(1.0, 0, 0), Vector3(-1.0, 0, 0)]:
+		player.global_position = view.global_position + offset
+		player.camera.look_at(view.global_position + Vector3.UP * 0.05)
+		await physics_frame
+		if str(player.interactor.update_target().get("id", "")) == str(item_id):
+			aimed = true
+			break
+	if not aimed:
+		return false
+	var revision := session.state.revision
+	var click := InputEventMouseButton.new()
+	click.button_index = MOUSE_BUTTON_LEFT
+	click.pressed = true
+	Input.parse_input_event(click)
+	Input.flush_buffered_events()
+	for _index in range(3):
+		await physics_frame
+	click = InputEventMouseButton.new()
+	click.button_index = MOUSE_BUTTON_LEFT
+	click.pressed = false
+	Input.parse_input_event(click)
+	Input.flush_buffered_events()
+	await physics_frame
+	print("C01_RESCUE_INPUT target=%s tool=%s bag=%d location=%s revision=%d->%d" % [player.interactor.current_target.get("id", ""), session.progression.active_tool_id(&"local"), (session.state.players[&"local"].trash_bag as Array).size(), ItemRecord.LOCATION_NAMES[(session.state.items[item_id] as ItemRecord).location], revision, session.state.revision])
+	return (session.state.items[item_id] as ItemRecord).location == ItemRecord.Location.BAG and session.state.revision == revision + 1
 
 
 func _above_floor(player: BeachPlayer, position: Vector3) -> bool:

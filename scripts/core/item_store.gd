@@ -35,8 +35,9 @@ func try_collect(player_id: StringName, item_id: StringName, target_context: Dic
 	var target_error := _validate_target_context(item_id, target_context)
 	if target_error != null:
 		return target_error
-	if not definition.required_tool.is_empty() and _active_tool(player) != definition.required_tool:
-		return ActionResult.rejected(ActionResult.Reason.TOOL_REQUIRED, "%s requires %s" % [definition.display_name, definition.required_tool])
+	var required_tool := collection_tool_for(record, definition)
+	if not required_tool.is_empty() and _active_tool(player) != required_tool:
+		return ActionResult.rejected(ActionResult.Reason.TOOL_REQUIRED, "%s requires %s" % [definition.display_name, required_tool])
 
 	var bag_key := &"valuable_bag" if definition.kind == ItemDefinition.Kind.VALUABLE else &"trash_bag"
 	var bag := player[bag_key] as Array[StringName]
@@ -53,6 +54,15 @@ func try_collect(player_id: StringName, item_id: StringName, target_context: Dic
 	var changed := PackedStringArray([str(item_id)])
 	_session.finalize_action(changed)
 	return ActionResult.accepted(changed, {"item_id": str(item_id), "destination": str(bag_key)})
+
+
+static func collection_tool_for(record: ItemRecord, definition: ItemDefinition) -> StringName:
+	if record.location == ItemRecord.Location.WORLD:
+		if definition.required_tool == &"detector" and record.revealed:
+			return &"stick"
+		if definition.required_tool == &"knife" and not record.rescuer_id.is_empty():
+			return &"stick"
+	return definition.required_tool
 
 
 func try_hold(player_id: StringName, item_id: StringName, target_context: Dictionary = {}) -> ActionResult:

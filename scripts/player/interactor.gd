@@ -157,8 +157,9 @@ func _result_for_collider(collider: Object, hit_point: Vector3, distance: float)
 			return {}
 		var actions := PackedStringArray()
 		var reason := ""
-		if not view.definition.required_tool.is_empty() and _active_tool() != view.definition.required_tool:
-			reason = "Needs %s" % str(view.definition.required_tool).capitalize()
+		var required_tool := ItemStore.collection_tool_for(view.record, view.definition)
+		if not required_tool.is_empty() and _active_tool() != required_tool:
+			reason = "Needs %s" % str(required_tool).capitalize()
 		elif view.definition.kind == ItemDefinition.Kind.WASTE or view.definition.kind == ItemDefinition.Kind.VALUABLE:
 			if _bag_is_full():
 				reason = "Bag full"

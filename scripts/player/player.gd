@@ -55,13 +55,25 @@ func _physics_process(delta: float) -> void:
 	interactor.update_target()
 	if input_reader.primary_pressed:
 		var session := interactor.session
-		if session != null and session.sand_cleaner != null and session.sand_cleaner.is_active():
+		var sand_active := session != null and session.sand_cleaner != null and session.sand_cleaner.is_active()
+		var vacuum_active := session != null and session.vacuum_tool != null and session.vacuum_tool.is_active()
+		var actions := interactor.current_target.get("actions", PackedStringArray()) as PackedStringArray
+		var aimed_item := interactor.current_target.get("collider") as WorldItem
+		var contextual := actions.has("hold") or actions.has("hold_bag") or actions.has("place") or actions.has("clean")
+		contextual = contextual or (str(interactor.current_target.get("kind", "")) in ["item", "dirt_patch"] and not actions.has("collect"))
+		if actions.has("collect") and (not sand_active and not vacuum_active or aimed_item != null and (aimed_item.definition.kind == ItemDefinition.Kind.VALUABLE or aimed_item.definition.collision_profile == ItemDefinition.CollisionProfile.LARGE)):
+			contextual = true
+		if contextual:
+			if session != null and session.vacuum_tool != null and session.progression.active_tool_id(&"local") == &"vacuum":
+				session.vacuum_tool.suppress_until_release()
+			interactor.request_primary()
+		elif sand_active:
 			session.sand_cleaner.try_click()
 		elif session != null and session.metal_detector != null and session.metal_detector.is_active():
 			session.metal_detector.try_click()
 		elif session != null and session.rescue_knife != null and session.rescue_knife.is_active():
 			session.rescue_knife.try_click()
-		elif session == null or session.vacuum_tool == null or not session.vacuum_tool.is_active():
+		elif not vacuum_active:
 			interactor.request_primary()
 	if input_reader.interact_pressed:
 		interactor.request_interact()

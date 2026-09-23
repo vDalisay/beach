@@ -18,7 +18,7 @@ static func nearby_waste(session: RunSession, player: BeachPlayer, center: Vecto
 		if view == null or view.record == null or view.record.location != ItemRecord.Location.WORLD:
 			continue
 		var definition := view.definition
-		if definition == null or definition.kind != ItemDefinition.Kind.WASTE or definition.collision_profile == ItemDefinition.CollisionProfile.LARGE or not definition.required_tool.is_empty():
+		if definition == null or definition.kind != ItemDefinition.Kind.WASTE or definition.collision_profile == ItemDefinition.CollisionProfile.LARGE or not ItemStore.collection_tool_for(view.record, definition).is_empty():
 			continue
 		result.append(view)
 	result.sort_custom(func(a: WorldItem, b: WorldItem) -> bool:

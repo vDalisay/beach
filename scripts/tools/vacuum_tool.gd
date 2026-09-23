@@ -18,6 +18,7 @@ func configure(run_session: RunSession, player_body: BeachPlayer) -> void:
 	player = player_body
 	definition = session.progression.offers[TOOL_ID] as ToolDefinition
 	session.vacuum_tool = self
+	process_physics_priority = 1
 	set_physics_process(true)
 
 
@@ -35,6 +36,12 @@ func interval_seconds() -> float:
 	if session.progression.is_owned(&"local", &"vacuum_2"):
 		return 1.0 / (session.progression.offers[&"vacuum_2"] as UpgradeDefinition).exact_value
 	return definition.use_interval
+
+
+func suppress_until_release() -> void:
+	_blocked_until_release = true
+	_started = false
+	_elapsed = 0.0
 
 
 func try_collect_next() -> ActionResult:
