@@ -2,7 +2,7 @@
 
 ## Purpose and starting point
 
-Finish the existing game, rather than restart P00–P29. The [implementation review](06-implementation-review.md) is the evidence baseline and defines findings F01–F12. This document is a new work plan; none of its implementation or acceptance steps is claimed complete by writing it.
+Finish the existing game, rather than restart P00–P29. The [initial implementation review](06-implementation-review.md) defines findings F01–F12; the [C04 checkpoint review](08-checkpoint-review.md) reconciles progress and adds F13–F15. Current checkout `3c6b431` uses Godot 4.6.1, `beach-content-6`, beach version 6, `manifest-1` and save schema 1. C00 is accepted; C01's checked repairs work; C02/C03 need the bounded C03a follow-up below; C04 is unfinished; C05–C09 remain open. Writing or revising this plan does not complete those gates.
 
 The original [requirements](01-requirements.md) remain the product authority. The new screenshots guide composition, materials and habitat density. They do not authorize human visitors, a third-person camera, drivable boats, multiplayer, sound, a larger city or a second beach. Keep the approximately 160 m beach, 5,700 required IDs, 40 optional valuables, eight zones, 18 sections, three service points and existing upgrade progression. Jetski remains deferred P30.
 
@@ -18,18 +18,19 @@ The C numbers identify follow-up packets, not replacements for the original requ
 | C01 | Normal controls can collect and carry every eligible target | C00 | F01/F03; P08/P09/P16/P17/P19 |
 | C02 | Complete table/controller/pause flow | C01 | F02/F04 and prompt part of F12; P03/P12/P13/P22/P24/P27 |
 | C03 | Ordered mixed bag, complete local save/result contracts | C02 | F05/F12; P09/P17/P20/P24 |
-| C04 | Reference-led beach composition, structural reef and finished destinations | C00 | F08; P05/P10/P25 |
-| C05 | Complete catalog and natural, reachable clutter distribution | C01, C04 | F06/F08; P06/P07/P26 |
+| C03a | Remapped table confirmation and correct checkpoint continuation | C03 | F14/F15; P03/P12/P24/P27 |
+| C04 | Reference-led composition, accessible structural reef and finished destinations | C00 | F08/F13; P05/P06/P07/P10/P25 |
+| C05 | Complete catalog and natural, reachable clutter distribution | C03a, C04 | F06/F08/F13; P06/P07/P26 |
 | C06 | Cohesive sunny shore, surface water and underwater treatment | C04 | F09; P18/P25 |
 | C07 | Authored reef and visible local restoration | C04, C05, C06; required assets for final fidelity | F07/F09; P19/P20/P21/P25 |
-| C08 | Final asset integration, interaction feel and pacing | C03, C05, C06, C07 | F09/F10/F12; P01/P04/P22/P26/P27 |
+| C08 | Final asset integration, interaction feel and pacing | C03a, C05, C06, C07 | F09/F10/F12; P01/P04/P22/P26/P27 |
 | C09 | Full player completion and exported release evidence | C08 | F10/F11; P28/P29 |
 
-Recommended execution is C00 → C01 → C02 → C03 → C04 → C05 → C06 → C07 → C08 → C09. Asset identification/supply can progress while input repairs happen, but final reef acceptance depends on actual assets. This ordering does not require delegation. If work is later split, explicitly allocate shared files first: C01–C03 touch player/session input and inventory; C04–C07 share world scenes and anchors. Never edit those shared scenes concurrently without allocating ownership.
+Remaining execution is **C03a → finish C04 → C05 → C06 → C07 → C08 → C09**. C00–C03 are implemented history with the specific exceptions above; do not restart them. C04's F13 collision repair can precede C03a without a dependency conflict, and must precede further reef dressing. Asset identification/supply can progress while repairs happen, but final reef acceptance depends on actual assets. This ordering does not require delegation. If work is later split, explicitly allocate shared files first: C03a touches input/save UI; C04–C07 share world scenes and anchors. Never edit those shared scenes concurrently without allocating ownership.
 
 Profile representative views during C04–C08. C09 is the final hardware gate, not the first performance measurement after adding art.
 
-C04 establishes the coast **and structural reef geometry before C05 fits clutter to it**. C07 adds habitat dressing and restoration to that geometry. Any later change to terrain, collision, destinations or dense vegetation reopens the affected C05 access checks; packet numbering does not make earlier evidence valid after its inputs change.
+C04 establishes the coast **and structural reef geometry before C05 fits the final catalog/clutter to it**. C04 must also leave the current objectives physically accessible: F13 reproduces required litter trapped inside its new rocks. C05 deepens distribution/access validation rather than inheriting a known blocked run. C07 adds habitat dressing and restoration to that geometry. Any later change to terrain, collision, destinations or dense vegetation reopens the affected access checks; packet numbering does not make earlier evidence valid after its inputs change.
 
 ## C00 — Establish an honest current baseline
 
@@ -105,9 +106,33 @@ Work:
 
 **Acceptance:** collect waste → keys → waste and throw in reverse order, including after reload. Unload and faint leave no stale ordering entries. Two checkpoints in one run restore distinct states while another run stays independent. A failed save retains the previous valid generation and does not quit. Finish once, save/reload, rearrange a prop: original result metadata/payment remains unchanged. Extend the existing carry/save validations only for the new order/schema invariant.
 
+## C03a — Close remapping and checkpoint continuation gaps
+
+**Deliverable:** close F14/F15 without reopening the working inventory, payment or save backend. C02/C03's original handoffs remain historical evidence; record the follow-up in `docs/handoffs/C03a.md`.
+
+Work:
+
+1. Give focused native controls priority for their confirm action over table inspect/bin shortcuts. Trace the full `SortingView._input` branch order and SettingsStore's active conflict contexts, including the valuable-sale shortcut. A valid confirm remap must not be swallowed merely because it also matches a table action. Preserve grid navigation/selection, mouse dragging, intended bin shortcuts and event consumption across modal transitions.
+2. After loading a manual checkpoint, select that same checkpoint for subsequent Save and Save and quit. Keep the choice while opening/closing pause/settings. Default new runs and autosave loads to Checkpoint 1, visibly labelled; changing the destination remains an explicit picker action. Preserve independent runs, A/B fallback and failed-write behavior.
+3. Use consistent Checkpoint 1–3 names, saved time and progress in the existing Load list and pause picker. Reuse existing summary data; no new save-management subsystem or confirmation flow is needed.
+
+**Ownership:** `scripts/ui/sorting_view.gd`, `settings_store.gd` if conflict handling needs it, `scripts/main.gd`, existing pause/load controls and summary helpers. Reuse `tests/validate_sorting.gd` / `validate_save.gd` for only the failing cases; the [review probe](review-evidence/checkpoint-review.gd) supplies reproduction setup, not another permanent test harness.
+
+**Playable evidence:** in the main scene, remap confirm to Y (currently inspect), focus Unload and activate it once; repeat a bin-shortcut conflict at Seal, then return to the grid, sell a valuable, exit and pause/resume. Exercise mouse and device switching. Save two distinct checkpoints, load Checkpoint 2, use Save and Save and quit, then verify Checkpoint 1's saved generation/state is unchanged and Checkpoint 2 contains the update. Repeat with Checkpoint 3 and a second run. Use real input dispatch for activations; final physical-controller evidence still belongs to C09.
+
+**Exit condition:** F14/F15 no longer reproduce; each press has one intended effect; loaded-slot continuation cannot overwrite another slot by resetting the picker. The broad save check passed during this review using a fresh temporary `%APPDATA%`; continue using isolated profiles rather than accumulating more runs in the historical 1.7 GB `p24` directory. No cleanup of genuine player data is authorized by this guidance.
+
 ## C04 — Compose the finished beach first
 
 **Deliverable:** an inviting, navigable completed beach with the reference's spatial relationships, using the present scale and supplied assets, plus the structural reef surfaces to which C05 will fit objectives. Establish this before tuning thousands of clutter positions.
+
+**Resume from [the committed checkpoint](../handoffs/C04.md), not from an empty scene.** Grouped chair/lounger/parasol destinations, the wider coast treatment, eighteen structural reef colliders and the paired-capture command already exist. Keep the passing lounge pocket, quotas and traversal. Finish these three bounded passes:
+
+1. **Objective clearance first (F13).** For `full-run-integration`, resolve the 23 WORLD origins inside reef rocks, including the frozen can `item:reef_east:coral:00070`. Reuse conservative authored exclusion bounds in existing anchor data/shared geometry and deterministic generation, or move the conflicting geometry/anchors together. Include full item/carry/reveal clearance rather than only unique points. Do not rely on frozen-body depenetration or weaken pickup occlusion. Record the resulting bounds for C05 and C07. If generation changes, preserve content-6 saves with `3c6b431` and advance the explicit content version under C00's policy.
+2. **Finish composition.** Recompose pier/café proportions and the broad empty flanks, add near/middle activity to the along-shore view, and integrate the inland backdrop edge. Move actual compatible destinations where needed; retain all families, capacities and the 160 m playable length. Ground the review camera at real player height after terrain changes, keeping matching initial/restored transforms.
+3. **Accept the occupied layout.** Populate the actual 300 prop records, inspect every destination family/approach, perform normal pickup/placement/throw/removal/reload in representative groups, and rerun hut/pier/swim traversal. Demonstrate normal pickup of previously trapped reef litter with nearby attachments and recovery paths intact. Record a rendered worst-view profile and refresh the existing paired captures and rubric.
+
+Add the smallest collider/pickup regression to the existing world validation for F13. The two passing swim-channel routes and accelerated completion do not establish per-object access. Final 100-seed content validation remains C09; no new physics-test framework is needed here.
 
 ### Authored direction
 
@@ -173,11 +198,11 @@ Assign unique descriptive pool IDs, for example `row:lounges:chairs:01`; derived
 
 Populate all 300 required props through the existing accelerated setup, then inspect each destination family for intersecting occupied meshes, covered targets and blocked walkways. Also exercise normal pickup, ghost placement, throw capture, removal and reload in the representative group. Spare slot counts alone do not prove usable capacity. Update old coordinate/mesh-count assertions only where the authored layout intentionally changed; retain traversal, collision, ownership and capacity checks.
 
-**Ownership:** `scenes/world/beach.tscn`, `scenes/world/zones/*.tscn`, existing lookout/café/shelter scenes; `scripts/world/coastline.gd`, `shore_dressing.gd`, `pier_visuals.gd`, `city_backdrop.gd`, structural `reef_dressing.gd`; world/slot/anchor resources where movement requires it. Keep one authoritative shoreline shared by visible sand/water and gameplay placement. Reuse `tests/validate_pier_art.gd` for the [capture procedure](#repeatable-capture-procedure), with only the small changes needed for reproducible visual evidence.
+**Ownership:** `scenes/world/beach.tscn`, `scenes/world/zones/*.tscn`, existing lookout/café/shelter scenes; `scripts/world/coastline.gd`, `shore_dressing.gd`, `pier_visuals.gd`, `city_backdrop.gd`, structural `reef_dressing.gd`; world/slot/anchor resources and the existing generator/validator where F13 clearance requires it. Keep one authoritative shoreline shared by visible sand/water and gameplay placement. Reuse `tests/validate_pier_art.gd` for the [capture procedure](#repeatable-capture-procedure); its paired-capture option is already implemented.
 
 **Evidence:** reuse the main scene and existing traversal validation. Follow the capture procedure for the three review cameras, an along-shore player view and the representative lounge/reef pockets, plus hut/pier navigation. For new before/after comparisons use the same seed, FOV, light, resolution and camera transforms. Record the accelerated setup for restored visual review separately from human completion. Walk/carry across the whole route, enter all huts, carry a large prop onto/off the pier and place representative items in every destination type.
 
-**Exit condition:** the composition rows of the reference rubric pass in the representative areas and the complete layout; no exposed world edges dominate normal playable views; coast, pier and lighthouse read as one composition; completed seating resembles usable groups; travel and sufficient compatible storage still work. Both reef areas have their structural surfaces, collision and exclusions ready for C05. Record the final layout/pool allocation and a quick worst-view profile before proceeding. Keep an elevated shot for authoring only, not a new game camera.
+**Exit condition:** F13 no longer reproduces and the composition rows of the reference rubric pass in the representative areas and the complete layout; no exposed world edges dominate normal playable views; coast, pier and lighthouse read as one composition; completed seating resembles usable groups; travel and sufficient compatible storage still work. Both reef areas have their structural surfaces, collision and shared exclusions ready for C05, with the current required pickups accessible. Record the final layout/pool allocation and a quick worst-view profile before proceeding. Keep an elevated shot for authoring only, not a new game camera.
 
 ## C05 — Finish the catalog and author the mess
 
@@ -185,11 +210,11 @@ Populate all 300 required props through the existing accelerated setup, then ins
 
 Work:
 
-1. Add the missing straw, plastic wrap/bag, empty drink carton, fries, hamburger and sealed oil-container definitions. Reuse the existing definition resource and category rules: packaging/cartons PMD, loose food organic, sealed oil container general. Distinguish variants only where gameplay/art needs them. Keep missing visuals as explicit labelled coloured placeholders with asset requests; do not omit the logical type or quietly reuse an unrelated can as final art.
+1. Add the missing straw, plastic wrap/bag, empty drink carton, fries, hamburger and sealed oil-container definitions. Reuse the existing definition resource and category rules: packaging/cartons PMD, loose food organic, sealed oil container general. Distinguish variants only where gameplay/art needs them. Keep missing visuals as explicit labelled coloured placeholders with asset requests, including an explicit carton role currently absent from the split register; do not omit the logical type or quietly reuse an unrelated can as final art.
 2. Redistribute existing family counts to include these definitions. Keep PMD 2,700 / organic 900 / general 1,200 / glass 600, plus 300 props and 40 optional valuables. Preserve 300 buried, 24 attached, 120 residue and 60 dirty as subsets, not additions. Reconcile section/zone/category totals and seed determinism under the declared content version.
 3. Author anchors/masks for sparse singles, food/bin piles, sports litter, tidelines and submerged work sites. Use the original roughly 60/25/15 distribution as an art guide, not a demand for a new procedural placement framework. Break visible bands and grids while retaining collision-clear pickup poses and deterministic allocation.
 4. Place starter content near the first station so the opening action-to-payment loop is legible. Keep the first small restoration section possible with starter tools. Maintain base-only affordability and existing required-access prerequisites; no tuning should make optional valuables or correct sorting necessary for access.
-5. Fit buried dig surfaces, attachment sites and dense piles to C04's finished coast and structural reef terrain/collision. Check line of sight, loose-item clearance, air-limited routes and recovery positions, including exclusions reserved for restoration plants. Keep required litter out of inaccessible rocks, under permanent props, inside foliage or behind the nonplayable backdrop. Record which terrain/layout revision these checks cover so later C07/C08 changes can reopen the affected checks.
+5. Fit buried dig surfaces, attachment sites and dense piles to C04's finished coast and structural reef terrain/collision using its shared exclusion bounds. Check line of sight, loose-item clearance, air-limited routes and recovery positions, including exclusions reserved for restoration plants. Keep required litter out of inaccessible rocks, under permanent props, inside foliage or behind the nonplayable backdrop. Retain the F13 regression and check actual colliders/pickup rays in representative generated sites; passing quota/unique-position validation or transferring every ID by service is insufficient. Record which terrain/layout revision these checks cover so later C07/C08 changes can reopen the affected checks.
 
 **Ownership:** `data/items/*.tres`, `data/world/section_quotas.tres`, `spawn_anchors.tres`, `beach_01.tres`, existing generator/validator, zone anchor nodes and asset manifest. Keep near-body/distant rendering contracts intact for new definitions.
 
@@ -252,7 +277,7 @@ Work:
 
 Work and gates:
 
-1. Reuse the existing short checks for ownership, exact payment, completion, content/seed determinism and save integrity. Run the existing 100-seed validator once against settled content, including edge-case seed input. Run the accelerated full-run check for service invariants, but label it accelerated.
+1. Reuse the existing short checks for ownership, exact payment, completion, content/seed determinism and save integrity, including C03a's remap/checkpoint and C04's collider-access regressions. Run the existing 100-seed validator once against settled content, including edge-case seed input. Run the accelerated full-run check for service invariants, but label it accelerated and retain normal-control pickup evidence for the physical access failures it bypasses. Record exact commit/content/engine for every result and use isolated test profiles; older engine/content passes are historical.
 2. Complete at least one human-paced 5,700-object run through normal controls, without debug collection, staged completion or direct button signals. Record seed/build, progression, all special content, final-item search, final collection/placement, results, continued roaming and post-finish save/reload. Resume over multiple sessions is acceptable and demonstrates persistence.
 3. Perform the physical controller-only acceptance route from launch through every menu/tool/station, save/load and result continuation, without mouse assistance. Prefer doing the full human run on controller so this evidence overlaps; otherwise supplement it with a representative controller route including a normally reached near-finish save. Record which evidence was actually obtained.
 4. Profile the exported Windows release at 1920×1080 defaults on GTX 980-class graphics and an 8 GB RAM system. Record CPU, GPU/VRAM, driver, OS and build. Existing defaults: 60 fps goal, p95 ≤18 ms, no recurring >50 ms gameplay stalls, aim ≤3 GB process resident memory and ≤3 GB dedicated GPU memory. A stronger development GPU or headless pass does not certify these budgets.
@@ -290,9 +315,9 @@ Record each row as pass, fail or blocked with capture filenames and the observed
 
 ### Repeatable capture procedure
 
-**Existing tooling, not new acceptance evidence:** `tests/validate_pier_art.gd` already supports `--capture` / `--goal`, uses seed `restoration-fixture`, and writes under `docs/handoffs/images/`. `tests/validate_full_run.gd` uses `full-run-integration` and isolated saves under `user://test_runs/full_run`; its last saved checkpoint has the final chair held (5,699), although its final live state is 5,700. Do not use those two outputs as a matched before/after pair or assume the last checkpoint is fully placed. The previous review's SubViewport captures document their settings but do not provide a reusable capture entry point.
+**Implemented at C04:** `tests/validate_pier_art.gd -- --review-pair --review-output=...` dispatches to the existing full-run setup and captures matching initial/restored states with seed `full-run-integration`, a 1920×1080 SubViewport and FOV 85. [C04's handoff](../handoffs/C04.md) records exit 0, ten images, final placement/save/reload and zero invariant errors. See its [capture log](../handoffs/images/C04/capture-log.txt). This is working tooling and accelerated visual evidence, not C04 acceptance: the recorded rubric still fails and F13 demonstrates an access gap bypassed by setup. The legacy `--capture` / `--goal` views use different setup; do not mix those outputs into a matched pair.
 
-Before accepting C04, extend the existing pier capture script only enough to produce the paired review set. Keep the current validation entry point and flags working. Required small additions: a `--review-pair` option with `--review-output` for the packet's output directory; one fixed seed `full-run-integration` for both states; a 1920×1080 SubViewport/FOV 85; and the shared camera table below. Reuse the accelerated completion procedure from the existing full-run check for the restored state, preserving its invariant/payment checks; extract only the needed existing setup if sharing is necessary. Do not copy another completion engine or build a capture framework. In the live restored state, ensure all 300 props are placed, all 5,400 waste collected, restoration applied and invariants clean before capture. Continue roaming through the existing results flow so the tree is unpaused before waiting for streaming/physics frames. Use only isolated test saves. Label this accelerated visual setup throughout.
+Reuse this implementation; do not build another capture entry point or completion engine. Preserve the existing invariant/payment checks and the shared camera table below. In the live restored state, ensure all 300 props are placed, all 5,400 waste collected, restoration applied and invariants clean before capture. Continue roaming through the existing results flow so the tree is unpaused before waiting for streaming/physics frames. Use only isolated test saves. Label this accelerated visual setup throughout and record exact final camera transforms in each output log.
 
 | Capture name | Position → target (world metres) | Purpose |
 |---|---|---|
@@ -304,24 +329,24 @@ Before accepting C04, extend the existing pier capture script only enough to pro
 
 If a redesigned landform makes a camera obstructed/submerged or outside the intended pocket, record that fact and choose one new transform for **both** states. Retain the historical images and distinguish the new framing from a camera-matched comparison with the historical build. Never move only the restored-state camera to make it look better. For every pair keep seed/content, transforms, FOV, sun, resolution and culling settings identical; only objective/restoration state changes. Record one fixed underwater environment per state if restoration intentionally changes it.
 
-Place the real player/streaming origin at each view, disable movement and automatic swim updates only while fixed captures run, and apply the appropriate above/underwater environment. Hide UI/hands for composition captures only. Wait at least 180 physics frames and a rendered frame; confirm nearby item views are populated before saving. Distant culling remains enabled. Write `<view>-initial.png` and `<view>-restored.png` plus `capture-log.txt` to `docs/handoffs/images/C04/` (later packets use their own Cxx directory). Log build/content/engine, seed, camera/settings, state counts and zero/nonzero invariant errors. Failed setup, missing captures or invariant errors return a nonzero exit. Retain a HUD-visible walk/swim recording separately using normal controls.
+Place the real player/streaming origin at each view, disable movement and automatic swim updates only while fixed captures run, and apply the appropriate above/underwater environment. Hide UI/hands for composition captures only. Wait at least 180 physics frames and a rendered frame; confirm nearby item views are populated before saving. Distant culling remains enabled. Write `<view>-initial.png` and `<view>-restored.png` plus `capture-log.txt` to the selected output directory, using `docs/handoffs/images/C04-final/` for the resumed pass and retaining `C04/` as checkpoint evidence (later packets use their own Cxx directory). Log build/content/engine, seed, camera/settings, state counts and zero/nonzero invariant errors. Failed setup, missing captures or invariant errors return a nonzero exit. Retain a HUD-visible walk/swim recording separately using normal controls.
 
-PowerShell command contract from the project root, **to be implemented and exercised by C04**; `--review-pair` is not available merely because this plan names it. Use the executable agreed in C00; this example points to the review's existing installation without resolving R01 on its own:
+PowerShell commands from the project root using the entry point exercised by C04 and the engine selected in C00. The output directory below is changed for the future resumed pass so the existing checkpoint evidence remains available:
 
 ```powershell
-$beachGodot = 'C:/Users/Home/Downloads/Godot_v4.6.3-stable_win64/Godot_v4.6.3-stable_win64_console.exe'
+$beachGodot = 'C:/Users/Home/Downloads/Godot_v4.6.1-stable_mono_win64/Godot_v4.6.1-stable_mono_win64_console.exe'
 & $beachGodot --headless --path . --script res://tests/run_checks.gd
-& $beachGodot --path . --script res://tests/validate_pier_art.gd -- --review-pair --review-output=res://docs/handoffs/images/C04
+& $beachGodot --path . --script res://tests/validate_pier_art.gd -- --review-pair --review-output=res://docs/handoffs/images/C04-final
 ```
 
-Run captures with rendering enabled. Record each command's exit code. Before that addition, the existing `-- --capture --goal` flags can regenerate their historical views but cannot satisfy paired acceptance. C04 handoff must replace this pending status with the actual working command, exact output paths and inspected results; no separate test scene, golden-image test suite or pixel-diff threshold is required.
+Run captures with rendering enabled. Record each command's exit code and update C04's handoff with the actual output paths and inspected rubric. Keep a HUD-visible normal-input route and the F13 pickup check alongside the paired images; no separate test scene, golden-image test suite or pixel-diff threshold is required.
 
 ## What can be called complete
 
 | Claim | Required evidence |
 |---|---|
-| Core implementation repaired | C01–C03 input flows work and authoritative state/payment/save checks remain sound. |
+| Core implementation repaired | C01–C03 plus C03a input/save flows work, F13's physical-access blocker is closed, and authoritative state/payment/save checks remain sound. |
 | Beach and reef visually aligned | C04–C08 pass matched rendered/first-person review in new and restored states; required final assets are actually integrated or remaining limitations are explicitly accepted. |
 | Full release ready | C09 gates pass on the agreed build; no completion/save blockers or unverified target-hardware claim is concealed. |
 
-The immediate next implementation packet is **C00, then C01**. The highest-value visual packet is **C04**; the reef's critical art dependency is **A01–A04**. There is no reason to rebuild the systems that already preserve ownership, payment and progress correctly.
+The immediate next implementation work is **C03a and C04's F13 clearance repair**, then the rest of C04. C00–C03 should not be restarted. C05–C09 still finish catalog/distribution, water, habitat, final integration and release evidence; the reef's critical art dependency remains **A01–A04**. Preserve the systems that already protect ownership, payment and progress.

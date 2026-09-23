@@ -1,5 +1,7 @@
 # Performance measurements — P28
 
+Current-status note, 23 September 2026: these are historical measurements, not a profile of C04 checkout `3c6b431` / `beach-content-6`. The [checkpoint review](plan/08-checkpoint-review.md) ran correctness checks only. C04 still needs its rendered worst-view measurement; C09 still owns exported Godot 4.6.1 target-hardware and extended-session acceptance. Do not infer current frame time from the older samples below.
+
 Status: development-machine optimization measured on 23 September 2026. A Windows candidate export now exists, but it has not been profiled; GTX 980-class / 8 GB system-RAM performance remains unverified.
 
 Test: Godot 4.6.1 Mono, OpenGL 3.3 Compatibility renderer, Windows, AMD Ryzen 5 5600, NVIDIA GeForce RTX 3070, driver 595.79, 1920×1080, default settings, full 5,700-required-item `first-shore` run. `tests/validate_physics.gd` times the synchronous item-view build and 120 visible frames after scene start. Frame times are wall-clock samples, not GPU timestamps; the static/video memory values are Godot monitors, not process private bytes or dedicated-board telemetry. The later exported build was not profiled, and no GTX 980 compliance is inferred.

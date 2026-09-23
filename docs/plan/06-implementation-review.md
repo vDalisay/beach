@@ -1,5 +1,7 @@
 # Implementation and reference review — 23 September 2026
 
+Historical review before C00–C04 implementation. See the [C04 checkpoint review](08-checkpoint-review.md) for current status, seven fresh passing checks and findings F13–F15. The findings below preserve their original evidence; repaired F01–F05 must not be read as unchanged current blockers.
+
 ## Conclusion
 
 The project has most of the planned systems and a substantial playable beach. It is **not functionally complete or visually aligned with the references yet**. The remaining work is not another implementation of the whole game: preserve the existing state, sorting, payment, placement, save and streaming services, repair the input paths that do not reach them, then finish the authored environment and content.

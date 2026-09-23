@@ -1,0 +1,10 @@
+Godot Engine v4.6.1.stable.mono.official.14d19694e - https://godotengine.org
+
+REEF_OVERLAP count=23 examples=["item:reef_east:coral:00070 at (30.6, -2.8, 147.6) inside ReefRock16", "item:reef_east:coral:00072 at (29.2, -2.8, 149.0) inside ReefRock16", "item:reef_east:coral:00092 at (31.3, -2.8, 148.3) inside ReefRock16", "item:reef_east:coral:00142 at (29.9, -2.8, 149.0) inside ReefRock16"]
+REEF_PICKUP id=item:reef_east:coral:00070 definition=waste_can position=(30.6, -2.8, 147.6) frozen=true blocked_approaches=5/5
+REMAP_Y conflicts=[] unloaded=false inspecting=true focus=SortingOverlay
+CHECKPOINT_AFTER_LOAD loaded=manual_2 selected=manual
+CHECKPOINT_AFTER_SAVE first_sequence=1->2 second_sequence=1->1
+PICKER_BEFORE_CANCEL paused=true popup=true
+PICKER_AFTER_START paused=true menu=true popup=true
+CHECKPOINT_REVIEW reproduced_failures=3
