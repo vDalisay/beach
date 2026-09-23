@@ -1,5 +1,7 @@
 # Project working rules
 
+Use ponytail only for work related to writing tests. Do not apply ponytail to gameplay code, architecture, or other implementation decisions.
+
 Keep written tests to a minimum. The primary evidence of correctness is a working system exercised in playable scenes with real game state and the actual gameplay components.
 
 - Validate the affected flow in the game or an existing development scene; record the setup, actions and observed result in the packet handoff. Reuse scenes rather than creating a separate test scene for every feature.
