@@ -47,6 +47,7 @@ func try_collect(player_id: StringName, item_id: StringName, target_context: Dic
 
 	bag.append(item_id)
 	player[bag_key] = bag
+	(player[&"bag_order"] as Array[StringName]).append(item_id)
 	_commit_record_transfer(record, ItemRecord.Location.BAG, player_id)
 	discover_definition(player, definition)
 	if definition.kind == ItemDefinition.Kind.VALUABLE and item_id not in _session.state.optional_finds:
@@ -213,14 +214,16 @@ func try_throw(player_id: StringName, spawn_transform: Transform3D, impulse: Vec
 	else:
 		var trash_bag := player[&"trash_bag"] as Array[StringName]
 		var valuable_bag := player[&"valuable_bag"] as Array[StringName]
-		if not trash_bag.is_empty():
-			item_id = trash_bag[trash_bag.size() - 1]
+		var bag_order := player[&"bag_order"] as Array[StringName]
+		if bag_order.is_empty():
+			return ActionResult.rejected(ActionResult.Reason.MISSING_ID, "Player %s has nothing to throw" % player_id)
+		item_id = bag_order.back()
+		if item_id in trash_bag and trash_bag.back() == item_id:
 			source_key = &"trash_bag"
-		elif not valuable_bag.is_empty():
-			item_id = valuable_bag[valuable_bag.size() - 1]
+		elif item_id in valuable_bag and valuable_bag.back() == item_id:
 			source_key = &"valuable_bag"
 		else:
-			return ActionResult.rejected(ActionResult.Reason.MISSING_ID, "Player %s has nothing to throw" % player_id)
+			return ActionResult.rejected(ActionResult.Reason.INVALID_REFERENCE, "Bag order disagrees with owner list")
 
 	var record_result: Variant = _record_or_error(item_id)
 	if record_result is ActionResult:
@@ -241,6 +244,7 @@ func try_throw(player_id: StringName, spawn_transform: Transform3D, impulse: Vec
 		var bag := player[source_key] as Array[StringName]
 		bag.pop_back()
 		player[source_key] = bag
+		(player[&"bag_order"] as Array[StringName]).pop_back()
 	_commit_record_transfer(record, ItemRecord.Location.WORLD, &"")
 	record.last_world_transform = spawn_transform
 	record.linear_velocity = impulse
@@ -260,11 +264,8 @@ func peek_throw_item(player_id: StringName) -> StringName:
 	if not held.is_empty():
 		var last := held.back() as Dictionary
 		return StringName(str(last.get("id", ""))) if str(last.get("kind", "")) == ITEM_REF_KIND else StringName()
-	var trash := player[&"trash_bag"] as Array[StringName]
-	if not trash.is_empty():
-		return trash.back()
-	var valuables := player[&"valuable_bag"] as Array[StringName]
-	return valuables.back() if not valuables.is_empty() else StringName()
+	var bag_order := player[&"bag_order"] as Array[StringName]
+	return bag_order.back() if not bag_order.is_empty() else StringName()
 
 
 func peek_throw_ref(player_id: StringName) -> Dictionary:
@@ -293,8 +294,7 @@ func try_release_all_items(player_id: StringName, world_transforms: Dictionary) 
 			item_ids.append(StringName(str(object_ref.get("id", ""))))
 		elif str(object_ref.get("kind", "")) == "bag":
 			bag_ids.append(StringName(str(object_ref.get("id", ""))))
-	item_ids.append_array(player[&"trash_bag"] as Array[StringName])
-	item_ids.append_array(player[&"valuable_bag"] as Array[StringName])
+	item_ids.append_array(player[&"bag_order"] as Array[StringName])
 	for item_id in item_ids + bag_ids:
 		if not world_transforms.has(item_id) or not (world_transforms[item_id] as Transform3D).is_finite():
 			return ActionResult.rejected(ActionResult.Reason.BLOCKED_TARGET, "Missing safe release pose for %s" % item_id)
@@ -307,6 +307,7 @@ func try_release_all_items(player_id: StringName, world_transforms: Dictionary) 
 	player[&"held_objects"] = [] as Array[Dictionary]
 	player[&"trash_bag"] = [] as Array[StringName]
 	player[&"valuable_bag"] = [] as Array[StringName]
+	player[&"bag_order"] = [] as Array[StringName]
 	player[&"selected_held_index"] = -1
 	for item_id in item_ids:
 		var record := _session.state.items[item_id] as ItemRecord

@@ -54,10 +54,14 @@ func _run() -> void:
 	await _joy(JOY_BUTTON_A)
 	check(station.free_cell_count() == 220 and (player_record.trash_bag as Array).is_empty() and station.item_at(0) == candidates[0] and station.item_at(19) == candidates[19], "whole bag unloads in stable order into cells 000–019")
 	await _joy(JOY_BUTTON_START)
-	check(paused and main.pause_menu.visible and station.active and station.table_camera.current, "Start opens pause over the populated table")
+	check(paused and main.pause_menu.visible and main.pause_menu.slot_picker.item_count == 3 and station.active and station.table_camera.current, "Start opens pause and three checkpoint choices over the populated table")
 	var paused_time := run_root.state.elapsed_active_seconds
 	await process_frame
 	check(is_equal_approx(run_root.state.elapsed_active_seconds, paused_time), "the active run timer stops while sorting is paused")
+	main.pause_menu.save_button.grab_focus()
+	await _joy(JOY_BUTTON_A)
+	check(main.pause_menu.note.text.begins_with("Saved checkpoint 1") and main.pause_menu.slot_picker.get_item_text(0).contains("0/5700") and not main.pause_menu.slot_picker.get_item_text(0).contains("empty"), "first checkpoint shows its saved timestamp and progress")
+	main.pause_menu.resume_button.grab_focus()
 	await _joy(JOY_BUTTON_A)
 	check(not paused and station.active and station.table_camera.current and player.input_reader.context == InputReader.Context.TABLE and view.unload_button.has_focus(), "Resume returns to the table camera, input context and focused control")
 	await _joy(JOY_BUTTON_START)
@@ -89,6 +93,25 @@ func _run() -> void:
 	check(not station.active and player.input_enabled, "remapped controller back exits table without a world action")
 	station.enter()
 	main.settings_store.reset_all()
+	await _joy(JOY_BUTTON_START)
+	main.pause_menu.slot_picker.grab_focus()
+	await _joy(JOY_BUTTON_A)
+	await _joy(JOY_BUTTON_DPAD_DOWN)
+	await _joy(JOY_BUTTON_A)
+	check(main.pause_menu.slot_picker.selected == 1, "controller selects Checkpoint 2 through the native picker")
+	main.pause_menu.save_button.grab_focus()
+	await _joy(JOY_BUTTON_A)
+	var checkpoint_one := main.save_service.load_slot(&"beach_01", run_root.state.run_id, &"manual")
+	var checkpoint_two := main.save_service.load_slot(&"beach_01", run_root.state.run_id, &"manual_2")
+	check(bool(checkpoint_one.ok) and bool(checkpoint_two.ok) and ((checkpoint_one.state as RunState).table_records[&"sorting:S1"].cells as Dictionary).size() == 20 and ((checkpoint_two.state as RunState).table_records[&"sorting:S1"].cells as Dictionary).size() == 200, "two named checkpoints in one run restore distinct table states")
+	var other_generation := ManifestGenerator.new().generate("sorting-fixture")
+	var other_run_id := run_root.state.run_id + "_other"
+	var other_state := ManifestGenerator.new().create_run_state(other_generation, other_run_id)
+	var other_saved := main.save_service.write_snapshot(&"beach_01", other_run_id, &"manual_2", other_state.to_snapshot())
+	var other_loaded := main.save_service.load_slot(&"beach_01", other_run_id, &"manual_2")
+	check(bool(other_saved.ok) and bool(other_loaded.ok) and (other_loaded.state as RunState).run_id == other_run_id and (other_loaded.state as RunState).table_records.is_empty() and (checkpoint_two.state as RunState).run_id == run_root.state.run_id, "another run's checkpoint remains independent")
+	main.pause_menu.resume_button.grab_focus()
+	await _joy(JOY_BUTTON_A)
 	if "--capture" in OS.get_cmdline_user_args():
 		await _capture("P12-table-200.png")
 	_collect(run_root, candidates.slice(200, 241))
@@ -173,6 +196,7 @@ func _run() -> void:
 	valuable_record.location = ItemRecord.Location.BAG
 	valuable_record.holder_id = &"local"
 	(player_record.valuable_bag as Array[StringName]).append(valuable_id)
+	(player_record.bag_order as Array[StringName]).append(valuable_id)
 	run_root.finalize_action(PackedStringArray([str(valuable_id)]))
 	check(station.try_unload(&"local").ok and valuable_id in (station.table_record().tray as Array) and (run_root.state.items[valuable_id] as ItemRecord).location == ItemRecord.Location.VALUABLE_TRAY, "full waste table still identifies an optional valuable into the labelled tray")
 	var glass_bin := station.bin_record(&"glass")
@@ -197,10 +221,18 @@ func _run() -> void:
 	await _joy(JOY_BUTTON_START)
 	check(paused and main.pause_menu.visible, "Pause remains available after a full table and tray are populated")
 	main.pause_menu.save_quit_button.grab_focus()
+	var prior_save_root := main.save_service.save_root
+	var prior_generation := main.save_service.load_slot(&"beach_01", run_id, &"manual_2")
+	main.save_service.save_root = "res://invalid_save_root"
+	await _joy(JOY_BUTTON_A)
+	check(main.run_root == run_root and main.pause_menu.note.text.begins_with("Save failed") and main.pause_menu.quit_without_save_button.visible, "failed Save and quit leaves the populated run open for retry")
+	main.save_service.save_root = prior_save_root
+	var after_failure := main.save_service.load_slot(&"beach_01", run_id, &"manual_2")
+	check(bool(prior_generation.ok) and bool(after_failure.ok) and int(after_failure.sequence) == int(prior_generation.sequence), "failed write retains the previous valid checkpoint generation")
 	await _joy(JOY_BUTTON_A)
 	check(not paused and not main.sorting_view.visible and main.menu_container.visible, "Save and quit from table returns to title without a world action")
-	var loaded := main.load_run(run_id, &"manual")
-	check(bool(loaded.ok), "table save loads from manual slot")
+	var loaded := main.load_run(run_id, &"manual_2")
+	check(bool(loaded.ok), "table save loads from second checkpoint")
 	if bool(loaded.ok):
 		var resumed := main.run_root as RunSession
 		var resumed_station := resumed.sorting_stations[&"sorting:S1"] as SortingStation

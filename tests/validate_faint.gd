@@ -98,7 +98,7 @@ func _run() -> void:
 	record.air_remaining = 0.0
 	var result := await swim.try_faint()
 	check(result.ok and str(result.receipt.pile_id) == "recovery:000001" and str(result.receipt.anchor_id) == "recovery:shallows" and (result.receipt.item_ids as Array).size() == 3 and (result.receipt.bag_ids as Array).size() == 1, "one faint commits mixed drop and chooses nearest dry anchor")
-	check((record.trash_bag as Array).is_empty() and (record.held_objects as Array).is_empty() and int(record.money) == before_money and record.equipped_handheld_ids == before_tools, "faint empties carry but preserves tools and wallet")
+	check((record.trash_bag as Array).is_empty() and (record.bag_order as Array).is_empty() and (record.held_objects as Array).is_empty() and int(record.money) == before_money and record.equipped_handheld_ids == before_tools and session.state.faint_count == 1, "faint empties carry and order but preserves tools and wallet")
 	check((session.state.items[bucket_id] as ItemRecord).location == ItemRecord.Location.WORLD and (session.state.bag_records[bag_id] as Dictionary).location == "WORLD", "bucket and sealed bag remain recoverable world objects")
 	for index in range(2):
 		check((session.state.items[pmd_ids[index]] as ItemRecord).location == ItemRecord.Location.SEALED, "sealed bag contents stay sealed")
@@ -127,7 +127,7 @@ func _run() -> void:
 	check(swim._recovering and not (await swim.try_faint()).ok, "faint request during fade is rejected without another drop")
 	await create_timer(1.2, true).timeout
 	swim.set_physics_process(false)
-	check(str((automatic.receipt as Dictionary).get("pile_id", "")) == "recovery:000002" and session.state.recovery_piles.size() == 2 and float(record.air_remaining) == 60.0, "automatic zero-air faint at 60-second tier creates new pile and restores tank air")
+	check(str((automatic.receipt as Dictionary).get("pile_id", "")) == "recovery:000002" and session.state.recovery_piles.size() == 2 and float(record.air_remaining) == 60.0 and session.state.faint_count == 2, "automatic zero-air faint at 60-second tier creates new pile and restores tank air")
 	check(session.state.validate_invariants(session.definitions).is_empty(), "no duplicate reference across recovery piles")
 	record.money = 700
 	player.global_position = shop.counter.global_position + Vector3(0, 0, 2)

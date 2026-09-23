@@ -99,10 +99,8 @@ func try_faint() -> ActionResult:
 
 func _build_drop_plan(player_record: Dictionary) -> Dictionary:
 	var refs: Array[Dictionary] = []
-	for item_id in player_record.trash_bag as Array[StringName]:
-		refs.append({"kind": "item", "id": item_id, "location": ItemRecord.Location.BAG, "expected_kind": ItemDefinition.Kind.WASTE})
-	for item_id in player_record.valuable_bag as Array[StringName]:
-		refs.append({"kind": "item", "id": item_id, "location": ItemRecord.Location.BAG, "expected_kind": ItemDefinition.Kind.VALUABLE})
+	for item_id in player_record.bag_order as Array[StringName]:
+		refs.append({"kind": "item", "id": item_id, "location": ItemRecord.Location.BAG, "expected_kind": ItemDefinition.Kind.WASTE if item_id in (player_record.trash_bag as Array) else ItemDefinition.Kind.VALUABLE})
 	for held_value in player_record.held_objects as Array[Dictionary]:
 		var held := held_value as Dictionary
 		refs.append({"kind": str(held.get("kind", "")), "id": StringName(str(held.get("id", ""))), "location": ItemRecord.Location.HELD, "expected_kind": ItemDefinition.Kind.PROP})
@@ -233,6 +231,9 @@ func _commit_faint(player_record: Dictionary, plan: Dictionary) -> Dictionary:
 			item_ids.append(str(object_id))
 	player_record.trash_bag = [] as Array[StringName]
 	player_record.valuable_bag = [] as Array[StringName]
+	player_record.bag_order = [] as Array[StringName]
+	if session.state.faint_count >= 0:
+		session.state.faint_count += 1
 	player_record.held_objects = [] as Array[Dictionary]
 	player_record.selected_held_index = -1
 	var pile_id := StringName("recovery:%06d" % session.state.next_recovery_serial)

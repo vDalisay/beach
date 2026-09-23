@@ -60,6 +60,21 @@ func _run() -> void:
 	check(not valuable_result.ok and valuable_result.reason == ActionResult.Reason.CAPACITY and (state.items[&"valuable"] as ItemRecord).location == ItemRecord.Location.WORLD, "optional valuables share the same capacity limit")
 	player_record.equipped_handheld_ids = [&"stick"] as Array[StringName]
 	player_record.bag_capacity = 20
+	check(session.item_store.try_collect(&"local", &"valuable").ok and session.item_store.try_collect(&"local", &"waste:d").ok, "waste, keys and waste enter one chronological bag")
+	check((player_record.bag_order as Array[StringName]) == [&"waste:a", &"valuable", &"waste:d"] and session.item_store.peek_throw_item(&"local") == &"waste:d", "mixed bag preview chooses the latest collection")
+	var old_snapshot := state.to_snapshot()
+	(old_snapshot.players[0] as Dictionary).erase("bag_order")
+	old_snapshot.erase("faint_count")
+	var old_state := RunState.from_snapshot(old_snapshot)
+	check(((old_state.players[&"local"] as Dictionary).bag_order as Array[StringName]) == [&"valuable", &"waste:a", &"waste:d"] and old_state.faint_count == -1, "older saves keep trash-first throw order and an unavailable historical faint count")
+	var restored_state := RunState.from_snapshot(state.to_snapshot())
+	var restored_session := RunSession.new()
+	restored_session.initialize(restored_state, definitions)
+	check((restored_state.players[&"local"].bag_order as Array[StringName]) == [&"waste:a", &"valuable", &"waste:d"] and restored_state.validate_invariants(definitions).is_empty(), "snapshot keeps exact mixed bag chronology")
+	for expected in [&"waste:d", &"valuable", &"waste:a"]:
+		check(restored_session.item_store.peek_throw_item(&"local") == expected and restored_session.item_store.try_throw(&"local", Transform3D(Basis.IDENTITY, Vector3(0, 1, 0)), Vector3.ZERO).ok, "restored mixed bag throws %s next" % expected)
+	check((restored_state.players[&"local"].bag_order as Array).is_empty() and restored_state.validate_invariants(definitions).is_empty(), "three throws clear order and owner lists once")
+	restored_session.free()
 
 	await _primary_item(player, manager, &"prop:bucket")
 	await _primary_item(player, manager, &"prop:ball")

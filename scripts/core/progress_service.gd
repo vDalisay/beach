@@ -117,6 +117,7 @@ func finalize(changed_ids: PackedStringArray) -> Dictionary:
 			correct += int(receipt.get("correct_count", 0))
 		var player := session.state.players[&"local"] as Dictionary
 		session.state.completion_receipt = {
+			"beach_id": "beach_01",
 			"run_id": session.state.run_id,
 			"seed": session.state.seed_text,
 			"game_version": session.state.game_version,
@@ -125,6 +126,11 @@ func finalize(changed_ids: PackedStringArray) -> Dictionary:
 			"manifest_hash": session.state.initial_manifest_hash,
 			"revision": session.state.revision + 1,
 			"active_seconds": session.state.elapsed_active_seconds,
+			"participant_ids": ["local"],
+			"participant_count": 1,
+			"ruleset": "solo-beach-1",
+			"gameplay_settings": {"bag_capacity": int(player.bag_capacity), "hand_capacity": int(player.hand_capacity), "bin_capacity": SortingStation.BIN_CAPACITY, "rack_capacity": SortingStation.RACK_CAPACITY},
+			"faint_count": session.state.faint_count if session.state.faint_count >= 0 else null,
 			"required_total": session.state.required_total,
 			"collected_waste": completed_waste,
 			"slotted_props": completed_props,

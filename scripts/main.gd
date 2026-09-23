@@ -284,6 +284,8 @@ func clear_run() -> void:
 	faint_fade.color.a = 0.0
 	results_view.reset_view()
 	pause_menu.close_menu()
+	if pause_menu.slot_picker.item_count > 0:
+		pause_menu.slot_picker.select(0)
 	_clear_notices()
 	progress_panel.hide()
 	context_panel.hide()
@@ -363,16 +365,18 @@ func _load_selected() -> void:
 
 
 func _manual_save() -> void:
-	var result := save_service.save_slot(&"manual")
+	var slot_id := pause_menu.selected_slot_id()
+	var result := save_service.save_slot(slot_id)
 	if bool(result.ok):
-		pause_menu.note.text = "Saved to manual slot (generation %d)." % int(result.sequence)
+		pause_menu.note.text = "Saved checkpoint %d (generation %d)." % [pause_menu.slot_picker.selected + 1, int(result.sequence)]
+		pause_menu.set_slot_summaries(save_service.checkpoint_summaries())
 		pause_menu.quit_without_save_button.hide()
 	else:
 		pause_menu.show_save_failure(str(result.message))
 
 
 func _save_and_quit() -> void:
-	var result := save_service.save_slot(&"manual")
+	var result := save_service.save_slot(pause_menu.selected_slot_id())
 	if bool(result.ok):
 		clear_run()
 		show_menu()
@@ -538,6 +542,7 @@ func _sync_pause_menu(paused: bool, player: BeachPlayer) -> void:
 		return
 	if paused and not progression_view.visible and not results_view.visible and not settings_menu.visible:
 		pause_menu.open_menu()
+		pause_menu.set_slot_summaries(save_service.checkpoint_summaries())
 	else:
 		pause_menu.close_menu()
 

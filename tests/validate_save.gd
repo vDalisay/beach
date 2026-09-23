@@ -110,7 +110,7 @@ func _run() -> void:
 	player.set_paused(true)
 	await process_frame
 	main.pause_menu.save_button.pressed.emit()
-	_check(main.pause_menu.note.text.begins_with("Saved to manual"), "pause menu writes manual slot")
+	_check(main.pause_menu.note.text.begins_with("Saved checkpoint"), "pause menu writes selected checkpoint")
 	var earlier := main.save_service.load_slot(&"beach_01", first_id, &"manual")
 	_check(bool(earlier.ok), "first full-beach save loads")
 	player.global_position += Vector3(2, 0, 0)

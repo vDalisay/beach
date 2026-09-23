@@ -112,6 +112,7 @@ func try_unload(player_id: StringName) -> ActionResult:
 	var player_record := session.state.players[player_id] as Dictionary
 	var waste := player_record.trash_bag as Array[StringName]
 	var valuables := player_record.valuable_bag as Array[StringName]
+	var order := player_record.bag_order as Array[StringName]
 	if waste.is_empty() and valuables.is_empty():
 		return ActionResult.rejected(ActionResult.Reason.WRONG_STATE, "Bag is empty")
 	if waste.size() > free_cell_count():
@@ -122,27 +123,33 @@ func try_unload(player_id: StringName) -> ActionResult:
 	for item_id in valuables:
 		if not _is_bag_item(item_id, player_id, ItemDefinition.Kind.VALUABLE):
 			return ActionResult.rejected(ActionResult.Reason.INVALID_REFERENCE, "Bag disagrees with valuable %s" % item_id)
+	if order.size() != waste.size() + valuables.size():
+		return ActionResult.rejected(ActionResult.Reason.INVALID_REFERENCE, "Bag order disagrees with contents")
+	var seen := {}
+	for item_id in order:
+		if seen.has(item_id) or (item_id not in waste and item_id not in valuables):
+			return ActionResult.rejected(ActionResult.Reason.INVALID_REFERENCE, "Bag order contains an invalid item")
+		seen[item_id] = true
 	var cells := table_record().cells as Dictionary
 	var tray := table_record().tray as Array
 	var changed := PackedStringArray()
-	for item_id in waste:
-		var cell := first_free_cell()
-		cells[cell] = item_id
+	for item_id in order:
 		var record := session.state.items[item_id] as ItemRecord
-		record.location = ItemRecord.Location.TABLE
-		record.holder_id = &""
-		record.container_id = station_id
-		record.slot_id = cell
-		changed.append(str(item_id))
-	for item_id in valuables:
-		tray.append(item_id)
-		var record := session.state.items[item_id] as ItemRecord
-		record.location = ItemRecord.Location.VALUABLE_TRAY
+		if item_id in waste:
+			var cell := first_free_cell()
+			cells[cell] = item_id
+			record.location = ItemRecord.Location.TABLE
+			record.slot_id = cell
+		else:
+			tray.append(item_id)
+			record.location = ItemRecord.Location.VALUABLE_TRAY
+			record.slot_id = &""
 		record.holder_id = &""
 		record.container_id = station_id
 		changed.append(str(item_id))
 	player_record.trash_bag = [] as Array[StringName]
 	player_record.valuable_bag = [] as Array[StringName]
+	player_record.bag_order = [] as Array[StringName]
 	session.finalize_action(changed)
 	_contents_committed()
 	return ActionResult.accepted(changed, {"waste": waste.size(), "valuables": valuables.size()})

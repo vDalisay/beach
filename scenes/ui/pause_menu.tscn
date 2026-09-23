@@ -28,7 +28,7 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="Panel" type="PanelContainer" parent="Center"]
-custom_minimum_size = Vector2(440, 0)
+custom_minimum_size = Vector2(560, 0)
 
 [node name="Margin" type="MarginContainer" parent="Center/Panel"]
 theme_override_constants/margin_left = 28
@@ -54,10 +54,14 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 52)
 text = "Settings"
 
+[node name="SlotPicker" type="OptionButton" parent="Center/Panel/Margin/Stack"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+
 [node name="SaveButton" type="Button" parent="Center/Panel/Margin/Stack"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 52)
-text = "Save to manual slot"
+text = "Save checkpoint"
 
 [node name="SaveQuitButton" type="Button" parent="Center/Panel/Margin/Stack"]
 unique_name_in_owner = true

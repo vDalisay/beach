@@ -83,6 +83,7 @@ func try_cut(item_id: StringName) -> ActionResult:
 		drop_pose = _nearby_drop_pose(site, area.global_position, item_definition)
 	if destination == "bag":
 		(player_record.trash_bag as Array[StringName]).append(item_id)
+		(player_record.bag_order as Array[StringName]).append(item_id)
 		record.location = ItemRecord.Location.BAG
 		record.holder_id = &"local"
 		session.item_store.discover_definition(player_record, item_definition)

@@ -9,7 +9,7 @@ func _run() -> void:
 	var started := Time.get_ticks_msec()
 	var main := (load("res://scenes/main.tscn") as PackedScene).instantiate() as BeachMain
 	root.add_child(main)
-	main.save_service.save_root = "user://test_runs/full_run"
+	main.save_service.save_root = "user://test_runs/c03_full_run"
 	main.seed_input.text = "full-run-integration"
 	var session := main.start_run() as RunSession
 	if session == null or session.state.items.size() != 5740:
@@ -159,12 +159,16 @@ func _run() -> void:
 	if not session.results_open or not paused or int(receipt.get("required_total", 0)) != 5700 or int(receipt.get("collected_waste", 0)) != 5400 or int(receipt.get("slotted_props", 0)) != 300:
 		_fail("first full-run completion receipt did not latch")
 		return
+	if receipt.get("participant_ids", []) != ["local"] or int(receipt.get("participant_count", 0)) != 1 or str(receipt.get("ruleset", "")) != "solo-beach-1" or int(receipt.get("faint_count", -1)) != 0 or int((receipt.get("gameplay_settings", {}) as Dictionary).get("bin_capacity", 0)) != SortingStation.BIN_CAPACITY:
+		_fail("first full-run receipt lacks local ruleset, participant or faint metadata")
+		return
 	if not bool((session.state.section_states[&"arrival:start"] as Dictionary).restored_once) or not session.state.validate_invariants(session.definitions).is_empty():
 		_fail("completed full beach violates restoration or ownership")
 		return
 	var run_id := session.state.run_id
-	if not bool(main.save_service.save_slot(&"manual").ok):
-		_fail("completed full beach would not save")
+	var completion_save := main.save_service.save_slot(&"manual")
+	if not bool(completion_save.ok):
+		_fail("completed full beach would not save: %s" % str(completion_save.get("message", "")))
 		return
 	var loaded := main.load_run(run_id, &"manual")
 	if not bool(loaded.ok):

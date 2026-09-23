@@ -119,8 +119,11 @@ func write_snapshot(target_beach: StringName, run_id: String, slot_id: StringNam
 	if write_error != OK:
 		return {"ok": false, "message": "Save write failed (%d); previous generation retained" % write_error}
 	var verified := _read_generation(temporary)
-	if not bool(verified.get("ok", false)) or int(verified.sequence) != sequence or not bool(_validate_generation(verified.envelope as Dictionary, run_id).get("ok", false)):
+	if not bool(verified.get("ok", false)) or int(verified.sequence) != sequence:
 		return {"ok": false, "message": "New save failed verification; previous generation retained"}
+	var checked := _validate_generation(verified.envelope as Dictionary, run_id)
+	if not bool(checked.get("ok", false)):
+		return {"ok": false, "message": "New save failed verification: %s; previous generation retained" % str(checked.message)}
 	var source_path := ProjectSettings.globalize_path(temporary)
 	var target_path := ProjectSettings.globalize_path(destination)
 	var rename_error := DirAccess.rename_absolute(source_path, target_path)
@@ -203,6 +206,23 @@ func list_slots(target_beach: StringName) -> Array[Dictionary]:
 	return entries
 
 
+func checkpoint_summaries() -> Array[Dictionary]:
+	var summaries: Array[Dictionary] = []
+	for slot_id in [&"manual", &"manual_2", &"manual_3"]:
+		var selected := _select_generation(_slot_folder(beach_id, session.state.run_id, slot_id))
+		if not bool(selected.get("ok", false)):
+			summaries.append({})
+			continue
+		var envelope := selected.envelope as Dictionary
+		var payload := envelope.payload as Dictionary
+		var completed := 0
+		for section_value in (payload.get("section_states", {}) as Dictionary).values():
+			var section := section_value as Dictionary
+			completed += int(section.get("collected_waste", 0)) + int(section.get("slotted_props", 0))
+		summaries.append({"saved_at": int(envelope.saved_at), "completed": completed, "required": int(payload.get("required_total", 0))})
+	return summaries
+
+
 func _select_generation(folder: String) -> Dictionary:
 	var a := _read_generation(folder.path_join("A.json"))
 	var b := _read_generation(folder.path_join("B.json"))
@@ -260,6 +280,10 @@ func _validate_payload_shape(payload: Dictionary, generated: Dictionary) -> Stri
 	for key in ["next_recovery_serial", "next_runtime_bag_serial", "next_collection_serial", "revision", "required_total", "elapsed_active_seconds"]:
 		if payload.get(key) is not int and payload.get(key) is not float:
 			return "Saved %s value is invalid" % key
+	if payload.has("faint_count"):
+		var count: Variant = payload.faint_count
+		if (count is not int and count is not float) or float(count) != floorf(float(count)) or float(count) < -1.0:
+			return "Saved faint count is invalid"
 	if payload.get("initial_manifest") is not Array or _canonical(payload.initial_manifest) != _canonical(JSON.parse_string(_canonical(generated.rows))):
 		return "Saved manifest differs from authored content"
 	for key in ["table_records", "bin_records", "bag_records", "container_records", "recovery_piles", "rescue_states", "section_states", "group_states", "zone_states", "completion_receipt"]:
@@ -346,6 +370,8 @@ func _validate_payload_shape(payload: Dictionary, generated: Dictionary) -> Stri
 	for key in ["trash_bag", "valuable_bag", "held_objects", "owned_tools", "owned_gear", "equipped_handheld_ids", "discoveries"]:
 		if saved_player.get(key) is not Array:
 			return "Saved player inventory is invalid"
+	if saved_player.has("bag_order") and saved_player.bag_order is not Array:
+		return "Saved bag order is invalid"
 	if saved_player.get("upgrade_levels") is not Dictionary:
 		return "Saved player upgrades are invalid"
 	for held in saved_player.held_objects as Array:

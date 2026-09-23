@@ -28,6 +28,7 @@ var guidance_seen: Array[StringName] = []
 var optional_finds: Array[StringName] = []
 var valuable_sales: Array[Dictionary] = []
 var elapsed_active_seconds := 0.0
+var faint_count := 0
 var completion_receipt: Dictionary = {}
 var next_runtime_bag_serial := 1
 var collection_receipts: Array[Dictionary] = []
@@ -39,6 +40,7 @@ var required_total := 0
 func add_player(player_id: StringName = LOCAL_PLAYER_ID) -> Dictionary:
 	var trash_bag: Array[StringName] = []
 	var valuable_bag: Array[StringName] = []
+	var bag_order: Array[StringName] = []
 	var held_objects: Array[Dictionary] = []
 	var equipped: Array[StringName] = [&"stick"]
 	var owned_tools: Array[StringName] = [&"stick"]
@@ -48,6 +50,7 @@ func add_player(player_id: StringName = LOCAL_PLAYER_ID) -> Dictionary:
 		"player_id": player_id,
 		"trash_bag": trash_bag,
 		"valuable_bag": valuable_bag,
+		"bag_order": bag_order,
 		"held_objects": held_objects,
 		"bag_capacity": 20,
 		"hand_capacity": 2,
@@ -119,6 +122,7 @@ func to_snapshot() -> Dictionary:
 		"optional_finds": _string_names_to_array(optional_finds),
 		"valuable_sales": valuable_sales.duplicate(true),
 		"elapsed_active_seconds": elapsed_active_seconds,
+		"faint_count": faint_count,
 		"completion_receipt": completion_receipt.duplicate(true),
 		"next_runtime_bag_serial": next_runtime_bag_serial,
 		"collection_receipts": collection_receipts.duplicate(true),
@@ -177,6 +181,7 @@ static func from_snapshot(data: Dictionary) -> RunState:
 	state.optional_finds = _array_to_string_names(data.get("optional_finds", []) as Array)
 	state.valuable_sales.assign(data.get("valuable_sales", []))
 	state.elapsed_active_seconds = float(data.get("elapsed_active_seconds", 0.0))
+	state.faint_count = int(data.get("faint_count", -1))
 	state.completion_receipt = (data.get("completion_receipt", {}) as Dictionary).duplicate(true)
 	state.next_runtime_bag_serial = int(data.get("next_runtime_bag_serial", 1))
 	state.collection_receipts.assign(data.get("collection_receipts", []))
@@ -188,6 +193,8 @@ static func from_snapshot(data: Dictionary) -> RunState:
 
 func validate_invariants(definitions: Dictionary) -> PackedStringArray:
 	var errors: PackedStringArray = []
+	if faint_count < -1:
+		errors.append("invalid faint count")
 	var ownership_counts: Dictionary = {}
 	var bag_counts: Dictionary = {}
 	for item_key in items:
@@ -221,6 +228,19 @@ func validate_invariants(definitions: Dictionary) -> PackedStringArray:
 		for bag_key in [&"trash_bag", &"valuable_bag"]:
 			for item_value in player.get(bag_key, []):
 				_count_ownership(errors, ownership_counts, StringName(item_value), "%s:%s" % [player_id, bag_key])
+		var expected_bag_ids: Dictionary = {}
+		for item_id in (player.trash_bag as Array[StringName]) + (player.valuable_bag as Array[StringName]):
+			expected_bag_ids[item_id] = true
+		var bag_order := player.get("bag_order", []) as Array[StringName]
+		if bag_order.size() != (player.trash_bag as Array).size() + (player.valuable_bag as Array).size():
+			errors.append("player %s bag order has the wrong length" % player_id)
+		if int(player.get("bag_capacity", 0)) < 1 or bag_order.size() > int(player.bag_capacity):
+			errors.append("player %s exceeds bag capacity" % player_id)
+		for item_id in bag_order:
+			if not expected_bag_ids.erase(item_id):
+				errors.append("player %s bag order has a missing or duplicate item %s" % [player_id, item_id])
+		if not expected_bag_ids.is_empty():
+			errors.append("player %s bag order omits bagged items" % player_id)
 
 		var hand_cost := 0
 		var held_objects := player.get("held_objects", []) as Array
@@ -592,6 +612,7 @@ static func _player_to_snapshot(player: Dictionary) -> Dictionary:
 		"player_id": str(player.get("player_id", "")),
 		"trash_bag": _string_names_to_array(player.get("trash_bag", []) as Array[StringName]),
 		"valuable_bag": _string_names_to_array(player.get("valuable_bag", []) as Array[StringName]),
+		"bag_order": _string_names_to_array(player.get("bag_order", []) as Array[StringName]),
 		"held_objects": (player.get("held_objects", []) as Array).duplicate(true),
 		"bag_capacity": int(player.get("bag_capacity", 20)),
 		"hand_capacity": int(player.get("hand_capacity", 2)),
@@ -616,10 +637,15 @@ static func _player_from_snapshot(data: Dictionary) -> Dictionary:
 	var held_objects: Array[Dictionary] = []
 	for value in data.get("held_objects", []):
 		held_objects.append(value as Dictionary)
+	var trash_bag := _array_to_string_names(data.get("trash_bag", []) as Array)
+	var valuable_bag := _array_to_string_names(data.get("valuable_bag", []) as Array)
+	# Old saves did not record cross-category chronology; this retains their trash-first throw behavior.
+	var bag_order := _array_to_string_names(data.get("bag_order", []) as Array) if data.has("bag_order") else valuable_bag + trash_bag
 	return {
 		"player_id": StringName(str(data.get("player_id", ""))),
-		"trash_bag": _array_to_string_names(data.get("trash_bag", []) as Array),
-		"valuable_bag": _array_to_string_names(data.get("valuable_bag", []) as Array),
+		"trash_bag": trash_bag,
+		"valuable_bag": valuable_bag,
+		"bag_order": bag_order,
 		"held_objects": held_objects,
 		"bag_capacity": int(data.get("bag_capacity", 20)),
 		"hand_capacity": int(data.get("hand_capacity", 2)),
