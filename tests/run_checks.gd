@@ -344,15 +344,15 @@ func check_manifest_generation() -> void:
 	if fixture.is_empty():
 		return
 
-	check(str(fixture.content_hash) == "9f0b359d3b7c31f4fa26073764364ef80ec0e3fef0b10c05e40875027614ca49", "fixture content hash is pinned")
-	check(str(fixture.manifest_hash) == "eebd5e3f7ce7d56591d1b0f0b08c5f1b2dad6f549861b3d14dbee72d13e05b0b", "fixture manifest hash is pinned")
+	check(str(fixture.content_hash) == "89b71358eaa880bec6e4a61c6ed7e58ae075aefed060ece47279a40c3605a20e", "fixture content hash is pinned")
+	check(str(fixture.manifest_hash) == "a849eb7617661ebfbad9f14ae046547efd08988500dc42839811ffdd98ab67df", "fixture manifest hash is pinned")
 	var normalized := generator.normalize_seed("  Côte, \"Azure\" 🌊  ")
 	check(normalized.ok and normalized.seed == "Côte, \"Azure\" 🌊", "seed normalization trims only surrounding whitespace")
 	check(not generator.normalize_seed("bad\nseed").ok, "control characters are rejected")
 	check(not generator.normalize_seed("é".repeat(33)).ok, "seed limit counts UTF-8 bytes")
 	var stream := generator.derive_stream(str(normalized.seed), "reef_west:coral", "buried", str(fixture.content_hash))
-	check(stream.canonical == "[\"manifest-1\",\"9f0b359d3b7c31f4fa26073764364ef80ec0e3fef0b10c05e40875027614ca49\",\"Côte, \\\"Azure\\\" 🌊\",\"reef_west:coral\",\"buried\"]", "Unicode stream canonical bytes are pinned")
-	check(stream.hash == "f69d3c093ed6e9f03beed87d1fe6f137ca5f500999e11299f269c08540ecb21e" and int(stream.rng_seed) == 1110651607192530591, "Unicode stream SHA-256 and 60-bit seed are pinned")
+	check(stream.canonical == "[\"manifest-1\",\"89b71358eaa880bec6e4a61c6ed7e58ae075aefed060ece47279a40c3605a20e\",\"Côte, \\\"Azure\\\" 🌊\",\"reef_west:coral\",\"buried\"]", "Unicode stream canonical bytes are pinned")
+	check(stream.hash == "024ea2ff840f48857001f6ec140219bef11fc512a1df63e84577314a0c455104" and int(stream.rng_seed) == 10390590910952584, "Unicode stream SHA-256 and 60-bit seed are pinned")
 
 	var state := generator.create_run_state(fixture, "manifest-check")
 	check(state.required_total == 5700 and state.items.size() == 5740, "manifest creates one record per stable ID")

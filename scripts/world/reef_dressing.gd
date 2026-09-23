@@ -7,6 +7,16 @@ const POSITIONS := [
 	Vector2(36.25, 110), Vector2(44, 106), Vector2(52.75, 112),
 	Vector2(37, 153), Vector2(45.75, 154), Vector2(54.25, 142),
 ]
+const STRUCTURES := [
+	# West pocket: near frame, middle channel, rear ridge.
+	Vector4(-3, 99, 0.2, 4.8), Vector4(8, 102, -0.4, 5.1), Vector4(-6, 107, 0.8, 4.0),
+	Vector4(-1, 112, -0.6, 5.4), Vector4(6, 113, 0.5, 4.5), Vector4(13, 117, 1.1, 4.9),
+	Vector4(-2, 127, 0.3, 5.5), Vector4(5, 131, -0.9, 4.3), Vector4(13, 128, 0.7, 5.0),
+	# East pocket repeats the three-layer structure without closing its swim lanes.
+	Vector4(31, 115, -0.5, 4.6), Vector4(47, 118, 0.8, 5.2), Vector4(53, 114, -0.9, 4.0),
+	Vector4(35, 129, 0.4, 5.3), Vector4(44, 132, -0.6, 4.4), Vector4(53, 128, 1.0, 5.0),
+	Vector4(30, 148, 0.9, 5.1), Vector4(39, 152, -0.3, 4.2), Vector4(50, 149, 0.5, 5.4),
+]
 
 
 func _ready() -> void:
@@ -28,4 +38,30 @@ func _ready() -> void:
 	visual.multimesh = instances
 	visual.material_override = stone
 	add_child(visual)
+	var structure_meshes := MultiMesh.new()
+	structure_meshes.transform_format = MultiMesh.TRANSFORM_3D
+	structure_meshes.mesh = source.mesh
+	structure_meshes.instance_count = STRUCTURES.size()
+	for index in STRUCTURES.size():
+		var rock := STRUCTURES[index] as Vector4
+		var width := 0.52 + float(index % 3) * 0.04
+		var depth := 0.7 + float(index % 2) * 0.08
+		var basis := Basis(Vector3.UP, rock.z).scaled(Vector3(width, rock.w, depth))
+		structure_meshes.set_instance_transform(index, Transform3D(basis, Vector3(rock.x, -2.65, rock.y)))
+		var body := StaticBody3D.new()
+		body.name = "ReefRock%02d" % (index + 1)
+		body.position = Vector3(rock.x, -2.25, rock.y)
+		body.rotation.y = rock.z
+		add_child(body)
+		var collision := CollisionShape3D.new()
+		collision.name = "Collision"
+		var shape := BoxShape3D.new()
+		shape.size = Vector3(3.5 + float(index % 3) * 0.3, 1.8, 2.5 + float(index % 2) * 0.3)
+		collision.shape = shape
+		body.add_child(collision)
+	var structures := MultiMeshInstance3D.new()
+	structures.name = "StructuralReefRocks"
+	structures.multimesh = structure_meshes
+	structures.material_override = stone
+	add_child(structures)
 	wrapper.free()

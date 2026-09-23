@@ -100,7 +100,7 @@ func _ready() -> void:
 	for placement in [Vector3(180, -10, 365), Vector3(145, -14, -300)]:
 		var island := MOUNTAIN.instantiate() as Node3D
 		island.position = placement
-		island.scale = Vector3(14, 14, 14)
+		island.scale = Vector3(8, 8, 8)
 		add_child(island)
 		for mesh in island.find_children("*", "MeshInstance3D", true, false):
 			var mountain_mesh := mesh as MeshInstance3D

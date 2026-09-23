@@ -8,6 +8,15 @@ func _init() -> void:
 
 
 func _run() -> void:
+	if "--review-pair" in OS.get_cmdline_user_args():
+		var output := []
+		var args := ["--path", ProjectSettings.globalize_path("res://"), "--script", "res://tests/validate_full_run.gd", "--"]
+		args.append_array(OS.get_cmdline_user_args())
+		var status := OS.execute(OS.get_executable_path(), args, output, true)
+		for line in output:
+			print(line)
+		quit(status)
+		return
 	var main := (load("res://scenes/main.tscn") as PackedScene).instantiate() as BeachMain
 	root.add_child(main)
 	main.save_service.save_root = "user://test_runs/p25"

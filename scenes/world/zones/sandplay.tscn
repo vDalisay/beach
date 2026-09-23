@@ -102,13 +102,20 @@ pool_id = &"row:sandplay:inflatables"
 accepted_families = PackedStringArray("portable_inflatable")
 capacity = 4
 spacing = 1.5
-[node name="Parasols" type="Marker3D" parent="Storage" groups=["placement_pools"]]
-position = Vector3(-20, 0, 16)
+[node name="Parasol01" type="Marker3D" parent="Storage" groups=["placement_pools"]]
+position = Vector3(-8, 0, 20)
 script = ExtResource("3_slot")
-pool_id = &"row:sandplay:parasols"
+pool_id = &"row:sandplay:parasols:01"
 accepted_families = PackedStringArray("parasol")
-capacity = 4
-spacing = 2.2
+capacity = 1
+
+[node name="Parasol02" type="Marker3D" parent="Storage" groups=["placement_pools"]]
+position = Vector3(9, 0, 25)
+script = ExtResource("3_slot")
+pool_id = &"row:sandplay:parasols:02"
+accepted_families = PackedStringArray("parasol")
+capacity = 1
+
 [node name="RecoverySandplay" type="Marker3D" parent="." groups=["recovery_anchors"]]
 position = Vector3(0, 0.05, -2)
 script = ExtResource("4_recovery")

@@ -2,12 +2,14 @@ extends Node3D
 const Coastline = preload("res://scripts/world/coastline.gd")
 
 const EDGE := preload("res://art/synty/wrappers/world_sand_edge_02.tscn")
+const DUNE := preload("res://art/synty/wrappers/world_reef_ridge.tscn")
 
 @export var sand_material: Material
 
 
 func _ready() -> void:
 	_build_sand_surface()
+	_build_outer_dunes()
 	var wrapper := EDGE.instantiate() as Node3D
 	var source := wrapper.get_node("Visual/Edge") as MeshInstance3D
 	var mesh := source.mesh.duplicate() as ArrayMesh
@@ -34,14 +36,36 @@ func _ready() -> void:
 	wrapper.free()
 
 
+func _build_outer_dunes() -> void:
+	var wrapper := DUNE.instantiate() as Node3D
+	var source := wrapper.get_node("Visual/Ridge") as MeshInstance3D
+	var instances := MultiMesh.new()
+	instances.transform_format = MultiMesh.TRANSFORM_3D
+	instances.mesh = source.mesh
+	var dunes := [
+		Vector3(-104, 0, 4), Vector3(-135, 0, 20), Vector3(-167, 0, 5),
+		Vector3(105, 0, 9), Vector3(137, 0, 28), Vector3(170, 0, 8),
+	]
+	instances.instance_count = dunes.size()
+	for index in dunes.size():
+		var basis := Basis(Vector3.UP, float(index) * 0.8).scaled(Vector3(6.0, 16.0, 6.0))
+		instances.set_instance_transform(index, Transform3D(basis, dunes[index]))
+	var visual := MultiMeshInstance3D.new()
+	visual.name = "OuterDunes"
+	visual.multimesh = instances
+	visual.material_override = sand_material
+	add_child(visual)
+	wrapper.free()
+
+
 func _build_sand_surface() -> void:
 	var vertices := PackedVector3Array()
 	var normals := PackedVector3Array()
 	var colors := PackedColorArray()
 	var uvs := PackedVector2Array()
 	var indices := PackedInt32Array()
-	for index in 65:
-		var x := float(index * 2.5 - 80)
+	for index in 241:
+		var x := float(index * 2.5 - 300)
 		var shore_z := Coastline.shore_z(x)
 		var points := [Vector2(-36.0, 0.012), Vector2(shore_z - 2.0, 0.012), Vector2(shore_z + 28.0, -2.5), Vector2(shore_z + 55.0, -3.2), Vector2(800.0, -3.2)]
 		var tints := [Color.WHITE, Color.WHITE, Color(0.8, 0.95, 1), Color(0.35, 0.75, 0.85), Color(0.35, 0.75, 0.85)]

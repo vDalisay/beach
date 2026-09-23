@@ -432,6 +432,24 @@ scale = Vector3(0.78, 0.78, 0.78)
 [node name="Palm29" parent="Foliage" instance=ExtResource("11_palm")]
 position = Vector3(70, 0, -8)
 rotation = Vector3(0, 1.8, 0)
+[node name="WestHeadlandPalm01" parent="Foliage" instance=ExtResource("11_palm")]
+position = Vector3(-92, 0, 4)
+rotation = Vector3(0, 0.4, 0)
+[node name="WestHeadlandPalm02" parent="Foliage" instance=ExtResource("11_palm")]
+position = Vector3(-103, 0, 18)
+scale = Vector3(0.85, 0.85, 0.85)
+[node name="WestHeadlandPalm03" parent="Foliage" instance=ExtResource("11_palm")]
+position = Vector3(-116, 0, 8)
+rotation = Vector3(0, 1.4, 0)
+[node name="EastHeadlandPalm01" parent="Foliage" instance=ExtResource("11_palm")]
+position = Vector3(91, 0, 5)
+rotation = Vector3(0, 2.1, 0)
+[node name="EastHeadlandPalm02" parent="Foliage" instance=ExtResource("11_palm")]
+position = Vector3(103, 0, 19)
+scale = Vector3(0.8, 0.8, 0.8)
+[node name="EastHeadlandPalm03" parent="Foliage" instance=ExtResource("11_palm")]
+position = Vector3(115, 0, 9)
+rotation = Vector3(0, 0.9, 0)
 
 [node name="Skyline" type="Node3D" parent="."]
 [node name="CityBackdrop" type="Node3D" parent="."]

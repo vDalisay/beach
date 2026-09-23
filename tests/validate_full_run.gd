@@ -1,5 +1,14 @@
 extends SceneTree
 
+const REVIEW_VIEWS := [
+	{"name": "aerial", "origin": Vector3(-15, 65, 135), "target": Vector3(0, 0, 0)},
+	{"name": "sports-eye", "origin": Vector3(-45, 2.1, 32), "target": Vector3(-43.75, 1.7, 12)},
+	{"name": "reef", "origin": Vector3(2.5, -1.25, 101), "target": Vector3(2.5, -2.25, 107.5)},
+	{"name": "along-shore", "origin": Vector3(-65, 2.1, 45), "target": Vector3(60, 6, 72)},
+	{"name": "lounge-pocket", "origin": Vector3(-24.5, 2.1, 14), "target": Vector3(-24.5, 1.2, 20)},
+]
+
+var review_lines := PackedStringArray()
 
 func _init() -> void:
 	call_deferred("_run")
@@ -7,9 +16,10 @@ func _init() -> void:
 
 func _run() -> void:
 	var started := Time.get_ticks_msec()
+	var review_pair := "--review-pair" in OS.get_cmdline_user_args()
 	var main := (load("res://scenes/main.tscn") as PackedScene).instantiate() as BeachMain
 	root.add_child(main)
-	main.save_service.save_root = "user://test_runs/c03_full_run"
+	main.save_service.save_root = "user://test_runs/c04_review" if review_pair else "user://test_runs/c03_full_run"
 	main.seed_input.text = "full-run-integration"
 	var session := main.start_run() as RunSession
 	if session == null or session.state.items.size() != 5740:
@@ -17,6 +27,9 @@ func _run() -> void:
 		return
 	var player := session.get_node("Player") as BeachPlayer
 	var placement := session.placement_service
+	if review_pair and not await _capture_review(main, session, "initial"):
+		_fail("initial review captures failed")
+		return
 	var waste_ids: Array[StringName] = []
 	var prop_ids: Array[StringName] = []
 	for value in session.state.items.values():
@@ -143,6 +156,13 @@ func _run() -> void:
 	if not final_special_mode and bool((session.state.section_states[&"arrival:start"] as Dictionary).restored_once):
 		_fail("final starter section restored too early")
 		return
+	for frame in 3:
+		await physics_frame
+	if review_pair:
+		var populated_ids := PackedStringArray()
+		for item_id in session.item_view_manager.views:
+			populated_ids.append(str(item_id))
+		await session.item_view_manager._reconcile_at_boundary(populated_ids)
 	if final_special_mode:
 		if not await _finish_with_special_input(session, player, station, container, final_special):
 			_fail("last buried waste did not complete through detector, stick, table and truck")
@@ -152,8 +172,9 @@ func _run() -> void:
 			_fail("could not hold the final chair")
 			return
 		player.global_position = placement.slot_transform(final_slot).origin + Vector3(0, 0, 1.8)
-		if not placement.try_place(&"local", final_slot).ok:
-			_fail("final chair would not snap into its authored slot")
+		var final_placement := placement.try_place(&"local", final_slot)
+		if not final_placement.ok:
+			_fail("final chair would not snap into its authored slot: %s" % final_placement.message)
 			return
 	var receipt := session.state.completion_receipt as Dictionary
 	if not session.results_open or not paused or int(receipt.get("required_total", 0)) != 5700 or int(receipt.get("collected_waste", 0)) != 5400 or int(receipt.get("slotted_props", 0)) != 300:
@@ -184,6 +205,15 @@ func _run() -> void:
 	if paused or session.results_open or not _same_receipt(session.state.completion_receipt, persisted_receipt):
 		_fail("completed run could not continue roaming with its receipt")
 		return
+	if review_pair and not await _exercise_review_lounge(session):
+		_fail("completed lounge pocket could not remove, preview, throw-capture and restore a real chair")
+		return
+	if review_pair and not await _capture_review(main, session, "restored"):
+		_fail("restored review captures failed")
+		return
+	if review_pair and not _write_review_log(session):
+		_fail("review capture log failed")
+		return
 	var earned_money := int((session.state.players[&"local"] as Dictionary).money)
 	if not session.placement_service.try_remove(&"local", final_slot).ok or session.progress_service.completed_props != 299 or not _same_receipt(session.state.completion_receipt, persisted_receipt):
 		_fail("post-results chair removal lost the original receipt")
@@ -195,13 +225,101 @@ func _run() -> void:
 	if main.results_view.visible or paused or session.progress_service.completed_props != 299 or not _same_receipt(session.state.completion_receipt, persisted_receipt) or not bool((session.state.section_states[&"arrival:start"] as Dictionary).restored_once):
 		_fail("post-results reload lost incomplete progress, receipt, or restoration")
 		return
-	if final_special_mode:
-		(session.get_node("Player") as BeachPlayer).global_position = session.placement_service.slot_transform(final_slot).origin + Vector3(0, 0, 1.8)
+	(session.get_node("Player") as BeachPlayer).global_position = session.placement_service.slot_transform(final_slot).origin + Vector3(0, 0, 1.8)
 	if not session.placement_service.try_place(&"local", final_slot).ok or session.progress_service.completed_props != 300 or int((session.state.players[&"local"] as Dictionary).money) != earned_money or not _same_receipt(session.state.completion_receipt, persisted_receipt) or not session.state.validate_invariants(session.definitions).is_empty():
 		_fail("replacing the post-results chair changed its receipt, reward, or ownership")
 		return
 	print("FULL_RUN_COMPLETE mode=%s waste=5400 props=300 results=1 receipt=1 reloaded=2 roam_replacement=1 elapsed_ms=%d" % ["special-input" if final_special_mode else "final-prop", Time.get_ticks_msec() - started])
 	quit()
+
+
+func _exercise_review_lounge(session: RunSession) -> bool:
+	var slot_id := &"row:lounges:chairs:09:000"
+	var placement := session.placement_service
+	var item_id := placement.occupant_for(slot_id)
+	if item_id.is_empty():
+		return false
+	var player := session.get_node("Player") as BeachPlayer
+	player.global_position = placement.slot_transform(slot_id).origin + Vector3(0, 0.3, 1.8)
+	if not placement.try_remove(&"local", slot_id).ok:
+		return false
+	var preview := placement.preview_slot(&"local", slot_id)
+	var area := (placement.slots[slot_id] as Dictionary).area as Area3D
+	if not preview.ok or not (area.get_node("GhostRoot") as Node3D).visible:
+		return false
+	if not session.item_store.try_throw(&"local", placement.slot_transform(slot_id), Vector3.ZERO).ok:
+		return false
+	for frame in 12:
+		await physics_frame
+	return placement.occupant_for(slot_id) == item_id and session.progress_service.completed_props == 300 and session.state.validate_invariants(session.definitions).is_empty()
+
+
+func _capture_review(main: BeachMain, session: RunSession, state_name: String) -> bool:
+	var output_dir := "res://docs/handoffs/images/C04"
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--review-output="):
+			output_dir = arg.trim_prefix("--review-output=")
+	var disk_dir := ProjectSettings.globalize_path(output_dir)
+	if DirAccess.make_dir_recursive_absolute(disk_dir) != OK:
+		return false
+	var viewport := SubViewport.new()
+	viewport.size = Vector2i(1920, 1080)
+	viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	viewport.world_3d = (session.get_node("Beach") as Node3D).get_world_3d()
+	root.add_child(viewport)
+	var camera := Camera3D.new()
+	camera.fov = 85.0
+	viewport.add_child(camera)
+	camera.make_current()
+	var player := session.get_node("Player") as BeachPlayer
+	var ui := main.get_node("UI") as CanvasLayer
+	var ui_was_visible := ui.visible
+	var player_was_visible := player.visible
+	var player_was_processing := player.is_physics_processing()
+	var swim_was_processing := session.swim_service.is_physics_processing()
+	ui.visible = false
+	player.visible = false
+	player.set_physics_process(false)
+	session.swim_service.set_physics_process(false)
+	var errors := session.state.validate_invariants(session.definitions)
+	var succeeded := errors.is_empty()
+	for view in REVIEW_VIEWS:
+		var origin := view.origin as Vector3
+		camera.global_position = origin
+		camera.look_at(view.target as Vector3)
+		camera.environment = SwimService.UNDERWATER_ENVIRONMENT if origin.y < 0.0 else null
+		player.global_position = origin
+		for frame in 180:
+			await physics_frame
+		await RenderingServer.frame_post_draw
+		var image := viewport.get_texture().get_image()
+		var file_path := disk_dir.path_join("%s-%s.png" % [view.name, state_name])
+		if image.is_empty() or image.save_png(file_path) != OK:
+			succeeded = false
+		review_lines.append("%s %s %s -> %s fov=85 size=1920x1080 populated_views=%d" % [state_name, view.name, origin, view.target, session.item_view_manager.views.size()])
+	player.set_physics_process(player_was_processing)
+	session.swim_service.set_physics_process(swim_was_processing)
+	player.visible = player_was_visible
+	ui.visible = ui_was_visible
+	viewport.free()
+	review_lines.append("%s waste=%d props=%d invariants=%d" % [state_name, session.progress_service.completed_waste, session.progress_service.completed_props, errors.size()])
+	return succeeded
+
+
+func _write_review_log(session: RunSession) -> bool:
+	var output_dir := "res://docs/handoffs/images/C04"
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--review-output="):
+			output_dir = arg.trim_prefix("--review-output=")
+	var file := FileAccess.open(ProjectSettings.globalize_path(output_dir).path_join("capture-log.txt"), FileAccess.WRITE)
+	if file == null:
+		return false
+	file.store_line("Godot %s; content %s; seed full-run-integration; accelerated setup; build C04" % [Engine.get_version_info().string, session.state.content_version])
+	file.store_line("Sun rotation=(-0.64,-0.75,0) colour=(1,0.88,0.74) energy=0.86; material sand=(1,0.73,0.57); culling enabled")
+	for line in review_lines:
+		file.store_line(line)
+	file.close()
+	return true
 
 
 func _finish_with_special_input(session: RunSession, player: BeachPlayer, station: SortingStation, container: WasteContainer, item_id: StringName) -> bool:

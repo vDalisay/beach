@@ -2,7 +2,7 @@ class_name ManifestGenerator
 extends RefCounted
 
 const GENERATOR_VERSION := "manifest-1"
-const CONTENT_VERSION := "beach-content-5"
+const CONTENT_VERSION := "beach-content-6"
 const BEACH_PATH := "res://data/world/beach_01.tres"
 const QUOTAS_PATH := "res://data/world/section_quotas.tres"
 const ANCHORS_PATH := "res://data/world/spawn_anchors.tres"

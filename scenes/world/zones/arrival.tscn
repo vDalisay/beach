@@ -81,27 +81,86 @@ pool_id = &"shelf:arrival:03"
 accepted_families = PackedStringArray("bucket", "spade", "beach_ball", "volleyball", "speaker")
 capacity = 6
 layout = 1
-[node name="ChairRow" type="Marker3D" parent="Storage" groups=["placement_pools"]]
-position = Vector3(10, 0, -13)
+[node name="ChairPair01" type="Marker3D" parent="Storage" groups=["placement_pools"]]
+position = Vector3(-8, 0, 14)
+rotation = Vector3(0, 0.1, 0)
 script = ExtResource("3_slot")
-pool_id = &"row:arrival:chairs"
+pool_id = &"row:arrival:chairs:01"
 accepted_families = PackedStringArray("beach_chair")
-capacity = 10
-spacing = 1.2
-[node name="LoungerRow" type="Marker3D" parent="Storage" groups=["placement_pools"]]
-position = Vector3(22, 0, -13)
-script = ExtResource("3_slot")
-pool_id = &"row:arrival:loungers"
-accepted_families = PackedStringArray("lounger")
-capacity = 4
+capacity = 2
 spacing = 1.4
-[node name="ParasolRow" type="Marker3D" parent="Storage" groups=["placement_pools"]]
-position = Vector3(12, 0, 15)
+
+[node name="ChairPair02" type="Marker3D" parent="Storage" groups=["placement_pools"]]
+position = Vector3(1, 0, 14)
+rotation = Vector3(0, -0.1, 0)
 script = ExtResource("3_slot")
-pool_id = &"row:arrival:parasols"
+pool_id = &"row:arrival:chairs:02"
+accepted_families = PackedStringArray("beach_chair")
+capacity = 2
+spacing = 1.4
+
+[node name="ChairPair03" type="Marker3D" parent="Storage" groups=["placement_pools"]]
+position = Vector3(-7, 0, 22)
+rotation = Vector3(0, 0.1, 0)
+script = ExtResource("3_slot")
+pool_id = &"row:arrival:chairs:03"
+accepted_families = PackedStringArray("beach_chair")
+capacity = 2
+spacing = 1.4
+
+[node name="ChairPair04" type="Marker3D" parent="Storage" groups=["placement_pools"]]
+position = Vector3(3, 0, 22)
+rotation = Vector3(0, -0.1, 0)
+script = ExtResource("3_slot")
+pool_id = &"row:arrival:chairs:04"
+accepted_families = PackedStringArray("beach_chair")
+capacity = 2
+spacing = 1.4
+
+[node name="LoungerPair01" type="Marker3D" parent="Storage" groups=["placement_pools"]]
+position = Vector3(-8, 0, 17)
+script = ExtResource("3_slot")
+pool_id = &"row:arrival:loungers:01"
+accepted_families = PackedStringArray("lounger")
+capacity = 2
+spacing = 1.8
+
+[node name="LoungerPair02" type="Marker3D" parent="Storage" groups=["placement_pools"]]
+position = Vector3(3, 0, 25)
+script = ExtResource("3_slot")
+pool_id = &"row:arrival:loungers:02"
+accepted_families = PackedStringArray("lounger")
+capacity = 2
+spacing = 1.8
+
+[node name="Parasol01" type="Marker3D" parent="Storage" groups=["placement_pools"]]
+position = Vector3(-5.3, 0, 15.5)
+script = ExtResource("3_slot")
+pool_id = &"row:arrival:parasols:01"
 accepted_families = PackedStringArray("parasol")
-capacity = 6
-spacing = 2.0
+capacity = 1
+
+[node name="Parasol02" type="Marker3D" parent="Storage" groups=["placement_pools"]]
+position = Vector3(3.7, 0, 15.5)
+script = ExtResource("3_slot")
+pool_id = &"row:arrival:parasols:02"
+accepted_families = PackedStringArray("parasol")
+capacity = 1
+
+[node name="Parasol03" type="Marker3D" parent="Storage" groups=["placement_pools"]]
+position = Vector3(-4.3, 0, 23.5)
+script = ExtResource("3_slot")
+pool_id = &"row:arrival:parasols:03"
+accepted_families = PackedStringArray("parasol")
+capacity = 1
+
+[node name="Parasol04" type="Marker3D" parent="Storage" groups=["placement_pools"]]
+position = Vector3(5.7, 0, 23.5)
+script = ExtResource("3_slot")
+pool_id = &"row:arrival:parasols:04"
+accepted_families = PackedStringArray("parasol")
+capacity = 1
+
 [node name="CoolerRow" type="Marker3D" parent="Storage" groups=["placement_pools"]]
 position = Vector3(-4, 0, 15)
 script = ExtResource("3_slot")
