@@ -10,7 +10,7 @@ Verified source root: `Assets/Synty/POLYGON_Palm_City/meshes/tscn_separate/`. Th
 
 ## Full beach composition
 
-Default blockout: approximately 600 m along a curved coastline, 40–80 m of usable sand, and a roughly 630 m pedestrian end-to-end route at 3.5 m/s (three minutes without sprinting). Walk time is a measured target, not a demand for an exact rectangular map. Keep visible scenery compact and sightlines broken by palms/towers, not arbitrary walls.
+Current blockout: approximately 160 m along a curved coastline, one quarter of the previous 640 m beach length, with the original Synty prop scale retained. The authored end-to-end walking route is about 148 m. The earlier three-minute target is superseded; the user explicitly confirmed that this 160 m layout is the desired quarter-size beach, not a request to cut it to 40 m. Keep sightlines broken by palms/towers, not arbitrary walls, and preserve all 5,700 required cleanup IDs unless a later balance decision changes that objective.
 
 ```text
 BACK: minimal skyline silhouettes → promenade/low resort boundary (not enterable)
@@ -72,7 +72,7 @@ All names below are exact entries in the scene index and relative to the verifie
 | General litter | `SM_Prop_Towel_01.tscn`, `SM_Prop_Towel_02.tscn`, `SM_Prop_Newspaper_01.tscn`, `SM_Prop_Toilet_Paper_01.tscn` through `_04`, `SM_Prop_Baggy_01.tscn` through `_05` (inspect branding before use) |
 | Waste infrastructure | `SM_Prop_Trash_Bag_01.tscn`, `SM_Prop_Trash_Bag_Open_01.tscn`, `SM_Prop_Trash_Bin_01.tscn` through `_04`; table candidates `SM_Prop_Table_01.tscn`, `_02`, `_03` |
 | Knife/valuables | `SM_Wep_Knife_01.tscn`, `SM_Wep_Knife_01_Blade_01.tscn`, `SM_Prop_Keys_01.tscn`; knife may need blade assembly |
-| Water vehicles | `SM_Veh_Jetski_01.tscn` plus steering; `SM_Veh_Sailboat_01.tscn` plus sail/rudder, `SM_Veh_RIB_Boat_01.tscn` |
+| Water vehicles | `SM_Veh_Jetski_01.tscn` plus steering; `SM_Veh_Sailboat_01.tscn` plus sail/rudder, `SM_Veh_RIB_Boat_01.tscn`; `SM_Prop_WindSurf_Board_01.tscn` plus `SM_Prop_WindSurf_Sail_01_Alt.tscn` |
 
 Do not reinterpret cooked crab/lobster food props as living wildlife. A picture of an object in a promotional sheet is not proof that this particular converted subset contains a complete model.
 

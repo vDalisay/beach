@@ -9,7 +9,7 @@ The user's latest answer takes precedence: **full release only, no demo**. This 
 | ID | Required behavior |
 |---|---|
 | R01 | Use the supplied Godot 4.6.1 installation and GDScript. Ship singleplayer on Windows; target 60 fps, 8 GB RAM, GTX 980-class graphics. Preserve a viable later Linux port. |
-| R02 | Build one handcrafted, fixed-sunny, LA-style private resort beach with about a three-minute baseline end-to-end walk, roughly 5,700 items and no human visitors. The seed changes clutter, buried finds and entanglements, not the beach layout. |
+| R02 | Build one handcrafted, fixed-sunny, LA-style private resort beach about one quarter of the original 640 m blockout length (roughly 160 m), with roughly 5,700 items and no human visitors. The seed changes clutter, buried finds and entanglements, not the beach layout. |
 | R03 | Use supplied Synty Palm City art. Recreate the composition and feel of reference images 1–2: curved shoreline, pier, lighthouse, palms, minimal rear skyline/promenade, lifeguard towers, beach activity areas. The city is background and not enterable. |
 | R04 | WHEN a required asset is unavailable THEN retain the feature with a coloured cube and record the asset the user needs to provide. Do not invent an external asset purchase or substitute pack. |
 | R05 | Provide first-person WASD/mouse and controller movement, jumping, sprinting, crouching, visible hands/tools and a left-hand trash bag. No third-person mode. |

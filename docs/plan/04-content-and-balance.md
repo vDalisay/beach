@@ -65,17 +65,17 @@ Each logical prop-family group gives $15 the first time it completes; treat this
 | Purchase | Price | Exact initial effect / prerequisite |
 |---|---:|---|
 | Cloth | 30 | Clean one aimed stain patch per click; shop, no prerequisite |
-| Rescue knife | 60 | Remove one aimed attachment per click; shop |
+| Rescue knife | 60 | Remove one aimed attachment per click; shop; requires cloth |
 | Bag 40 | 60 | 40 units; shop, replaces 20 capacity |
 | Flippers | 80 | Passive swim speed 2.5→4.0 m/s; shop |
 | Walking I | 80 | Walk 3.5→4.2 m/s; booklet |
-| Detector | 180 | Reveal buried metal/valuables within detection radius; shop |
-| Oxygen tank | 220 | 60 seconds air; shop |
+| Detector | 180 | Reveal buried metal/valuables within detection radius; shop; requires knife |
+| Oxygen tank | 220 | 60 seconds air; shop; requires detector |
 | Bag 80 | 180 | 80 units; requires Bag 40 |
 | Scanner | 150 | Known definition/material filter and pulse; booklet |
-| Sand cleaner | 250 | Up to 6 eligible exposed sand items per click, 1.0 m radius; shop |
+| Sand cleaner | 250 | Up to 6 eligible exposed sand items per click, 1.0 m radius; shop; requires oxygen tank |
 | Reach I | 120 | Interaction reach 2.5→3.25 m; booklet |
-| Vacuum | 450 | Up to 8 eligible small items/sec while held, 3 m range, 25° cone; shop |
+| Vacuum | 450 | Up to 8 eligible small items/sec while held, 3 m range, 25° cone; shop; requires oxygen tank |
 | Walking II | 220 | Walk 4.2→4.9 m/s; requires Walking I |
 | Bag 140 | 360 | 140 units; requires Bag 80 |
 | Reach II | 260 | Reach 3.25→4.0 m; requires Reach I |
@@ -86,7 +86,7 @@ Each logical prop-family group gives $15 the first time it completes; treat this
 
 Default total for all listed purchases is $5,300; mandatory access tools cloth + knife + detector + tank cost $490, or $1,190 including unlimited breathing. Ordinary exposed starter-accessible dry waste must fund the $490 route even if every item is mis-sorted; enforce at least 1,000 such waste IDs across accessible dry sections. Flippers make travel easier but are not a prerequisite to surface or return to land. Optional valuables and group bonuses are not required for this proof.
 
-The 1,000-item floor proves one affordable route, not freedom from spending dead ends. For example, vacuum + sand cleaner + scanner + Walking I + Bag 40 cost $990 and can exhaust that guaranteed income before the cloth is bought. P26 must also validate every reachable affordable purchase set against remaining base-only income accessible with its owned equipment. After collecting all currently reachable waste, each unfinished state must still have a sequence of affordable access purchases that unlocks the remaining objectives. Include air-limited routes and free rack re-equipping, and exclude bonuses/valuables. If this fails, adjust the existing tuning defaults (prices, optional-upgrade prerequisites or accessible content quotas) and repeat the proof; do not add respawning waste, mandatory correct sorting or an undisclosed bailout. Total end-of-run earnings alone cannot establish this invariant.
+The 1,000-item floor proves one affordable route, not freedom from spending dead ends. For example, vacuum + sand cleaner + scanner + Walking I + Bag 40 cost $990 and can exhaust that guaranteed income before the cloth is bought. P26 validates every reachable affordable purchase set against remaining base-only income accessible with its owned equipment. After collecting all currently reachable waste, each unfinished state must still have a sequence of affordable access purchases that unlocks the remaining objectives. The final prerequisites above keep inexpensive optional purchases available first, but gate the two expensive efficiency trees behind the four access purchases. The $1,000/$990 configuration without those gates is retained as a failing check. Include air-limited routes and free rack re-equipping, and exclude bonuses/valuables. Total end-of-run earnings alone cannot establish this invariant.
 
 Do not introduce an auto-poke or hold-to-poke upgrade. Extra bag capacity, reach, walking, sand cleaner and vacuum create efficiency. All prices/values live in Resources; never hardcode prices in button scripts. Upgrade values recompute from purchased levels to prevent repeated application after loads. No reselling purchased equipment is needed.
 

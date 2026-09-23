@@ -2,6 +2,8 @@
 
 Current status — 23 September 2026: most gameplay systems are implemented, but normal-input completion and controller sorting have reproduced blockers. Visual alignment and release evidence remain incomplete. Start with the [implementation and screenshot review](06-implementation-review.md), then follow the [completion plan C00–C09](07-completion-plan.md).
 
+Handoff caveat: the implementation reviewed above is still largely local/untracked; this documentation update does not publish or certify a reproducible gameplay baseline. C00 now requires a versioned project-owned baseline, licensed-art staging instructions and a successful separate-checkout launch before C01. The committed requirements include the confirmed 160 m layout and current access-purchase prerequisites. C04–C07 now specify layout/slot defaults, reef-before-clutter ordering, a visual rubric and repeatable paired-capture work; those instructions are not claims that the visual changes or capture option already exist.
+
 The P00–P30 index below is the original implementation specification, not a current completion checklist. The starting-point and planning-validation sections record the historical 22 September planning pass. Use the review's packet reconciliation for current status; the confirmed requirements remain authoritative. This review added documentation and evidence, not gameplay fixes.
 
 This plan incorporates both clarification rounds and the final instruction: **build only the full-release version; there is no demo deliverable**. Internal test scenes are verification tools, not a separate product. There are no schedules, estimates, or staffing assumptions.
