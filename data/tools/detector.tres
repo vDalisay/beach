@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ToolDefinition" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/data/tool_definition.gd" id="1_tool"]
+[resource]
+script = ExtResource("1_tool")
+tool_id = &"detector"
+display_name = "Metal detector"
+handheld = true
+scene_path = "res://scenes/tools/metal_detector.tscn"
+allowed_target_tags = Array[StringName]([&"buried_metal", &"buried_valuable"])
+range = 4.0
+shop_price = 180
+upgrade_prerequisite = &"knife"
+effect_text = "Find buried metal and valuables within 4 m"
+implemented = true

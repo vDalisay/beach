@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="UpgradeDefinition" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/data/upgrade_definition.gd" id="1_upgrade"]
+[resource]
+script = ExtResource("1_upgrade")
+upgrade_id = &"bag_40"
+display_name = "Bag 40"
+level = 1
+price = 60
+source = 0
+affected_stat = &"bag_capacity"
+exact_value = 40.0
+effect_text = "Bag capacity 20 → 40 units"

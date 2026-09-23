@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+definition_id = &"prop_paddle"
+display_name = "Paddle"
+kind = 1
+waste_category = 4
+material_tags = Array[StringName]([&"boat_gear"])
+sorting_family = &"paddle"
+visual_scene_path = "res://art/synty/wrappers/prop_paddle.tscn"
+collision_profile = 2
+hand_cost = 2
+float_mode = 0
+eligible_spawn_tags = Array[StringName]([&"sand", &"deck", &"water_surface"])

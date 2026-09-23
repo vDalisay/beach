@@ -1,0 +1,57 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="PackedScene" path="res://art/synty/wrappers/world_pier_table.tscn" id="1_table"]
+[ext_resource type="PackedScene" path="res://art/synty/wrappers/world_pier_umbrella.tscn" id="2_umbrella"]
+[ext_resource type="PackedScene" path="res://art/synty/wrappers/world_pier_chair.tscn" id="3_chair"]
+
+[sub_resource type="CylinderShape3D" id="Shape_table"]
+radius = 0.75
+height = 0.8
+
+[sub_resource type="BoxShape3D" id="Shape_chair"]
+size = Vector3(0.6, 0.96, 0.6)
+
+[node name="BeachCafeSet" type="Node3D"]
+
+[node name="Table" parent="." instance=ExtResource("1_table")]
+position = Vector3(0, 0.2, 0)
+
+[node name="Umbrella" parent="." instance=ExtResource("2_umbrella")]
+position = Vector3(0, 0.2, 0)
+
+[node name="ChairWest" parent="." instance=ExtResource("3_chair")]
+position = Vector3(-1.45, 0.2, 0)
+rotation = Vector3(0, -1.5708, 0)
+
+[node name="ChairEast" parent="." instance=ExtResource("3_chair")]
+position = Vector3(1.45, 0.2, 0)
+rotation = Vector3(0, 1.5708, 0)
+
+[node name="ChairNorth" parent="." instance=ExtResource("3_chair")]
+position = Vector3(0, 0.2, -1.6)
+rotation = Vector3(0, 3.14159, 0)
+
+[node name="ChairSouth" parent="." instance=ExtResource("3_chair")]
+position = Vector3(0, 0.2, 1.6)
+
+[node name="Collision" type="StaticBody3D" parent="."]
+
+[node name="TableShape" type="CollisionShape3D" parent="Collision"]
+position = Vector3(0, 0.6, 0)
+shape = SubResource("Shape_table")
+
+[node name="ChairWestShape" type="CollisionShape3D" parent="Collision"]
+position = Vector3(-1.45, 0.68, 0)
+shape = SubResource("Shape_chair")
+
+[node name="ChairEastShape" type="CollisionShape3D" parent="Collision"]
+position = Vector3(1.45, 0.68, 0)
+shape = SubResource("Shape_chair")
+
+[node name="ChairNorthShape" type="CollisionShape3D" parent="Collision"]
+position = Vector3(0, 0.68, -1.6)
+shape = SubResource("Shape_chair")
+
+[node name="ChairSouthShape" type="CollisionShape3D" parent="Collision"]
+position = Vector3(0, 0.68, 1.6)
+shape = SubResource("Shape_chair")

@@ -1,0 +1,519 @@
+{
+  "version": 1,
+  "source_scene_root": "res://POLYGON_Palm_City/meshes/tscn_separate/",
+  "assets": [
+    {
+      "id": "waste_can",
+      "label": "Drink can",
+      "wrapper_scene": "res://art/synty/wrappers/waste_can.tscn",
+      "components": [
+        {"name": "Can", "source_scene": "SM_Prop_Drink_Can_01.tscn"}
+      ],
+      "visual_position": [0.0, 0.0084, 0.0],
+      "gallery_position": [-7.0, 0.0, 2.0],
+      "label_height": 0.7
+    },
+    {
+      "id": "waste_buried_scrap", "label": "Buried damaged can", "wrapper_scene": "res://art/synty/wrappers/waste_buried_scrap.tscn",
+      "components": [{"name": "DamagedCan", "source_scene": "SM_Prop_Spray_Can_Damaged_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [-9, 0, 8], "label_height": 0.6
+    },
+    {
+      "id": "prop_beach_chair",
+      "label": "Beach chair",
+      "wrapper_scene": "res://art/synty/wrappers/prop_beach_chair.tscn",
+      "components": [
+        {"name": "Chair", "source_scene": "SM_Prop_Beach_Chair_01.tscn"}
+      ],
+      "visual_position": [0.0, 0.0022, 0.1492],
+      "gallery_position": [-5.0, 0.0, 2.0],
+      "label_height": 1.3
+    },
+    {
+      "id": "prop_bucket",
+      "label": "Bucket and handle",
+      "wrapper_scene": "res://art/synty/wrappers/prop_bucket.tscn",
+      "components": [
+        {"name": "Bucket", "source_scene": "SM_Prop_Bucket_01.tscn"},
+        {"name": "Handle", "source_scene": "SM_Prop_Bucket_01_Handle.tscn"}
+      ],
+      "visual_position": [0.0, 0.1163, 0.0],
+      "gallery_position": [-3.0, 0.0, 2.0],
+      "label_height": 0.9
+    },
+    {
+      "id": "tool_knife",
+      "label": "Knife and blade",
+      "wrapper_scene": "res://art/synty/wrappers/tool_knife.tscn",
+      "components": [
+        {"name": "Handle", "source_scene": "SM_Wep_Knife_01.tscn"},
+        {"name": "Blade", "source_scene": "SM_Wep_Knife_01_Blade_01.tscn"}
+      ],
+      "visual_position": [0.0, 0.0851, 0.0],
+      "gallery_position": [-1.0, 0.0, 2.0],
+      "label_height": 0.8
+    },
+    {
+      "id": "tool_poking_stick",
+      "label": "Starter poking stick (Synty pole shaft)",
+      "wrapper_scene": "res://art/synty/wrappers/tool_poking_stick.tscn",
+      "components": [
+        {"name": "Shaft", "source_scene": "SM_Prop_Sign_Pole_01.tscn"}
+      ],
+      "visual_position": [0.0, 0.095, 0.0],
+      "gallery_position": [0.0, 0.0, 2.0],
+      "label_height": 2.7
+    },
+    {
+      "id": "glass_test",
+      "label": "Glass material test",
+      "wrapper_scene": "res://art/synty/wrappers/glass_test.tscn",
+      "components": [
+        {
+          "name": "Glass",
+          "source_scene": "SM_Bld_Deco_Door_01_Glass.tscn",
+          "material_override": {
+            "albedo_color": [0.35, 0.8, 0.9, 0.28],
+            "metallic": 0.05,
+            "roughness": 0.08
+          }
+        }
+      ],
+      "visual_position": [-0.5, -0.0795, 0.0],
+      "gallery_position": [1.5, 0.0, 2.0],
+      "label_height": 2.2
+    },
+    {
+      "id": "building_beach_shop",
+      "label": "Beach shop",
+      "wrapper_scene": "res://art/synty/wrappers/building_beach_shop.tscn",
+      "components": [
+        {"name": "Shop", "source_scene": "SM_Bld_Beach_Shop_01.tscn"}
+      ],
+      "visual_position": [-1.8357, 0.0858, -1.3446],
+      "gallery_position": [5.5, 0.0, 0.0],
+      "label_height": 3.8
+    },
+    {
+      "id": "foliage_palm",
+      "label": "Palm LOD0",
+      "wrapper_scene": "res://art/synty/wrappers/foliage_palm.tscn",
+      "components": [
+        {"name": "Palm", "source_scene": "SM_Env_Tree_Palm_01_LOD0.tscn"}
+      ],
+      "visual_position": [0.4426, 0.2311, 0.2368],
+      "gallery_position": [-5.0, 0.0, -6.0],
+      "label_height": 14.2
+    },
+    {
+      "id": "water_test",
+      "label": "Compatibility water test",
+      "wrapper_scene": "res://art/synty/wrappers/water_test.tscn",
+      "components": [
+        {"name": "Water", "source_scene": "SM_Veh_Super_Yacht_01_Water.tscn"}
+      ],
+      "visual_position": [0.0, -1.8224, 12.8767],
+      "gallery_position": [0.0, 0.03, -6.0],
+      "label_height": 1.0
+    },
+    {
+      "id": "waste_plastic_bottle", "label": "Plastic bottle", "wrapper_scene": "res://art/synty/wrappers/waste_plastic_bottle.tscn",
+      "components": [{"name": "Bottle", "source_scene": "SM_Prop_Drink_Bottle_02.tscn", "material_override": {"albedo_color": [0.48, 0.78, 0.84, 0.78], "metallic": 0.0, "roughness": 0.5}}],
+      "visual_position": [0, 0, 0], "gallery_position": [-7, 0, 8], "label_height": 0.6
+    },
+    {
+      "id": "waste_glass_bottle", "label": "Glass bottle", "wrapper_scene": "res://art/synty/wrappers/waste_glass_bottle.tscn",
+      "components": [{"name": "Bottle", "source_scene": "SM_Prop_Drink_Bottle_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [-5, 0, 8], "label_height": 0.7
+    },
+    {
+      "id": "waste_food_scrap", "label": "Discarded food", "wrapper_scene": "res://art/synty/wrappers/waste_food_scrap.tscn",
+      "components": [{"name": "Food", "source_scene": "SM_Prop_Food_Hotdog_01.tscn"}],
+      "visual_position": [0, 0.013, 0], "gallery_position": [-3, 0, 8], "label_height": 0.6
+    },
+    {
+      "id": "waste_paper", "label": "Newspaper", "wrapper_scene": "res://art/synty/wrappers/waste_paper.tscn",
+      "components": [{"name": "Paper", "source_scene": "SM_Prop_Newspaper_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [-1, 0, 8], "label_height": 0.5
+    },
+    {
+      "id": "waste_bundled_scrap", "label": "Rubbish pile", "wrapper_scene": "res://art/synty/wrappers/waste_bundled_scrap.tscn",
+      "components": [{"name": "Scrap", "source_scene": "SM_Prop_RubbishPile_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [1, 0, 8], "label_height": 1.0
+    },
+    {
+      "id": "valuable_keys", "label": "Keys", "wrapper_scene": "res://art/synty/wrappers/valuable_keys.tscn",
+      "components": [{"name": "Keys", "source_scene": "SM_Prop_Keys_01.tscn"}],
+      "visual_position": [0, 0.001, 0], "gallery_position": [3, 0, 8], "label_height": 0.5
+    },
+    {
+      "id": "prop_beach_ball", "label": "Beach ball", "wrapper_scene": "res://art/synty/wrappers/prop_beach_ball.tscn",
+      "components": [{"name": "Ball", "source_scene": "SM_Prop_Beach_Ball_01.tscn"}],
+      "visual_position": [0, 0.27, 0], "gallery_position": [5, 0, 8], "label_height": 0.8
+    },
+    {
+      "id": "prop_cooler", "label": "Drinks cooler", "wrapper_scene": "res://art/synty/wrappers/prop_cooler.tscn",
+      "components": [{"name": "Cooler", "source_scene": "SM_Prop_Drinks_Cooler_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [7, 0, 8], "label_height": 0.9
+    },
+    {
+      "id": "prop_lifebuoy", "label": "Rescue buoy", "wrapper_scene": "res://art/synty/wrappers/prop_lifebuoy.tscn",
+      "components": [{"name": "Buoy", "source_scene": "SM_Prop_Rescue_Buoy_02.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [-7, 0, 12], "label_height": 0.7
+    },
+    {
+      "id": "prop_lounger", "label": "Deck chair", "wrapper_scene": "res://art/synty/wrappers/prop_lounger.tscn",
+      "components": [{"name": "Lounger", "source_scene": "SM_Prop_Deck_Chair_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [-4, 0, 12], "label_height": 1.3
+    },
+    {
+      "id": "prop_paddle", "label": "Paddle", "wrapper_scene": "res://art/synty/wrappers/prop_paddle.tscn",
+      "components": [{"name": "Paddle", "source_scene": "SM_Prop_Paddle_01.tscn"}],
+      "visual_position": [0, 0.906, 0], "gallery_position": [-1, 0, 12], "label_height": 2.0
+    },
+    {
+      "id": "prop_parasol", "label": "Parasol", "wrapper_scene": "res://art/synty/wrappers/prop_parasol.tscn",
+      "components": [{"name": "Umbrella", "source_scene": "SM_Prop_Umbrella_01.tscn"}],
+      "visual_position": [0, 0.172, 0], "gallery_position": [2, 0, 12], "label_height": 3.0
+    },
+    {
+      "id": "prop_portable_inflatable", "label": "Inflatable", "wrapper_scene": "res://art/synty/wrappers/prop_portable_inflatable.tscn",
+      "components": [{"name": "Inflatable", "source_scene": "SM_Prop_Inflatable_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [5, 0, 12], "label_height": 1.3
+    },
+    {
+      "id": "prop_spade", "label": "Spade", "wrapper_scene": "res://art/synty/wrappers/prop_spade.tscn",
+      "components": [{"name": "Spade", "source_scene": "SM_Prop_Spade_01.tscn"}],
+      "visual_position": [0, 0.017, 0], "gallery_position": [-7, 0, 16], "label_height": 0.8
+    },
+    {
+      "id": "prop_speaker", "label": "Stereo", "wrapper_scene": "res://art/synty/wrappers/prop_speaker.tscn",
+      "components": [{"name": "Stereo", "source_scene": "SM_Prop_Stereo_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [-4, 0, 16], "label_height": 0.9
+    },
+    {
+      "id": "prop_surfboard", "label": "Surfboard", "wrapper_scene": "res://art/synty/wrappers/prop_surfboard.tscn",
+      "components": [{"name": "Board", "source_scene": "SM_Prop_Surfboard_01.tscn"}],
+      "visual_position": [0, 0.183, 0], "gallery_position": [-1, 0, 16], "label_height": 0.8
+    },
+    {
+      "id": "prop_volleyball", "label": "Volleyball", "wrapper_scene": "res://art/synty/wrappers/prop_volleyball.tscn",
+      "components": [{"name": "Ball", "source_scene": "SM_Prop_VolleyBall_01.tscn"}],
+      "visual_position": [0, 0.2485, 0], "gallery_position": [2, 0, 16], "label_height": 0.8
+    },
+    {
+      "id": "disposal_bag", "label": "Sealed trash bag", "wrapper_scene": "res://art/synty/wrappers/disposal_bag.tscn",
+      "components": [{"name": "Bag", "source_scene": "SM_Prop_Trash_Bag_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [5, 0, 16], "label_height": 0.9
+    },
+    {
+      "id": "sorting_bin", "label": "Sorting bin", "wrapper_scene": "res://art/synty/wrappers/sorting_bin.tscn",
+      "components": [{"name": "Bin", "source_scene": "SM_Prop_Trash_Bin_04.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [-7, 0, 20], "label_height": 1.4
+    },
+    {
+      "id": "waste_container", "label": "Waste container", "wrapper_scene": "res://art/synty/wrappers/waste_container.tscn",
+      "components": [{"name": "Container", "source_scene": "SM_Prop_Trash_Bin_02.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [-4, 0, 20], "label_height": 1.5
+    },
+    {
+      "id": "sorting_table", "label": "Outdoor table", "wrapper_scene": "res://art/synty/wrappers/sorting_table.tscn",
+      "components": [{"name": "Table", "source_scene": "SM_Prop_Table_Outdoor_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [-1, 0, 20], "label_height": 1.1
+    },
+    {
+      "id": "collection_phone", "label": "Collection hotline", "wrapper_scene": "res://art/synty/wrappers/collection_phone.tscn",
+      "components": [{"name": "Phone", "source_scene": "SM_Prop_Pay_Phone_01.tscn"}],
+      "visual_position": [0, 0.0155, 0], "gallery_position": [2, 0, 20], "label_height": 1.9
+    },
+    {
+      "id": "shop_counter", "label": "Equipment counter", "wrapper_scene": "res://art/synty/wrappers/shop_counter.tscn",
+      "components": [{"name": "Counter", "source_scene": "SM_Prop_Counter_02.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [5, 0, 20], "label_height": 1.5
+    },
+    {
+      "id": "world_lighthouse", "label": "Striped lighthouse", "wrapper_scene": "res://art/synty/wrappers/world_lighthouse.tscn",
+      "components": [{"name": "Lighthouse", "source_scene": "SM_Bld_Lighthouse_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [14, 0, -10], "label_height": 31
+    },
+    {
+      "id": "world_dock_platform", "label": "Pier platform", "wrapper_scene": "res://art/synty/wrappers/world_dock_platform.tscn",
+      "components": [{"name": "Platform", "source_scene": "SM_Bld_Dock_Platform_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [20, 0, -10], "label_height": 1
+    },
+    {
+      "id": "world_dock_railing", "label": "Pier railing", "wrapper_scene": "res://art/synty/wrappers/world_dock_railing.tscn",
+      "components": [{"name": "Railing", "source_scene": "SM_Bld_Dock_Railing_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [24, 0, -10], "label_height": 1.3
+    },
+    {
+      "id": "world_volleyball_net", "label": "Volleyball net", "wrapper_scene": "res://art/synty/wrappers/world_volleyball_net.tscn",
+      "components": [{"name": "Net", "source_scene": "SM_Prop_VolleyBall_Net_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [28, 0, -10], "label_height": 3
+    },
+    {
+      "id": "world_shade_sail", "label": "Shade sail", "wrapper_scene": "res://art/synty/wrappers/world_shade_sail.tscn",
+      "components": [{"name": "Shade", "source_scene": "SM_Bld_Shade_Sail_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [32, 0, -10], "label_height": 4
+    },
+    {
+      "id": "world_lifeguard_flag", "label": "Lifeguard flag", "wrapper_scene": "res://art/synty/wrappers/world_lifeguard_flag.tscn",
+      "components": [{"name": "Flag", "source_scene": "SM_Prop_Lifeguard_Flag_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [36, 0, -10], "label_height": 3
+    },
+    {
+      "id": "world_sandcastle", "label": "Sandcastle", "wrapper_scene": "res://art/synty/wrappers/world_sandcastle.tscn",
+      "components": [{"name": "Castle", "source_scene": "SM_Prop_Sandcastle_01.tscn"}, {"name": "Flag", "source_scene": "SM_Prop_Sandcastle_Flag_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [40, 0, -10], "label_height": 1.5
+    },
+    {
+      "id": "world_beach_shop_02", "label": "Beach shop variant 02", "wrapper_scene": "res://art/synty/wrappers/world_beach_shop_02.tscn",
+      "components": [{"name": "Shop", "source_scene": "SM_Bld_Beach_Shop_02.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [44, 0, -10], "label_height": 4
+    },
+    {
+      "id": "world_beach_shop_03", "label": "Beach shop variant 03", "wrapper_scene": "res://art/synty/wrappers/world_beach_shop_03.tscn",
+      "components": [{"name": "Shop", "source_scene": "SM_Bld_Beach_Shop_03.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [48, 0, -10], "label_height": 4
+    },
+    {
+      "id": "world_paddle_board", "label": "Paddle board", "wrapper_scene": "res://art/synty/wrappers/world_paddle_board.tscn",
+      "components": [{"name": "Board", "source_scene": "SM_Prop_PaddleBoard_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [52, 0, -10], "label_height": 1
+    },
+    {
+      "id": "world_sailboat", "label": "Sailboat", "wrapper_scene": "res://art/synty/wrappers/world_sailboat.tscn",
+      "components": [{"name": "Hull", "source_scene": "SM_Veh_Sailboat_01.tscn"}, {"name": "Sail", "source_scene": "SM_Veh_Sailboat_01_Sail.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [60, 0, -10], "label_height": 7
+    },
+    {
+      "id": "world_windsurf", "label": "Windsurf board and sail", "wrapper_scene": "res://art/synty/wrappers/world_windsurf.tscn",
+      "components": [{"name": "Board", "source_scene": "SM_Prop_WindSurf_Board_01.tscn"}, {"name": "Sail", "source_scene": "SM_Prop_WindSurf_Sail_01_Alt.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [63, 0, -10], "label_height": 4.5
+    },
+    {
+      "id": "world_jetski", "label": "Jetski", "wrapper_scene": "res://art/synty/wrappers/world_jetski.tscn",
+      "components": [{"name": "Hull", "source_scene": "SM_Veh_Jetski_01.tscn"}, {"name": "Steering", "source_scene": "SM_Veh_Jetski_01_Steering.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [65, 0, -10], "label_height": 2
+    },
+    {
+      "id": "world_skyline_01", "label": "Coastal skyline A", "wrapper_scene": "res://art/synty/wrappers/world_skyline_01.tscn",
+      "components": [{"name": "Skyline", "source_scene": "SM_Env_Skyline_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [0, 0, -30], "label_height": 23
+    },
+    {
+      "id": "world_skyline_02", "label": "Coastal skyline B", "wrapper_scene": "res://art/synty/wrappers/world_skyline_02.tscn",
+      "components": [{"name": "Skyline", "source_scene": "SM_Env_Skyline_02.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [200, 0, -30], "label_height": 31
+    },
+    {
+      "id": "world_sand_edge_01", "label": "Sand shoreline edge A", "wrapper_scene": "res://art/synty/wrappers/world_sand_edge_01.tscn",
+      "components": [{"name": "Edge", "source_scene": "SM_Env_Sand_Edge_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [70, 0, -10], "label_height": 0.5
+    },
+    {
+      "id": "world_sand_edge_02", "label": "Sand shoreline edge B", "wrapper_scene": "res://art/synty/wrappers/world_sand_edge_02.tscn",
+      "components": [{"name": "Edge", "source_scene": "SM_Env_Sand_Edge_02.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [80, 0, -10], "label_height": 0.6
+    },
+    {
+      "id": "world_sand_pile", "label": "Sand pile", "wrapper_scene": "res://art/synty/wrappers/world_sand_pile.tscn",
+      "components": [{"name": "Pile", "source_scene": "SM_Env_Sand_Pile_02.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [90, 0, -10], "label_height": 0.3
+    },
+    {
+      "id": "world_dock_pole", "label": "Shade support pole", "wrapper_scene": "res://art/synty/wrappers/world_dock_pole.tscn",
+      "components": [{"name": "Pole", "source_scene": "SM_Bld_Dock_Pole_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [95, 0, -10], "label_height": 3.2
+    },
+    {
+      "id": "world_dock_stairs", "label": "Lookout stairs", "wrapper_scene": "res://art/synty/wrappers/world_dock_stairs.tscn",
+      "components": [{"name": "Stairs", "source_scene": "SM_Bld_Dock_Stairs_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [100, 0, -10], "label_height": 1.6
+    },
+    {
+      "id": "world_reef_ridge", "label": "Reef substrate ridge", "wrapper_scene": "res://art/synty/wrappers/world_reef_ridge.tscn",
+      "components": [{"name": "Ridge", "source_scene": "SM_Env_Sand_Pile_03.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [105, 0, -10], "label_height": 0.6
+    },
+    {
+      "id": "waste_fruit_scrap", "label": "Banana food scrap", "wrapper_scene": "res://art/synty/wrappers/waste_fruit_scrap.tscn",
+      "components": [{"name": "BananaFood", "source_scene": "SM_Prop_Food_Banana_Split_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [110, 0, -10], "label_height": 0.3
+    },
+    {
+      "id": "prop_small_rowboat", "label": "Small inflatable dinghy", "wrapper_scene": "res://art/synty/wrappers/prop_small_rowboat.tscn",
+      "components": [{"name": "Hull", "source_scene": "SM_Veh_RIB_Boat_01.tscn"}],
+      "visual_position": [0, 0.275, 0], "gallery_position": [117, 0, -10], "label_height": 1.2
+    },
+    {
+      "id": "waste_crushed_can", "label": "Crushed drink can", "wrapper_scene": "res://art/synty/wrappers/waste_crushed_can.tscn",
+      "components": [{"name": "Can", "source_scene": "SM_Prop_Drink_Can_Crushed_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [121, 0, -10], "label_height": 0.4
+    },
+    {
+      "id": "waste_drink_cup", "label": "Discarded drink cup", "wrapper_scene": "res://art/synty/wrappers/waste_drink_cup.tscn",
+      "components": [{"name": "Cup", "source_scene": "SM_Prop_Drink_Coffee_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [124, 0, -10], "label_height": 0.5
+    },
+    {
+      "id": "waste_ice_cream", "label": "Fallen ice cream", "wrapper_scene": "res://art/synty/wrappers/waste_ice_cream.tscn",
+      "components": [{"name": "IceCream", "source_scene": "SM_Prop_Food_Ice_Cream_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [127, 0, -10], "label_height": 0.5
+    },
+    {
+      "id": "waste_panini", "label": "Discarded sandwich", "wrapper_scene": "res://art/synty/wrappers/waste_panini.tscn",
+      "components": [{"name": "Panini", "source_scene": "SM_Prop_Food_Panini_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [130, 0, -10], "label_height": 0.5
+    },
+    {
+      "id": "waste_towel", "label": "Discarded beach towel", "wrapper_scene": "res://art/synty/wrappers/waste_towel.tscn",
+      "components": [{"name": "Towel", "source_scene": "SM_Prop_Towel_02.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [133, 0, -10], "label_height": 0.5
+    },
+    {
+      "id": "waste_glass_jar", "label": "Glass jar", "wrapper_scene": "res://art/synty/wrappers/waste_glass_jar.tscn",
+      "components": [{"name": "Jar", "source_scene": "SM_Prop_Jar_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [136, 0, -10], "label_height": 0.5
+    },
+    {
+      "id": "world_city_window", "label": "City window facade", "wrapper_scene": "res://art/synty/wrappers/world_city_window.tscn",
+      "components": [{"name": "Facade", "source_scene": "SM_Bld_Wall_City_Window_01.tscn"}, {"name": "Glass", "source_scene": "SM_Bld_Wall_Window_01_Glass_01_SM_Bld_Wall_City_Window_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [140, 0, -10], "label_height": 4
+    },
+    {
+      "id": "world_tower_window", "label": "Tower window facade", "wrapper_scene": "res://art/synty/wrappers/world_tower_window.tscn",
+      "components": [{"name": "Facade", "source_scene": "SM_Bld_Wall_Tower_Windows_01.tscn"}, {"name": "Glass", "source_scene": "SM_Bld_Wall_Tower_Windows_01_Glass.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [145, 0, -10], "label_height": 4
+    },
+    {
+      "id": "world_lowrise_window", "label": "Low-rise window facade", "wrapper_scene": "res://art/synty/wrappers/world_lowrise_window.tscn",
+      "components": [{"name": "Facade", "source_scene": "SM_Bld_Wall_Window_04.tscn"}, {"name": "Glass", "source_scene": "SM_Bld_Wall_Window_04_Glass_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [148, 0, -10], "label_height": 4
+    },
+    {
+      "id": "world_deco_window", "label": "Art deco window facade", "wrapper_scene": "res://art/synty/wrappers/world_deco_window.tscn",
+      "components": [{"name": "Facade", "source_scene": "SM_Bld_Deco_Wall_Window_03.tscn"}, {"name": "Glass", "source_scene": "SM_Bld_Deco_Wall_Window_03_Glass_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [185, 0, -10], "label_height": 4
+    },
+    {
+      "id": "world_villa_window", "label": "Villa window facade", "wrapper_scene": "res://art/synty/wrappers/world_villa_window.tscn",
+      "components": [{"name": "Facade", "source_scene": "SM_Bld_Villa_Wall_Window_01.tscn"}, {"name": "Glass", "source_scene": "SM_Bld_Villa_Wall_Window_01_Glass_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [190, 0, -10], "label_height": 4
+    },
+    {
+      "id": "world_roof_flat", "label": "City roof", "wrapper_scene": "res://art/synty/wrappers/world_roof_flat.tscn",
+      "components": [{"name": "Roof", "source_scene": "SM_Bld_Roof_Flat_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [150, 0, -10], "label_height": 2
+    },
+    {
+      "id": "world_roof_tower", "label": "Tower roof", "wrapper_scene": "res://art/synty/wrappers/world_roof_tower.tscn",
+      "components": [{"name": "Roof", "source_scene": "SM_Bld_Roof_Tower_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [155, 0, -10], "label_height": 2
+    },
+    {
+      "id": "world_city_roof_cap", "label": "City roof cap", "wrapper_scene": "res://art/synty/wrappers/world_city_roof_cap.tscn",
+      "components": [{"name": "Cap", "source_scene": "SM_Bld_City_RoofCap_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [230, 0, -10], "label_height": 11
+    },
+    {
+      "id": "world_deco_balcony", "label": "Art deco balcony", "wrapper_scene": "res://art/synty/wrappers/world_deco_balcony.tscn",
+      "components": [{"name": "Balcony", "source_scene": "SM_Bld_Deco_Balcony_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [234, 0, -10], "label_height": 2
+    },
+    {
+      "id": "world_sidewalk", "label": "City sidewalk", "wrapper_scene": "res://art/synty/wrappers/world_sidewalk.tscn",
+      "components": [{"name": "Sidewalk", "source_scene": "SM_Env_Sidewalk_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [158, 0, -10], "label_height": 1
+    },
+    {
+      "id": "world_mountain_range", "label": "Island mountain range", "wrapper_scene": "res://art/synty/wrappers/world_mountain_range.tscn",
+      "components": [{"name": "Mountain", "source_scene": "SM_Env_MountainRange_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [160, 0, -10], "label_height": 20
+    },
+    {
+      "id": "world_planter_bench", "label": "Promenade planter bench", "wrapper_scene": "res://art/synty/wrappers/world_planter_bench.tscn",
+      "components": [{"name": "Planter", "source_scene": "SM_Prop_Planter_Bench_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [165, 0, -10], "label_height": 2
+    },
+    {
+      "id": "world_road_trim", "label": "Boulevard curb trim", "wrapper_scene": "res://art/synty/wrappers/world_road_trim.tscn",
+      "components": [{"name": "Curb", "source_scene": "SM_Env_Road_Trim_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [170, 0, -10], "label_height": 1
+    },
+    {
+      "id": "world_cloud_ring", "label": "Sky cloud ring", "wrapper_scene": "res://art/synty/wrappers/world_cloud_ring.tscn",
+      "components": [{"name": "Clouds", "source_scene": "SM_Env_Cloud_Ring_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [175, 0, -10], "label_height": 40
+    },
+    {
+      "id": "world_service_wall", "label": "Service hut wall", "wrapper_scene": "res://art/synty/wrappers/world_service_wall.tscn",
+      "components": [{"name": "Wall", "source_scene": "SM_Bld_Wall_Exterior_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [180, 0, -10], "label_height": 3
+    },
+    {
+      "id": "world_service_roof", "label": "Service hut roof", "wrapper_scene": "res://art/synty/wrappers/world_service_roof.tscn",
+      "components": [{"name": "Roof", "source_scene": "SM_Bld_Roof_Flat_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [185, 0, -10], "label_height": 3
+    },
+    {
+      "id": "world_pier_awning", "label": "Pier cafe awning", "wrapper_scene": "res://art/synty/wrappers/world_pier_awning.tscn",
+      "components": [{"name": "Awning", "source_scene": "SM_Bld_Deco_Awning_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [190, 0, -10], "label_height": 2
+    },
+    {
+      "id": "world_pier_lamp", "label": "Pier lamp", "wrapper_scene": "res://art/synty/wrappers/world_pier_lamp.tscn",
+      "components": [{"name": "Lamp", "source_scene": "SM_Prop_Pier_Lamp_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [194, 0, -10], "label_height": 4
+    },
+    {
+      "id": "world_pier_bench", "label": "Pier bench", "wrapper_scene": "res://art/synty/wrappers/world_pier_bench.tscn",
+      "components": [{"name": "Bench", "source_scene": "SM_Prop_Pier_Bench_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [198, 0, -10], "label_height": 1
+    },
+    {
+      "id": "world_pier_umbrella", "label": "Pier terrace umbrella", "wrapper_scene": "res://art/synty/wrappers/world_pier_umbrella.tscn",
+      "components": [{"name": "Umbrella", "source_scene": "SM_Prop_Umbrella_03.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [202, 0, -10], "label_height": 3
+    },
+    {
+      "id": "world_pier_table", "label": "Pier terrace table", "wrapper_scene": "res://art/synty/wrappers/world_pier_table.tscn",
+      "components": [{"name": "Table", "source_scene": "SM_Prop_Table_Outdoor_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [206, 0, -10], "label_height": 1
+    },
+    {
+      "id": "world_pier_chair", "label": "Pier terrace chair", "wrapper_scene": "res://art/synty/wrappers/world_pier_chair.tscn",
+      "components": [{"name": "Chair", "source_scene": "SM_Prop_Chair_03.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [210, 0, -10], "label_height": 1
+    },
+    {
+      "id": "world_pier_pole", "label": "Pier support pole", "wrapper_scene": "res://art/synty/wrappers/world_pier_pole.tscn",
+      "components": [{"name": "Pole", "source_scene": "SM_Bld_Dock_Pole_01.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [214, 0, -10], "label_height": 3
+    },
+    {
+      "id": "world_beach_shelter", "label": "Beach shelter", "wrapper_scene": "res://art/synty/wrappers/world_beach_shelter.tscn",
+      "components": [{"name": "Shelter", "source_scene": "SM_Prop_Shelter_02.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [218, 0, -10], "label_height": 3.2
+    }
+  ],
+  "missing_assets": [
+    {"id": "A01", "label": "Turtle", "color": "55b868", "dimensions": [1.4, 0.45, 1.0], "intended_interaction": "Restoration wildlife and entanglement rescue", "search_notes": "No turtle-named converted scene found.", "replacement_path": "res://art/replacements/wildlife/turtle.tscn"},
+    {"id": "A02", "label": "Small reef fish", "color": "3a8fd8", "dimensions": [0.45, 0.25, 0.18], "intended_interaction": "Authored underwater wildlife routes", "search_notes": "No living fish-named converted scene found.", "replacement_path": "res://art/replacements/wildlife/reef_fish.tscn"},
+    {"id": "A03", "label": "Starfish", "color": "f08b36", "dimensions": [0.35, 0.08, 0.35], "intended_interaction": "Reef restoration wildlife", "search_notes": "No starfish scene found.", "replacement_path": "res://art/replacements/wildlife/starfish.tscn"},
+    {"id": "A04", "label": "Coral and seaweed set", "color": "dd5a9d", "dimensions": [0.8, 0.9, 0.8], "intended_interaction": "Permanent reef restoration visuals", "search_notes": "No matching coral, seaweed, or seagrass scenes found.", "replacement_path": "res://art/replacements/reef/coral_set.tscn"},
+    {"id": "A05", "label": "Shore bird", "color": "eeeeee", "dimensions": [0.45, 0.5, 0.25], "intended_interaction": "Shore wildlife presentation", "search_notes": "No seagull or shore-bird scene found.", "replacement_path": "res://art/replacements/wildlife/shore_bird.tscn"},
+    {"id": "A06", "label": "Poking stick", "color": "e6c84f", "dimensions": [0.08, 1.2, 0.08], "intended_interaction": "Starter handheld litter tool", "search_notes": "No matching named tool found.", "replacement_path": "res://art/replacements/tools/poking_stick.tscn"},
+    {"id": "A07", "label": "Vacuum and sand cleaner", "color": "9d5ad1", "dimensions": [0.65, 0.9, 0.45], "intended_interaction": "Purchased cleanup tools", "search_notes": "No vacuum or sand-cleaner model found.", "replacement_path": "res://art/replacements/tools/cleanup_tools.tscn"},
+    {"id": "A08", "label": "Detector", "color": "38ced1", "dimensions": [0.35, 1.1, 0.25], "intended_interaction": "Buried-item detection", "search_notes": "No detector model found.", "replacement_path": "res://art/replacements/tools/detector.tscn"},
+    {"id": "A09", "label": "Flippers and oxygen tank", "color": "ef8c32", "dimensions": [0.65, 0.8, 0.35], "intended_interaction": "Swimming equipment presentation", "search_notes": "No matching equipment scenes found.", "replacement_path": "res://art/replacements/equipment/swim_gear.tscn"},
+    {"id": "A10", "label": "Cleaning cloth", "color": "f3f3f3", "dimensions": [0.35, 0.04, 0.35], "intended_interaction": "Handheld furniture cleaning", "search_notes": "No cloth scene found; beach towels are not a suitable handheld substitute.", "replacement_path": "res://art/replacements/tools/cloth.tscn"},
+    {"id": "A11", "label": "Rescue entanglements", "color": "d64b45", "dimensions": [0.6, 0.12, 0.6], "intended_interaction": "Knife-removable rescue attachments", "search_notes": "Can-pack and sports-net meshes do not provide verified six-pack rings or tangled rescue variants.", "replacement_path": "res://art/replacements/waste/rescue_entanglements.tscn"},
+    {"id": "A12", "label": "Plastic litter forms", "color": "5ab5d1", "dimensions": [0.3, 0.25, 0.3], "intended_interaction": "Loose PMD waste variants", "search_notes": "Synty drink-bottle and drink-cup geometry is staged; straw and wrap/bag forms remain open.", "replacement_path": "res://art/replacements/waste/plastic_litter_set.tscn"},
+    {"id": "A13", "label": "Fries and hamburger", "color": "e9993e", "dimensions": [0.28, 0.18, 0.28], "intended_interaction": "Loose organic/general food waste", "search_notes": "Synty hotdog, banana food, ice cream and panini are staged; no burger or fries scenes found.", "replacement_path": "res://art/replacements/waste/food_set.tscn"},
+    {"id": "A14", "label": "Oil container", "color": "34383d", "dimensions": [0.35, 0.55, 0.25], "intended_interaction": "General-waste pickup", "search_notes": "Burn-barrel candidate is not an oil container.", "replacement_path": "res://art/replacements/waste/oil_container.tscn"},
+    {"id": "A15", "label": "Residue and dirt visuals", "color": "8c6848", "dimensions": [0.3, 0.08, 0.3], "intended_interaction": "Collectable residue and cleanable furniture patches", "search_notes": "No suitable Synty residue mesh; project-owned flat stain replaces the cube, but furniture stain variants remain open.", "replacement_path": "res://art/replacements/dirt/residue_and_stains.tscn"},
+    {"id": "A16", "label": "Beach service props", "color": "62a5cb", "dimensions": [1.2, 1.2, 1.2], "intended_interaction": "Lifeguard, storage, audio, boat, tent, and lifebuoy roles", "search_notes": "Synty dock modules and flag form lookouts; a RIB dinghy and scaled shade sail replace rowboat/tent cubes. Exact tower, rowboat and tent prefabs and storage shelf remain unverified.", "replacement_path": "res://art/replacements/world/beach_service_set.tscn"},
+    {"id": "A17", "label": "First-person hands", "color": "d9a27d", "dimensions": [0.22, 0.12, 0.45], "intended_interaction": "Visible hands and tool grips", "search_notes": "A project-owned low-poly hand scene replaces plain capsules; character FBX files exist, but no reusable Synty first-person hand rig or animations were verified.", "replacement_path": "res://art/replacements/player/first_person_hands.tscn"}
+  ]
+}

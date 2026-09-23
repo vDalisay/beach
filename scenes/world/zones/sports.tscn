@@ -1,0 +1,104 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/section.gd" id="1_section"]
+[ext_resource type="Script" path="res://scripts/world/spawn_anchor.gd" id="2_anchor"]
+[ext_resource type="Script" path="res://scripts/world/placement_slot.gd" id="3_slot"]
+[ext_resource type="Script" path="res://scripts/world/recovery_anchor.gd" id="4_recovery"]
+
+[node name="Sports" type="Node3D"]
+[node name="RestorationVisuals" type="Node3D" parent="."]
+[node name="Courts" type="Node3D" parent="RestorationVisuals"]
+[node name="SnackEdge" type="Node3D" parent="RestorationVisuals"]
+[node name="Sections" type="Node3D" parent="."]
+[node name="Courts" type="Node3D" parent="Sections" node_paths=PackedStringArray("restoration_visual_root")]
+position = Vector3(-5, 0, 0)
+script = ExtResource("1_section")
+section_id = &"sports:courts"
+zone_id = &"sports"
+required_waste = 400
+required_props = 24
+restoration_visual_root = NodePath("../../RestorationVisuals/Courts")
+[node name="SnackEdge" type="Node3D" parent="Sections" node_paths=PackedStringArray("restoration_visual_root")]
+position = Vector3(5, 0, 0)
+script = ExtResource("1_section")
+section_id = &"sports:snack_edge"
+zone_id = &"sports"
+required_waste = 350
+required_props = 16
+restoration_visual_root = NodePath("../../RestorationVisuals/SnackEdge")
+[node name="SpawnAnchors" type="Node3D" parent="."]
+[node name="CourtSingles" type="Marker3D" parent="SpawnAnchors" groups=["spawn_anchors"]]
+position = Vector3(-4.5, 0.15, 8)
+script = ExtResource("2_anchor")
+anchor_id = &"spawn:sports:courts:singles"
+section_id = &"sports:courts"
+tags = PackedStringArray("sand", "single", "sports")
+[node name="CourtPile" type="Marker3D" parent="SpawnAnchors" groups=["spawn_anchors"]]
+position = Vector3(-1.5, 0.15, 12)
+script = ExtResource("2_anchor")
+anchor_id = &"spawn:sports:courts:pile"
+section_id = &"sports:courts"
+tags = PackedStringArray("sand", "pile")
+clearance_class = 1
+[node name="SnackPile" type="Marker3D" parent="SpawnAnchors" groups=["spawn_anchors"]]
+position = Vector3(4.5, 0.15, -5)
+script = ExtResource("2_anchor")
+anchor_id = &"spawn:sports:snack_edge:pile"
+section_id = &"sports:snack_edge"
+tags = PackedStringArray("sand", "pile", "food")
+clearance_class = 1
+[node name="Storage" type="Node3D" parent="."]
+[node name="Shelf01" type="Marker3D" parent="Storage" groups=["placement_pools"]]
+position = Vector3(-18, 0.8, -15)
+script = ExtResource("3_slot")
+pool_id = &"shelf:sports:01"
+accepted_families = PackedStringArray("bucket", "spade", "beach_ball", "volleyball", "speaker")
+capacity = 6
+layout = 1
+[node name="Shelf02" type="Marker3D" parent="Storage" groups=["placement_pools"]]
+position = Vector3(-12, 0.8, -15)
+script = ExtResource("3_slot")
+pool_id = &"shelf:sports:02"
+accepted_families = PackedStringArray("bucket", "spade", "beach_ball", "volleyball", "speaker")
+capacity = 6
+layout = 1
+[node name="Shelf03" type="Marker3D" parent="Storage" groups=["placement_pools"]]
+position = Vector3(-6, 0.8, -15)
+script = ExtResource("3_slot")
+pool_id = &"shelf:sports:03"
+accepted_families = PackedStringArray("bucket", "spade", "beach_ball", "volleyball", "speaker")
+capacity = 6
+layout = 1
+[node name="Shelf04" type="Marker3D" parent="Storage" groups=["placement_pools"]]
+position = Vector3(0, 0.8, -15)
+script = ExtResource("3_slot")
+pool_id = &"shelf:sports:04"
+accepted_families = PackedStringArray("bucket", "spade", "beach_ball", "volleyball", "speaker")
+capacity = 6
+layout = 1
+[node name="Coolers" type="Marker3D" parent="Storage" groups=["placement_pools"]]
+position = Vector3(10, 0, -14)
+script = ExtResource("3_slot")
+pool_id = &"row:sports:coolers"
+accepted_families = PackedStringArray("cooler")
+capacity = 8
+[node name="Tents" type="Marker3D" parent="Storage" groups=["placement_pools"]]
+position = Vector3(22, 0, -13)
+script = ExtResource("3_slot")
+pool_id = &"row:sports:tents"
+accepted_families = PackedStringArray("portable_tent")
+capacity = 2
+spacing = 3.0
+[node name="Paddles" type="Marker3D" parent="Storage" groups=["placement_pools"]]
+position = Vector3(18, 0, 15)
+script = ExtResource("3_slot")
+pool_id = &"row:sports:paddles"
+accepted_families = PackedStringArray("paddle")
+capacity = 2
+spacing = 1.0
+layout = 2
+[node name="RecoverySports" type="Marker3D" parent="." groups=["recovery_anchors"]]
+position = Vector3(0, 0.05, -2)
+script = ExtResource("4_recovery")
+anchor_id = &"recovery:sports"
+zone_id = &"sports"

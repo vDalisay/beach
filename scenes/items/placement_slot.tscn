@@ -1,0 +1,19 @@
+[gd_scene load_steps=2 format=3]
+
+[sub_resource type="BoxShape3D" id="CaptureShape"]
+size = Vector3(0.56, 1.35, 1)
+
+[node name="PlacementSlot" type="Area3D"]
+collision_layer = 16
+collision_mask = 12
+monitoring = true
+monitorable = true
+
+[node name="CaptureShape" type="CollisionShape3D" parent="."]
+unique_name_in_owner = true
+position = Vector3(0, 0.675, 0)
+shape = SubResource("CaptureShape")
+
+[node name="GhostRoot" type="Node3D" parent="."]
+unique_name_in_owner = true
+visible = false

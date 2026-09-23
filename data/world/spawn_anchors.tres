@@ -1,0 +1,33 @@
+[gd_resource type="Resource" format=3]
+
+[resource]
+resource_name = "beach_01_spawn_packs_v2"
+metadata/content_version = "beach-content-5"
+metadata/grid_columns = 16
+metadata/grid_rows = 48
+metadata/grid_spacing_mm = 700
+metadata/packs = {
+&"arrival:start": {"anchor_id": &"pack:arrival:start", "origin_mm": PackedInt32Array(-76250, 150, -6000), "tags": PackedStringArray("sand", "single", "pile", "starter"), "min_depth_mm": 0, "max_depth_mm": 0},
+&"arrival:dunes": {"anchor_id": &"pack:arrival:dunes", "origin_mm": PackedInt32Array(-65000, 150, -6000), "tags": PackedStringArray("sand", "single", "pile", "buried"), "min_depth_mm": 0, "max_depth_mm": 700},
+&"sports:courts": {"anchor_id": &"pack:sports:courts", "origin_mm": PackedInt32Array(-53750, 150, -6000), "tags": PackedStringArray("sand", "single", "pile", "buried"), "min_depth_mm": 0, "max_depth_mm": 700},
+&"sports:snack_edge": {"anchor_id": &"pack:sports:snack_edge", "origin_mm": PackedInt32Array(-42500, 150, -6000), "tags": PackedStringArray("sand", "single", "pile", "buried"), "min_depth_mm": 0, "max_depth_mm": 700},
+&"lounges:west": {"anchor_id": &"pack:lounges:west", "origin_mm": PackedInt32Array(-31250, 150, -6000), "tags": PackedStringArray("sand", "single", "pile", "buried"), "min_depth_mm": 0, "max_depth_mm": 700},
+&"lounges:central": {"anchor_id": &"pack:lounges:central", "origin_mm": PackedInt32Array(-20000, 150, -6000), "tags": PackedStringArray("sand", "single", "pile", "buried"), "min_depth_mm": 0, "max_depth_mm": 700},
+&"lounges:east": {"anchor_id": &"pack:lounges:east", "origin_mm": PackedInt32Array(-8750, 150, -6000), "tags": PackedStringArray("sand", "single", "pile", "buried"), "min_depth_mm": 0, "max_depth_mm": 700},
+&"sandplay:cove": {"anchor_id": &"pack:sandplay:cove", "origin_mm": PackedInt32Array(2500, 150, -6000), "tags": PackedStringArray("sand", "single", "pile", "buried"), "min_depth_mm": 0, "max_depth_mm": 700},
+&"sandplay:hut": {"anchor_id": &"pack:sandplay:hut", "origin_mm": PackedInt32Array(13750, 150, -6000), "tags": PackedStringArray("sand", "single", "pile", "buried"), "min_depth_mm": 0, "max_depth_mm": 700},
+&"pier:approach": {"anchor_id": &"pack:pier:approach", "origin_mm": PackedInt32Array(37500, 150, -6000), "tags": PackedStringArray("sand", "single", "pile", "buried"), "min_depth_mm": 0, "max_depth_mm": 700},
+&"pier:deck": {"anchor_id": &"pack:pier:deck", "origin_mm": PackedInt32Array(57500, 1150, 45000), "tags": PackedStringArray("deck", "single", "pile"), "min_depth_mm": 0, "max_depth_mm": 0},
+&"pier:moorings": {"anchor_id": &"pack:pier:moorings", "origin_mm": PackedInt32Array(44000, -1200, 60000), "prop_origin_mm": PackedInt32Array(57500, 1150, 85000), "tags": PackedStringArray("deck", "water_surface", "seabed", "single", "pile", "attachment", "buried"), "min_depth_mm": 500, "max_depth_mm": 3500},
+&"shallows:west": {"anchor_id": &"pack:shallows:west", "origin_mm": PackedInt32Array(18750, -1200, 40000), "tags": PackedStringArray("water_surface", "seabed", "single", "pile", "attachment", "buried"), "min_depth_mm": 500, "max_depth_mm": 3500},
+&"shallows:east": {"anchor_id": &"pack:shallows:east", "origin_mm": PackedInt32Array(30000, -1800, 62000), "tags": PackedStringArray("water_surface", "seabed", "single", "pile", "attachment", "buried"), "min_depth_mm": 500, "max_depth_mm": 4500},
+&"reef_west:outer": {"anchor_id": &"pack:reef_west:outer", "origin_mm": PackedInt32Array(0, -2800, 85000), "tags": PackedStringArray("seabed", "single", "pile", "attachment", "buried"), "min_depth_mm": 1800, "max_depth_mm": 6000},
+&"reef_west:coral": {"anchor_id": &"pack:reef_west:coral", "origin_mm": PackedInt32Array(11250, -2800, 85000), "tags": PackedStringArray("seabed", "single", "pile", "attachment", "buried"), "min_depth_mm": 1800, "max_depth_mm": 6000},
+&"reef_east:outer": {"anchor_id": &"pack:reef_east:outer", "origin_mm": PackedInt32Array(36250, -2800, 100000), "tags": PackedStringArray("seabed", "single", "pile", "attachment", "buried"), "min_depth_mm": 1800, "max_depth_mm": 6000},
+&"reef_east:coral": {"anchor_id": &"pack:reef_east:coral", "origin_mm": PackedInt32Array(25000, -2800, 135000), "tags": PackedStringArray("seabed", "single", "pile", "attachment", "buried"), "min_depth_mm": 1800, "max_depth_mm": 6000}
+}
+metadata/pile_patterns = {
+&"fan_5": [PackedInt32Array(0, 0, 0), PackedInt32Array(280, 60, 0), PackedInt32Array(-280, 60, 0), PackedInt32Array(140, 120, 240), PackedInt32Array(-140, 120, 240)],
+&"ridge_6": [PackedInt32Array(-360, 0, 0), PackedInt32Array(0, 0, 0), PackedInt32Array(360, 0, 0), PackedInt32Array(-180, 120, 260), PackedInt32Array(180, 120, 260), PackedInt32Array(0, 240, 520)],
+&"scatter_4": [PackedInt32Array(-320, 0, -180), PackedInt32Array(260, 0, -220), PackedInt32Array(-180, 70, 260), PackedInt32Array(300, 50, 240)]
+}

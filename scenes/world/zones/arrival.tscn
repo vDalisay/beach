@@ -1,0 +1,123 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/section.gd" id="1_section"]
+[ext_resource type="Script" path="res://scripts/world/spawn_anchor.gd" id="2_anchor"]
+[ext_resource type="Script" path="res://scripts/world/placement_slot.gd" id="3_slot"]
+[ext_resource type="Script" path="res://scripts/world/recovery_anchor.gd" id="4_recovery"]
+
+[node name="Arrival" type="Node3D"]
+
+[node name="RestorationVisuals" type="Node3D" parent="."]
+[node name="Start" type="Node3D" parent="RestorationVisuals"]
+[node name="Dunes" type="Node3D" parent="RestorationVisuals"]
+
+[node name="Sections" type="Node3D" parent="."]
+[node name="Start" type="Node3D" parent="Sections" node_paths=PackedStringArray("restoration_visual_root")]
+position = Vector3(-5, 0, 0)
+script = ExtResource("1_section")
+section_id = &"arrival:start"
+zone_id = &"arrival"
+required_waste = 80
+required_props = 10
+restoration_visual_root = NodePath("../../RestorationVisuals/Start")
+[node name="Dunes" type="Node3D" parent="Sections" node_paths=PackedStringArray("restoration_visual_root")]
+position = Vector3(5, 0, 0)
+script = ExtResource("1_section")
+section_id = &"arrival:dunes"
+zone_id = &"arrival"
+required_waste = 570
+required_props = 20
+restoration_visual_root = NodePath("../../RestorationVisuals/Dunes")
+
+[node name="SpawnAnchors" type="Node3D" parent="."]
+[node name="StarterSingles" type="Marker3D" parent="SpawnAnchors" groups=["spawn_anchors"]]
+position = Vector3(-5.5, 0.15, 8)
+script = ExtResource("2_anchor")
+anchor_id = &"spawn:arrival:start:singles"
+section_id = &"arrival:start"
+tags = PackedStringArray("sand", "single", "starter")
+[node name="StarterLarge" type="Marker3D" parent="SpawnAnchors" groups=["spawn_anchors"]]
+position = Vector3(-3.5, 0.15, 12)
+script = ExtResource("2_anchor")
+anchor_id = &"spawn:arrival:start:large"
+section_id = &"arrival:start"
+tags = PackedStringArray("sand", "large_clearance")
+clearance_class = 2
+clearance_radius = 1.5
+[node name="DunePile" type="Marker3D" parent="SpawnAnchors" groups=["spawn_anchors"]]
+position = Vector3(3.5, 0.15, -4)
+script = ExtResource("2_anchor")
+anchor_id = &"spawn:arrival:dunes:pile"
+section_id = &"arrival:dunes"
+tags = PackedStringArray("sand", "pile")
+clearance_class = 1
+clearance_radius = 0.8
+[node name="DuneBuried" type="Marker3D" parent="SpawnAnchors" groups=["spawn_anchors"]]
+position = Vector3(6.5, -0.25, 10)
+script = ExtResource("2_anchor")
+anchor_id = &"spawn:arrival:dunes:buried"
+section_id = &"arrival:dunes"
+tags = PackedStringArray("sand", "buried")
+
+[node name="Storage" type="Node3D" parent="."]
+[node name="Shelf01" type="Marker3D" parent="Storage" groups=["placement_pools"]]
+position = Vector3(-14, 0.8, -15)
+script = ExtResource("3_slot")
+pool_id = &"shelf:arrival:01"
+accepted_families = PackedStringArray("bucket", "spade", "beach_ball", "volleyball", "speaker")
+capacity = 6
+layout = 1
+[node name="Shelf02" type="Marker3D" parent="Storage" groups=["placement_pools"]]
+position = Vector3(-8, 0.8, -15)
+script = ExtResource("3_slot")
+pool_id = &"shelf:arrival:02"
+accepted_families = PackedStringArray("bucket", "spade", "beach_ball", "volleyball", "speaker")
+capacity = 6
+layout = 1
+[node name="Shelf03" type="Marker3D" parent="Storage" groups=["placement_pools"]]
+position = Vector3(-2, 0.8, -15)
+script = ExtResource("3_slot")
+pool_id = &"shelf:arrival:03"
+accepted_families = PackedStringArray("bucket", "spade", "beach_ball", "volleyball", "speaker")
+capacity = 6
+layout = 1
+[node name="ChairRow" type="Marker3D" parent="Storage" groups=["placement_pools"]]
+position = Vector3(10, 0, -13)
+script = ExtResource("3_slot")
+pool_id = &"row:arrival:chairs"
+accepted_families = PackedStringArray("beach_chair")
+capacity = 10
+spacing = 1.2
+[node name="LoungerRow" type="Marker3D" parent="Storage" groups=["placement_pools"]]
+position = Vector3(22, 0, -13)
+script = ExtResource("3_slot")
+pool_id = &"row:arrival:loungers"
+accepted_families = PackedStringArray("lounger")
+capacity = 4
+spacing = 1.4
+[node name="ParasolRow" type="Marker3D" parent="Storage" groups=["placement_pools"]]
+position = Vector3(12, 0, 15)
+script = ExtResource("3_slot")
+pool_id = &"row:arrival:parasols"
+accepted_families = PackedStringArray("parasol")
+capacity = 6
+spacing = 2.0
+[node name="CoolerRow" type="Marker3D" parent="Storage" groups=["placement_pools"]]
+position = Vector3(-4, 0, 15)
+script = ExtResource("3_slot")
+pool_id = &"row:arrival:coolers"
+accepted_families = PackedStringArray("cooler")
+capacity = 4
+[node name="TentRow" type="Marker3D" parent="Storage" groups=["placement_pools"]]
+position = Vector3(24, 0, 15)
+script = ExtResource("3_slot")
+pool_id = &"row:arrival:tents"
+accepted_families = PackedStringArray("portable_tent")
+capacity = 2
+spacing = 3.0
+
+[node name="RecoveryArrival" type="Marker3D" parent="." groups=["recovery_anchors"]]
+position = Vector3(-2.5, 0.05, -2)
+script = ExtResource("4_recovery")
+anchor_id = &"recovery:arrival"
+zone_id = &"arrival"

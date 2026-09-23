@@ -1,0 +1,71 @@
+[gd_scene load_steps=8 format=3]
+
+[sub_resource type="StandardMaterial3D" id="GroundMaterial"]
+albedo_color = Color(0.72, 0.63, 0.45, 1)
+roughness = 0.95
+
+[sub_resource type="BoxMesh" id="GroundMesh"]
+material = SubResource("GroundMaterial")
+size = Vector3(30, 0.5, 24)
+
+[sub_resource type="BoxShape3D" id="GroundShape"]
+size = Vector3(30, 0.5, 24)
+
+[sub_resource type="StandardMaterial3D" id="WallMaterial"]
+albedo_color = Color(0.18, 0.3, 0.34, 1)
+roughness = 0.9
+
+[sub_resource type="BoxMesh" id="WallMesh"]
+material = SubResource("WallMaterial")
+size = Vector3(0.5, 3, 12)
+
+[sub_resource type="BoxShape3D" id="WallShape"]
+size = Vector3(0.5, 3, 12)
+
+[sub_resource type="Environment" id="Environment"]
+background_mode = 1
+background_color = Color(0.47, 0.76, 0.9, 1)
+ambient_light_source = 3
+ambient_light_energy = 0.75
+
+[node name="PhysicsLab" type="Node3D"]
+
+[node name="Environment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+rotation = Vector3(-0.8, -0.6, 0)
+shadow_enabled = true
+
+[node name="Ground" type="StaticBody3D" parent="."]
+position = Vector3(0, -0.25, 2)
+collision_layer = 1
+collision_mask = 0
+
+[node name="Mesh" type="MeshInstance3D" parent="Ground"]
+mesh = SubResource("GroundMesh")
+
+[node name="Collision" type="CollisionShape3D" parent="Ground"]
+shape = SubResource("GroundShape")
+
+[node name="CatchWall" type="StaticBody3D" parent="."]
+position = Vector3(8, 1.5, 2)
+collision_layer = 1
+collision_mask = 0
+
+[node name="Mesh" type="MeshInstance3D" parent="CatchWall"]
+mesh = SubResource("WallMesh")
+
+[node name="Collision" type="CollisionShape3D" parent="CatchWall"]
+shape = SubResource("WallShape")
+
+[node name="Camera" type="Camera3D" parent="."]
+position = Vector3(0, 10, 17)
+rotation = Vector3(-0.52, 0, 0)
+current = true
+
+[node name="Label" type="Label3D" parent="."]
+position = Vector3(0, 3.5, -2)
+text = "P07 PHYSICS LAB"
+font_size = 64
+outline_size = 10

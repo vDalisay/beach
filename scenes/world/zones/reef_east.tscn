@@ -1,0 +1,62 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/section.gd" id="1_section"]
+[ext_resource type="Script" path="res://scripts/world/spawn_anchor.gd" id="2_anchor"]
+
+[node name="ReefEast" type="Node3D"]
+[node name="RestorationVisuals" type="Node3D" parent="."]
+[node name="Outer" type="Node3D" parent="RestorationVisuals"]
+[node name="Coral" type="Node3D" parent="RestorationVisuals"]
+[node name="Sections" type="Node3D" parent="."]
+[node name="Outer" type="Node3D" parent="Sections" node_paths=PackedStringArray("restoration_visual_root")]
+position = Vector3(-5, 0, 0)
+script = ExtResource("1_section")
+section_id = &"reef_east:outer"
+zone_id = &"reef_east"
+required_waste = 250
+restoration_visual_root = NodePath("../../RestorationVisuals/Outer")
+[node name="Coral" type="Node3D" parent="Sections" node_paths=PackedStringArray("restoration_visual_root")]
+position = Vector3(-13.75, 0, 15)
+script = ExtResource("1_section")
+section_id = &"reef_east:coral"
+zone_id = &"reef_east"
+required_waste = 250
+restoration_visual_root = NodePath("../../RestorationVisuals/Coral")
+[node name="SpawnAnchors" type="Node3D" parent="."]
+[node name="OuterSeabed" type="Marker3D" parent="SpawnAnchors" groups=["spawn_anchors"]]
+position = Vector3(-5, 0.2, 0)
+script = ExtResource("2_anchor")
+anchor_id = &"spawn:reef_east:outer:seabed"
+section_id = &"reef_east:outer"
+tags = PackedStringArray("seabed", "pile")
+clearance_class = 1
+[node name="OuterAttachment" type="Marker3D" parent="SpawnAnchors" groups=["spawn_anchors"]]
+position = Vector3(-2, 1, 8)
+script = ExtResource("2_anchor")
+anchor_id = &"spawn:reef_east:outer:attachment"
+section_id = &"reef_east:outer"
+tags = PackedStringArray("seabed", "attachment")
+[node name="CoralBuried" type="Marker3D" parent="SpawnAnchors" groups=["spawn_anchors"]]
+position = Vector3(-13.75, -0.15, 15)
+script = ExtResource("2_anchor")
+anchor_id = &"spawn:reef_east:coral:buried"
+section_id = &"reef_east:coral"
+tags = PackedStringArray("seabed", "buried")
+[node name="CoralAttachment" type="Marker3D" parent="SpawnAnchors" groups=["spawn_anchors"]]
+position = Vector3(-11.25, 1, 25)
+script = ExtResource("2_anchor")
+anchor_id = &"spawn:reef_east:coral:attachment"
+section_id = &"reef_east:coral"
+tags = PackedStringArray("seabed", "attachment")
+[node name="SwimLane" type="Node3D" parent="." groups=["swim_lanes"]]
+[node name="Start" type="Marker3D" parent="SwimLane"]
+position = Vector3(-8.75, 2, -12)
+[node name="Middle" type="Marker3D" parent="SwimLane"]
+position = Vector3(0, 2, 8)
+[node name="End" type="Marker3D" parent="SwimLane"]
+position = Vector3(8.75, 2, -10)
+[node name="TurtleRoute" type="Node3D" parent="." groups=["wildlife_routes"]]
+[node name="A" type="Marker3D" parent="TurtleRoute"]
+position = Vector3(-6, 2, 12)
+[node name="B" type="Marker3D" parent="TurtleRoute"]
+position = Vector3(4.5, 3, 14)

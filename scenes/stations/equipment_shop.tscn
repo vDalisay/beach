@@ -1,0 +1,59 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/stations/equipment_shop.gd" id="1_shop"]
+[ext_resource type="PackedScene" path="res://art/synty/wrappers/shop_counter.tscn" id="2_counter"]
+[ext_resource type="PackedScene" path="res://art/synty/wrappers/sorting_table.tscn" id="3_rack"]
+
+[sub_resource type="BoxShape3D" id="CounterShape"]
+size = Vector3(2.2, 1.25, 1.2)
+
+[sub_resource type="BoxShape3D" id="RackShape"]
+size = Vector3(2.5, 1.0, 1.0)
+
+[node name="EquipmentShop" type="Node3D"]
+script = ExtResource("1_shop")
+
+[node name="Counter" type="StaticBody3D" parent="."]
+unique_name_in_owner = true
+collision_layer = 8
+collision_mask = 0
+
+[node name="SyntyCounter" parent="Counter" instance=ExtResource("2_counter")]
+scale = Vector3(2.1, 1.0, 1.2)
+
+[node name="Collision" type="CollisionShape3D" parent="Counter"]
+position = Vector3(0, 0.63, 0)
+shape = SubResource("CounterShape")
+
+[node name="Label" type="Label3D" parent="Counter"]
+position = Vector3(0, 1.65, 0.25)
+billboard = 1
+text = "EQUIPMENT SHOP"
+font_size = 48
+pixel_size = 0.002
+outline_size = 8
+
+[node name="ToolRack" type="StaticBody3D" parent="."]
+unique_name_in_owner = true
+position = Vector3(3.3, 0, 0)
+collision_layer = 8
+collision_mask = 0
+
+[node name="SyntyRack" parent="ToolRack" instance=ExtResource("3_rack")]
+scale = Vector3(1.2, 0.72, 0.82)
+
+[node name="Collision" type="CollisionShape3D" parent="ToolRack"]
+position = Vector3(0, 0.5, 0)
+shape = SubResource("RackShape")
+
+[node name="OwnedTools" type="Node3D" parent="ToolRack"]
+unique_name_in_owner = true
+position = Vector3(0, 0.82, 0)
+
+[node name="Label" type="Label3D" parent="ToolRack"]
+position = Vector3(0, 1.55, 0.2)
+billboard = 1
+text = "EQUIP OWNED TOOLS"
+font_size = 44
+pixel_size = 0.002
+outline_size = 8

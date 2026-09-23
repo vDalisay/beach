@@ -1,0 +1,54 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="PackedScene" path="res://art/synty/wrappers/world_dock_platform.tscn" id="1_platform"]
+[ext_resource type="PackedScene" path="res://art/synty/wrappers/world_dock_railing.tscn" id="2_railing"]
+[ext_resource type="PackedScene" path="res://art/synty/wrappers/world_dock_stairs.tscn" id="3_stairs"]
+[ext_resource type="PackedScene" path="res://art/synty/wrappers/world_dock_pole.tscn" id="4_pole"]
+[ext_resource type="PackedScene" path="res://art/synty/wrappers/world_lifeguard_flag.tscn" id="5_flag"]
+[ext_resource type="PackedScene" path="res://art/synty/wrappers/prop_beach_chair.tscn" id="6_chair"]
+
+[sub_resource type="BoxShape3D" id="Shape_lookout"]
+size = Vector3(3.1, 1.8, 3.1)
+
+[node name="LifeguardLookout" type="StaticBody3D"]
+
+[node name="Collision" type="CollisionShape3D" parent="."]
+position = Vector3(0, 0.9, 0)
+shape = SubResource("Shape_lookout")
+
+[node name="Deck" parent="." instance=ExtResource("1_platform")]
+position = Vector3(-1.25, 1.6, -1.25)
+
+[node name="Stairs" parent="." instance=ExtResource("3_stairs")]
+position = Vector3(-1.38, 0.07, 1.25)
+
+[node name="RailWest" parent="." instance=ExtResource("2_railing")]
+position = Vector3(-1.25, 1.86, -1.25)
+rotation = Vector3(0, -1.5708, 0)
+
+[node name="RailEast" parent="." instance=ExtResource("2_railing")]
+position = Vector3(1.25, 1.86, 1.25)
+rotation = Vector3(0, 1.5708, 0)
+
+[node name="PoleNW" parent="." instance=ExtResource("4_pole")]
+position = Vector3(-1, 0, -1)
+scale = Vector3(0.55, 0.55, 0.55)
+
+[node name="PoleNE" parent="." instance=ExtResource("4_pole")]
+position = Vector3(1, 0, -1)
+scale = Vector3(0.55, 0.55, 0.55)
+
+[node name="PoleSW" parent="." instance=ExtResource("4_pole")]
+position = Vector3(-1, 0, 1)
+scale = Vector3(0.55, 0.55, 0.55)
+
+[node name="PoleSE" parent="." instance=ExtResource("4_pole")]
+position = Vector3(1, 0, 1)
+scale = Vector3(0.55, 0.55, 0.55)
+
+[node name="Chair" parent="." instance=ExtResource("6_chair")]
+position = Vector3(0, 1.85, -0.55)
+rotation = Vector3(0, 3.14159, 0)
+
+[node name="Flag" parent="." instance=ExtResource("5_flag")]
+position = Vector3(-1.05, 1.8, -1.05)

@@ -1,0 +1,34 @@
+[gd_scene load_steps=6 format=3]
+
+[sub_resource type="StandardMaterial3D" id="HandleMaterial"]
+albedo_color = Color(0.18, 0.24, 0.27, 1)
+roughness = 0.7
+
+[sub_resource type="StandardMaterial3D" id="CoilMaterial"]
+albedo_color = Color(0.95, 0.62, 0.12, 1)
+roughness = 0.55
+
+[sub_resource type="CylinderMesh" id="Shaft"]
+material = SubResource("HandleMaterial")
+top_radius = 0.025
+bottom_radius = 0.025
+height = 0.78
+radial_segments = 8
+
+[sub_resource type="TorusMesh" id="Coil"]
+material = SubResource("CoilMaterial")
+inner_radius = 0.2
+outer_radius = 0.235
+rings = 8
+ring_segments = 20
+
+[node name="DetectorPrototype" type="Node3D"]
+
+[node name="Shaft" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.12, -0.3)
+rotation = Vector3(0.62, 0, 0)
+mesh = SubResource("Shaft")
+
+[node name="Coil" type="MeshInstance3D" parent="."]
+position = Vector3(0, -0.18, -0.62)
+mesh = SubResource("Coil")

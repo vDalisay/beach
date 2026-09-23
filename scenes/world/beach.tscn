@@ -1,0 +1,481 @@
+[gd_scene load_steps=53 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/world/zones/arrival.tscn" id="1_arrival"]
+[ext_resource type="PackedScene" path="res://scenes/world/zones/sports.tscn" id="2_sports"]
+[ext_resource type="PackedScene" path="res://scenes/world/zones/lounges.tscn" id="3_lounges"]
+[ext_resource type="PackedScene" path="res://scenes/world/zones/sandplay.tscn" id="4_sandplay"]
+[ext_resource type="PackedScene" path="res://scenes/world/zones/pier.tscn" id="5_pier"]
+[ext_resource type="PackedScene" path="res://scenes/world/zones/shallows.tscn" id="6_shallows"]
+[ext_resource type="PackedScene" path="res://scenes/world/zones/reef_west.tscn" id="7_reef_west"]
+[ext_resource type="PackedScene" path="res://scenes/world/zones/reef_east.tscn" id="8_reef_east"]
+[ext_resource type="PackedScene" path="res://scenes/world/service_hut.tscn" id="9_hut"]
+[ext_resource type="PackedScene" path="res://art/synty/wrappers/building_beach_shop.tscn" id="10_shop"]
+[ext_resource type="PackedScene" path="res://art/synty/wrappers/foliage_palm.tscn" id="11_palm"]
+[ext_resource type="PackedScene" path="res://scenes/stations/sorting_station.tscn" id="12_sorting"]
+[ext_resource type="PackedScene" path="res://scenes/stations/waste_container.tscn" id="13_container"]
+[ext_resource type="PackedScene" path="res://scenes/stations/collection_call_point.tscn" id="14_call"]
+[ext_resource type="PackedScene" path="res://scenes/stations/equipment_shop.tscn" id="15_shop"]
+[ext_resource type="PackedScene" path="res://scenes/world/water_volume.tscn" id="16_water"]
+[ext_resource type="Script" path="res://scripts/world/pier_visuals.gd" id="17_pier_art"]
+[ext_resource type="Script" path="res://scripts/world/shore_dressing.gd" id="19_shore_art"]
+[ext_resource type="PackedScene" path="res://scenes/world/shade_sail.tscn" id="20_shade"]
+[ext_resource type="PackedScene" path="res://scenes/world/lifeguard_lookout.tscn" id="21_lifeguard"]
+[ext_resource type="PackedScene" path="res://art/synty/wrappers/world_volleyball_net.tscn" id="22_net"]
+[ext_resource type="PackedScene" path="res://art/synty/wrappers/world_sandcastle.tscn" id="23_castle"]
+[ext_resource type="PackedScene" path="res://art/synty/wrappers/world_paddle_board.tscn" id="24_board"]
+[ext_resource type="PackedScene" path="res://art/synty/wrappers/world_sailboat.tscn" id="25_sailboat"]
+[ext_resource type="PackedScene" path="res://art/synty/wrappers/world_jetski.tscn" id="26_jetski"]
+[ext_resource type="PackedScene" path="res://art/synty/wrappers/world_skyline_01.tscn" id="27_skyline_a"]
+[ext_resource type="PackedScene" path="res://art/synty/wrappers/world_skyline_02.tscn" id="28_skyline_b"]
+[ext_resource type="PackedScene" path="res://art/synty/wrappers/world_beach_shop_02.tscn" id="29_shop_b"]
+[ext_resource type="PackedScene" path="res://art/synty/wrappers/world_beach_shop_03.tscn" id="30_shop_c"]
+[ext_resource type="Texture2D" path="res://art/synty/POLYGON_Palm_City/textures/Sand_01.png" id="31_sand_texture"]
+[ext_resource type="Script" path="res://scripts/world/water_surface.gd" id="32_water_geometry"]
+[ext_resource type="Script" path="res://scripts/world/reef_dressing.gd" id="33_reef_art"]
+[ext_resource type="Material" path="res://shaders/seabed_caustics.tres" id="34_caustics"]
+[ext_resource type="Script" path="res://scripts/world/city_backdrop.gd" id="35_city_backdrop"]
+[ext_resource type="PackedScene" path="res://scenes/world/beach_cafe_set.tscn" id="36_cafe_set"]
+[ext_resource type="PackedScene" path="res://scenes/world/beach_shelter.tscn" id="37_shelter"]
+[ext_resource type="PackedScene" path="res://art/synty/wrappers/world_windsurf.tscn" id="38_windsurf"]
+
+[sub_resource type="ProceduralSkyMaterial" id="SkyMaterial_beach"]
+sky_top_color = Color(0.09, 0.43, 0.72, 1)
+sky_horizon_color = Color(0.72, 0.88, 0.94, 1)
+ground_bottom_color = Color(0.17, 0.48, 0.57, 1)
+ground_horizon_color = Color(0.51, 0.77, 0.8, 1)
+sun_angle_max = 12.0
+
+[sub_resource type="Sky" id="Sky_beach"]
+sky_material = SubResource("SkyMaterial_beach")
+
+[sub_resource type="Environment" id="Environment_beach"]
+background_mode = 2
+sky = SubResource("Sky_beach")
+ambient_light_source = 3
+ambient_light_color = Color(0.67, 0.72, 0.75, 1)
+ambient_light_energy = 0.25
+tonemap_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="Material_sand"]
+albedo_color = Color(1, 0.73, 0.57, 1)
+roughness = 0.96
+albedo_texture = ExtResource("31_sand_texture")
+uv1_scale = Vector3(12, 1, 12)
+
+[sub_resource type="StandardMaterial3D" id="Material_concrete"]
+albedo_color = Color(0.48, 0.36, 0.3, 1)
+roughness = 0.92
+
+[sub_resource type="BoxMesh" id="Mesh_promenade"]
+material = SubResource("Material_concrete")
+size = Vector3(160, 0.35, 12)
+[sub_resource type="BoxShape3D" id="Shape_promenade"]
+size = Vector3(160, 0.35, 12)
+[sub_resource type="BoxShape3D" id="Shape_boundary"]
+size = Vector3(160, 3, 0.4)
+[sub_resource type="BoxShape3D" id="Shape_side_boundary"]
+size = Vector3(0.4, 3, 250)
+[sub_resource type="BoxShape3D" id="Shape_pier"]
+size = Vector3(10, 0.8, 90)
+[sub_resource type="BoxShape3D" id="Shape_pier_head"]
+size = Vector3(30, 0.8, 27.5)
+[sub_resource type="BoxShape3D" id="Shape_pier_pavilion"]
+size = Vector3(12.7, 7, 9.3)
+[sub_resource type="BoxShape3D" id="Shape_pier_ramp"]
+size = Vector3(10, 0.3, 24)
+[sub_resource type="CylinderShape3D" id="Shape_lighthouse"]
+radius = 5.5
+height = 24.0
+[sub_resource type="BoxShape3D" id="Shape_exclusion"]
+size = Vector3(18, 5, 16)
+
+[node name="Beach" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_beach")
+[node name="Sun" type="DirectionalLight3D" parent="."]
+rotation = Vector3(-0.64, -0.75, 0)
+light_color = Color(1, 0.88, 0.74, 1)
+light_energy = 0.86
+shadow_enabled = true
+directional_shadow_max_distance = 180.0
+
+[node name="Terrain" type="Node3D" parent="."]
+script = ExtResource("19_shore_art")
+sand_material = SubResource("Material_sand")
+[node name="ReefDressing" type="Node3D" parent="Terrain"]
+script = ExtResource("33_reef_art")
+
+[node name="Water" type="Node3D" parent="."]
+script = ExtResource("32_water_geometry")
+[node name="SwimVolume" parent="Water" instance=ExtResource("16_water")]
+position = Vector3(0, -4.5, 122)
+
+[node name="Promenade" type="StaticBody3D" parent="."]
+position = Vector3(0, 0.175, -38)
+[node name="Mesh" type="MeshInstance3D" parent="Promenade"]
+mesh = SubResource("Mesh_promenade")
+[node name="Collision" type="CollisionShape3D" parent="Promenade"]
+shape = SubResource("Shape_promenade")
+
+[node name="Boundaries" type="Node3D" parent="."]
+[node name="Rear" type="StaticBody3D" parent="Boundaries"]
+position = Vector3(0, 1.5, -46)
+[node name="Collision" type="CollisionShape3D" parent="Boundaries/Rear"]
+shape = SubResource("Shape_boundary")
+[node name="West" type="StaticBody3D" parent="Boundaries"]
+position = Vector3(-80, 1.5, 78)
+[node name="Collision" type="CollisionShape3D" parent="Boundaries/West"]
+shape = SubResource("Shape_side_boundary")
+[node name="East" type="StaticBody3D" parent="Boundaries"]
+position = Vector3(80, 1.5, 78)
+[node name="Collision" type="CollisionShape3D" parent="Boundaries/East"]
+shape = SubResource("Shape_side_boundary")
+[node name="Ocean" type="StaticBody3D" parent="Boundaries"]
+position = Vector3(0, -2, 210)
+[node name="Collision" type="CollisionShape3D" parent="Boundaries/Ocean"]
+shape = SubResource("Shape_boundary")
+
+[node name="Zones" type="Node3D" parent="."]
+[node name="Arrival" parent="Zones" instance=ExtResource("1_arrival")]
+position = Vector3(-65, 0, 0)
+[node name="Sports" parent="Zones" instance=ExtResource("2_sports")]
+position = Vector3(-43.75, 0, 0)
+[node name="Lounges" parent="Zones" instance=ExtResource("3_lounges")]
+position = Vector3(-18.75, 0, 0)
+[node name="Sandplay" parent="Zones" instance=ExtResource("4_sandplay")]
+position = Vector3(11.25, 0, 0)
+[node name="Pier" parent="Zones" instance=ExtResource("5_pier")]
+position = Vector3(62.5, 0, 0)
+[node name="Shallows" parent="Zones" instance=ExtResource("6_shallows")]
+position = Vector3(28.75, 0, 40)
+[node name="ReefWest" parent="Zones" instance=ExtResource("7_reef_west")]
+position = Vector3(7.5, -3, 105)
+[node name="ReefEast" parent="Zones" instance=ExtResource("8_reef_east")]
+position = Vector3(43.75, -3, 120)
+
+[node name="ServicePoints" type="Node3D" parent="."]
+[node name="S1" type="Marker3D" parent="ServicePoints" groups=["service_points"]]
+position = Vector3(-68.75, 0, -8)
+metadata/service_id = &"S1"
+[node name="Hut" parent="ServicePoints/S1" instance=ExtResource("9_hut")]
+[node name="SortingStation" parent="ServicePoints/S1" instance=ExtResource("12_sorting")]
+[node name="PMDContainer" parent="ServicePoints/S1" instance=ExtResource("13_container")]
+position = Vector3(-3.3, 0, 5.2)
+[node name="OrganicContainer" parent="ServicePoints/S1" instance=ExtResource("13_container")]
+position = Vector3(-1.1, 0, 5.2)
+container_id = &"container:S1:organic"
+category = &"organic"
+[node name="GeneralContainer" parent="ServicePoints/S1" instance=ExtResource("13_container")]
+position = Vector3(1.1, 0, 5.2)
+container_id = &"container:S1:general"
+category = &"general"
+[node name="GlassContainer" parent="ServicePoints/S1" instance=ExtResource("13_container")]
+position = Vector3(3.3, 0, 5.2)
+container_id = &"container:S1:glass"
+category = &"glass"
+[node name="CollectionCallPoint" parent="ServicePoints/S1" instance=ExtResource("14_call")]
+position = Vector3(5.5, 0, 5.2)
+[node name="Label" type="Label3D" parent="ServicePoints/S1"]
+position = Vector3(0, 4.2, 0)
+text = "S1  SORT • STORE • COLLECT"
+font_size = 64
+outline_size = 12
+[node name="S2" type="Marker3D" parent="ServicePoints" groups=["service_points"]]
+position = Vector3(6.25, 0, -8)
+metadata/service_id = &"S2"
+[node name="Hut" parent="ServicePoints/S2" instance=ExtResource("9_hut")]
+[node name="SortingStation" parent="ServicePoints/S2" instance=ExtResource("12_sorting")]
+station_id = &"sorting:S2"
+[node name="PMDContainer" parent="ServicePoints/S2" instance=ExtResource("13_container")]
+position = Vector3(-3.3, 0, 5.2)
+container_id = &"container:S2:pmd"
+[node name="OrganicContainer" parent="ServicePoints/S2" instance=ExtResource("13_container")]
+position = Vector3(-1.1, 0, 5.2)
+container_id = &"container:S2:organic"
+category = &"organic"
+[node name="GeneralContainer" parent="ServicePoints/S2" instance=ExtResource("13_container")]
+position = Vector3(1.1, 0, 5.2)
+container_id = &"container:S2:general"
+category = &"general"
+[node name="GlassContainer" parent="ServicePoints/S2" instance=ExtResource("13_container")]
+position = Vector3(3.3, 0, 5.2)
+container_id = &"container:S2:glass"
+category = &"glass"
+[node name="CollectionCallPoint" parent="ServicePoints/S2" instance=ExtResource("14_call")]
+position = Vector3(5.5, 0, 5.2)
+station_id = &"S2"
+[node name="Label" type="Label3D" parent="ServicePoints/S2"]
+position = Vector3(0, 4.2, 0)
+text = "S2  SERVICE + EQUIPMENT SHOP"
+font_size = 64
+outline_size = 12
+[node name="S3" type="Marker3D" parent="ServicePoints" groups=["service_points"]]
+position = Vector3(58.75, 0, -5)
+metadata/service_id = &"S3"
+[node name="Hut" parent="ServicePoints/S3" instance=ExtResource("9_hut")]
+[node name="SortingStation" parent="ServicePoints/S3" instance=ExtResource("12_sorting")]
+station_id = &"sorting:S3"
+[node name="PMDContainer" parent="ServicePoints/S3" instance=ExtResource("13_container")]
+position = Vector3(-3.3, 0, 5.2)
+container_id = &"container:S3:pmd"
+[node name="OrganicContainer" parent="ServicePoints/S3" instance=ExtResource("13_container")]
+position = Vector3(-1.1, 0, 5.2)
+container_id = &"container:S3:organic"
+category = &"organic"
+[node name="GeneralContainer" parent="ServicePoints/S3" instance=ExtResource("13_container")]
+position = Vector3(1.1, 0, 5.2)
+container_id = &"container:S3:general"
+category = &"general"
+[node name="GlassContainer" parent="ServicePoints/S3" instance=ExtResource("13_container")]
+position = Vector3(3.3, 0, 5.2)
+container_id = &"container:S3:glass"
+category = &"glass"
+[node name="CollectionCallPoint" parent="ServicePoints/S3" instance=ExtResource("14_call")]
+position = Vector3(5.5, 0, 5.2)
+station_id = &"S3"
+[node name="Label" type="Label3D" parent="ServicePoints/S3"]
+position = Vector3(0, 4.2, 0)
+text = "S3  SORT • STORE • COLLECT"
+font_size = 64
+outline_size = 12
+[node name="EquipmentShop" type="Node3D" parent="ServicePoints" groups=["equipment_shops"]]
+position = Vector3(10.5, 0, -10)
+[node name="Visual" parent="ServicePoints/EquipmentShop" instance=ExtResource("10_shop")]
+[node name="ShopStations" parent="ServicePoints/EquipmentShop" instance=ExtResource("15_shop")]
+position = Vector3(0, 0, 6)
+[node name="Label" type="Label3D" parent="ServicePoints/EquipmentShop"]
+position = Vector3(0, 4.5, 0)
+text = "EQUIPMENT SHOP"
+font_size = 64
+outline_size = 12
+
+[node name="SpawnExclusions" type="Node3D" parent="."]
+[node name="S1" type="Area3D" parent="SpawnExclusions" groups=["spawn_exclusions"]]
+position = Vector3(-68.75, 2.5, -8)
+metadata/exclusion_id = &"exclusion:service:S1"
+[node name="Collision" type="CollisionShape3D" parent="SpawnExclusions/S1"]
+shape = SubResource("Shape_exclusion")
+[node name="S2" type="Area3D" parent="SpawnExclusions" groups=["spawn_exclusions"]]
+position = Vector3(6.25, 2.5, -8)
+metadata/exclusion_id = &"exclusion:service:S2"
+[node name="Collision" type="CollisionShape3D" parent="SpawnExclusions/S2"]
+shape = SubResource("Shape_exclusion")
+[node name="S3" type="Area3D" parent="SpawnExclusions" groups=["spawn_exclusions"]]
+position = Vector3(58.75, 2.5, -5)
+metadata/exclusion_id = &"exclusion:service:S3"
+[node name="Collision" type="CollisionShape3D" parent="SpawnExclusions/S3"]
+shape = SubResource("Shape_exclusion")
+
+[node name="PierBlockout" type="Node3D" parent="."]
+position = Vector3(-187.5, 0, 0)
+script = ExtResource("17_pier_art")
+[node name="Approach" type="StaticBody3D" parent="PierBlockout"]
+position = Vector3(250, 0.55, 25)
+rotation = Vector3(-0.05, 0, 0)
+[node name="Collision" type="CollisionShape3D" parent="PierBlockout/Approach"]
+shape = SubResource("Shape_pier_ramp")
+[node name="Deck" type="StaticBody3D" parent="PierBlockout"]
+position = Vector3(250, 1.0, 82)
+[node name="Collision" type="CollisionShape3D" parent="PierBlockout/Deck"]
+shape = SubResource("Shape_pier")
+[node name="PierHead" type="StaticBody3D" parent="PierBlockout"]
+position = Vector3(250, 1, 113.75)
+[node name="Collision" type="CollisionShape3D" parent="PierBlockout/PierHead"]
+shape = SubResource("Shape_pier_head")
+[node name="Lighthouse" type="StaticBody3D" parent="PierBlockout"]
+position = Vector3(260, 13.65, 95)
+[node name="Collision" type="CollisionShape3D" parent="PierBlockout/Lighthouse"]
+shape = SubResource("Shape_lighthouse")
+[node name="PierPavilion" parent="PierBlockout" instance=ExtResource("10_shop")]
+position = Vector3(250, 1.25, 116)
+rotation = Vector3(0, 3.14159, 0)
+scale = Vector3(2.8, 2.8, 2.8)
+[node name="PavilionCollision" type="StaticBody3D" parent="PierBlockout"]
+position = Vector3(250, 4.7, 116)
+[node name="Collision" type="CollisionShape3D" parent="PierBlockout/PavilionCollision"]
+shape = SubResource("Shape_pier_pavilion")
+
+[node name="ActivityAreas" type="Node3D" parent="."]
+[node name="VolleyballNet" parent="ActivityAreas" instance=ExtResource("22_net")]
+position = Vector3(-43.75, 0.27, 12)
+[node name="LoungerShade" parent="ActivityAreas" instance=ExtResource("20_shade")]
+position = Vector3(-18.75, 0, 11)
+[node name="ArrivalShade" parent="ActivityAreas" instance=ExtResource("20_shade")]
+position = Vector3(-57, 0, -13)
+rotation = Vector3(0, 0.22, 0)
+[node name="SportsShade" parent="ActivityAreas" instance=ExtResource("20_shade")]
+position = Vector3(-29.5, 0, -11)
+rotation = Vector3(0, -0.18, 0)
+[node name="SandplayShade" parent="ActivityAreas" instance=ExtResource("20_shade")]
+position = Vector3(19.75, 0, -9)
+rotation = Vector3(0, 0.35, 0)
+[node name="PierShade" parent="ActivityAreas" instance=ExtResource("20_shade")]
+position = Vector3(43.25, 0, -14)
+rotation = Vector3(0, -0.27, 0)
+[node name="Sandcastle01" parent="ActivityAreas" instance=ExtResource("23_castle")]
+position = Vector3(9, 0, 17)
+[node name="Sandcastle02" parent="ActivityAreas" instance=ExtResource("23_castle")]
+position = Vector3(13.25, 0, 13)
+rotation = Vector3(0, 1.1, 0)
+[node name="LifeguardWest" parent="ActivityAreas" instance=ExtResource("21_lifeguard")]
+position = Vector3(-37.5, 0, 0)
+[node name="LifeguardEast" parent="ActivityAreas" instance=ExtResource("21_lifeguard")]
+position = Vector3(27.5, 0, 0)
+[node name="BoardParking01" parent="ActivityAreas" instance=ExtResource("24_board")]
+position = Vector3(3, 0.27, 30)
+rotation = Vector3(0, 0.45, 0)
+[node name="BoardParking02" parent="ActivityAreas" instance=ExtResource("24_board")]
+position = Vector3(4, 0.27, 29)
+rotation = Vector3(0, 0.7, 0)
+[node name="Sailboat" parent="ActivityAreas" instance=ExtResource("25_sailboat")]
+position = Vector3(-5, 0.08, 145)
+rotation = Vector3(0, -0.6, 0)
+[node name="Windsurf" parent="ActivityAreas" instance=ExtResource("38_windsurf")]
+position = Vector3(-27.5, 0.18, 46)
+rotation = Vector3(0, 1.3, 0)
+[node name="Jetski" parent="ActivityAreas" instance=ExtResource("26_jetski")]
+position = Vector3(21, 0.08, 72)
+rotation = Vector3(0, 0.4, 0)
+[node name="SportsCafeSet" parent="ActivityAreas" instance=ExtResource("36_cafe_set")]
+position = Vector3(-47, 0, -30)
+[node name="LoungesCafeSetWest" parent="ActivityAreas" instance=ExtResource("36_cafe_set")]
+position = Vector3(-23.75, 0, -30)
+rotation = Vector3(0, 0.35, 0)
+[node name="LoungesCafeSetEast" parent="ActivityAreas" instance=ExtResource("36_cafe_set")]
+position = Vector3(-12.75, 0, -29)
+rotation = Vector3(0, -0.28, 0)
+[node name="SandplayCafeSet" parent="ActivityAreas" instance=ExtResource("36_cafe_set")]
+position = Vector3(22.5, 0, -27)
+[node name="SportsShelter" parent="ActivityAreas" instance=ExtResource("37_shelter")]
+position = Vector3(-47, 0, -39)
+rotation = Vector3(0, 0.18, 0)
+scale = Vector3(2.2, 2.2, 2.2)
+[node name="LoungesShelter" parent="ActivityAreas" instance=ExtResource("37_shelter")]
+position = Vector3(-12.75, 0, -38)
+rotation = Vector3(0, -0.24, 0)
+scale = Vector3(2.2, 2.2, 2.2)
+[node name="SandplayShelter" parent="ActivityAreas" instance=ExtResource("37_shelter")]
+position = Vector3(22.5, 0, -37)
+rotation = Vector3(0, 0.12, 0)
+scale = Vector3(2.2, 2.2, 2.2)
+
+[node name="Foliage" type="Node3D" parent="."]
+[node name="Palm01" parent="Foliage" instance=ExtResource("11_palm")]
+position = Vector3(-61.25, 0, -22)
+[node name="Palm02" parent="Foliage" instance=ExtResource("11_palm")]
+position = Vector3(-48.75, 0, -25)
+[node name="Palm03" parent="Foliage" instance=ExtResource("11_palm")]
+position = Vector3(-30, 0, -24)
+[node name="Palm04" parent="Foliage" instance=ExtResource("11_palm")]
+position = Vector3(-11.25, 0, -25)
+[node name="Palm05" parent="Foliage" instance=ExtResource("11_palm")]
+position = Vector3(8.75, 0, -24)
+[node name="Palm06" parent="Foliage" instance=ExtResource("11_palm")]
+position = Vector3(26.25, 0, -22)
+[node name="Palm07" parent="Foliage" instance=ExtResource("11_palm")]
+position = Vector3(45, 0, -20)
+[node name="Palm08" parent="Foliage" instance=ExtResource("11_palm")]
+position = Vector3(67.5, 0, -18)
+[node name="Palm09" parent="Foliage" instance=ExtResource("11_palm")]
+position = Vector3(-71.25, 0, -30)
+[node name="Palm10" parent="Foliage" instance=ExtResource("11_palm")]
+position = Vector3(-56.25, 0, -34)
+[node name="Palm11" parent="Foliage" instance=ExtResource("11_palm")]
+position = Vector3(-39, 0, -32)
+[node name="Palm12" parent="Foliage" instance=ExtResource("11_palm")]
+position = Vector3(-21.25, 0, -33)
+[node name="Palm13" parent="Foliage" instance=ExtResource("11_palm")]
+position = Vector3(-3.75, 0, -29)
+[node name="Palm14" parent="Foliage" instance=ExtResource("11_palm")]
+position = Vector3(17.5, 0, -31)
+[node name="Palm15" parent="Foliage" instance=ExtResource("11_palm")]
+position = Vector3(36.25, 0, -33)
+[node name="Palm16" parent="Foliage" instance=ExtResource("11_palm")]
+position = Vector3(55, 0, -32)
+[node name="Palm17" parent="Foliage" instance=ExtResource("11_palm")]
+position = Vector3(75, 0, -30)
+[node name="Palm18" parent="Foliage" instance=ExtResource("11_palm")]
+position = Vector3(-64.25, 0, 7)
+rotation = Vector3(0, 0.8, 0)
+scale = Vector3(0.74, 0.74, 0.74)
+[node name="Palm19" parent="Foliage" instance=ExtResource("11_palm")]
+position = Vector3(-55, 0, 1)
+rotation = Vector3(0, 1.5, 0)
+[node name="Palm20" parent="Foliage" instance=ExtResource("11_palm")]
+position = Vector3(-46.25, 0, -5)
+scale = Vector3(0.82, 0.82, 0.82)
+[node name="Palm21" parent="Foliage" instance=ExtResource("11_palm")]
+position = Vector3(-33.75, 0, -3)
+rotation = Vector3(0, 2.1, 0)
+[node name="Palm22" parent="Foliage" instance=ExtResource("11_palm")]
+position = Vector3(-23.75, 0, -2)
+scale = Vector3(0.8, 0.8, 0.8)
+[node name="Palm23" parent="Foliage" instance=ExtResource("11_palm")]
+position = Vector3(-6.75, 0, 4)
+rotation = Vector3(0, 1.2, 0)
+[node name="Palm24" parent="Foliage" instance=ExtResource("11_palm")]
+position = Vector3(5.25, 0, 4)
+scale = Vector3(0.72, 0.72, 0.72)
+[node name="Palm25" parent="Foliage" instance=ExtResource("11_palm")]
+position = Vector3(15.5, 0, -1)
+rotation = Vector3(0, 0.7, 0)
+[node name="Palm26" parent="Foliage" instance=ExtResource("11_palm")]
+position = Vector3(31.25, 0, -4)
+scale = Vector3(0.86, 0.86, 0.86)
+[node name="Palm27" parent="Foliage" instance=ExtResource("11_palm")]
+position = Vector3(41.25, 0, 4)
+rotation = Vector3(0, 2.5, 0)
+[node name="Palm28" parent="Foliage" instance=ExtResource("11_palm")]
+position = Vector3(53.75, 0, -3)
+scale = Vector3(0.78, 0.78, 0.78)
+[node name="Palm29" parent="Foliage" instance=ExtResource("11_palm")]
+position = Vector3(70, 0, -8)
+rotation = Vector3(0, 1.8, 0)
+
+[node name="Skyline" type="Node3D" parent="."]
+[node name="CityBackdrop" type="Node3D" parent="."]
+script = ExtResource("35_city_backdrop")
+[node name="CityWest" parent="Skyline" instance=ExtResource("27_skyline_a")]
+position = Vector3(-51.25, 0, -185)
+[node name="CityMidWest" parent="Skyline" instance=ExtResource("27_skyline_a")]
+position = Vector3(-17.5, 0, -185)
+[node name="CityMidEast" parent="Skyline" instance=ExtResource("28_skyline_b")]
+position = Vector3(25, 0, -195)
+[node name="CityEast" parent="Skyline" instance=ExtResource("27_skyline_a")]
+position = Vector3(65, 0, -185)
+[node name="BeachShopWest" parent="Skyline" instance=ExtResource("29_shop_b")]
+position = Vector3(-54, 0.09, -52)
+[node name="BeachShopEast" parent="Skyline" instance=ExtResource("30_shop_c")]
+position = Vector3(38.5, 0.09, -52)
+[node name="BeachShopMid" parent="Skyline" instance=ExtResource("29_shop_b")]
+position = Vector3(-27.5, 0.09, -52)
+[node name="BeachShopArrivalA" parent="Skyline" instance=ExtResource("30_shop_c")]
+position = Vector3(-67, 0.09, -49)
+scale = Vector3(1.4, 1.4, 1.4)
+[node name="BeachShopArrivalB" parent="Skyline" instance=ExtResource("29_shop_b")]
+position = Vector3(-60.5, 0.09, -49)
+scale = Vector3(1.4, 1.4, 1.4)
+[node name="BeachShopSportsA" parent="Skyline" instance=ExtResource("30_shop_c")]
+position = Vector3(-47.5, 0.09, -49)
+scale = Vector3(1.4, 1.4, 1.4)
+[node name="BeachShopSportsB" parent="Skyline" instance=ExtResource("29_shop_b")]
+position = Vector3(-41, 0.09, -49)
+scale = Vector3(1.4, 1.4, 1.4)
+[node name="BeachShopSportsC" parent="Skyline" instance=ExtResource("30_shop_c")]
+position = Vector3(-34.5, 0.09, -49)
+scale = Vector3(1.4, 1.4, 1.4)
+[node name="BeachShopLoungesA" parent="Skyline" instance=ExtResource("29_shop_b")]
+position = Vector3(-21, 0.09, -49)
+scale = Vector3(1.4, 1.4, 1.4)
+[node name="BeachShopLoungesB" parent="Skyline" instance=ExtResource("30_shop_c")]
+position = Vector3(-14.5, 0.09, -49)
+scale = Vector3(1.4, 1.4, 1.4)
+[node name="BeachShopLoungesC" parent="Skyline" instance=ExtResource("29_shop_b")]
+position = Vector3(-8, 0.09, -49)
+scale = Vector3(1.4, 1.4, 1.4)
+
+[node name="PlayerSpawn" type="Marker3D" parent="." groups=["player_spawns"]]
+unique_name_in_owner = true
+position = Vector3(-73, 0.05, 7)
+rotation = Vector3(0, -1.5708, 0)

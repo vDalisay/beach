@@ -1,0 +1,21 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://art/synty/wrappers/world_shade_sail.tscn" id="1_canopy"]
+[ext_resource type="PackedScene" path="res://art/synty/wrappers/world_dock_pole.tscn" id="2_pole"]
+
+[node name="ShadeSail" type="Node3D"]
+
+[node name="Canopy" parent="." instance=ExtResource("1_canopy")]
+position = Vector3(-3.75, 3, -3.75)
+
+[node name="PoleNW" parent="." instance=ExtResource("2_pole")]
+position = Vector3(-3.35, 0, -3.35)
+
+[node name="PoleNE" parent="." instance=ExtResource("2_pole")]
+position = Vector3(3.35, 0, -3.35)
+
+[node name="PoleSW" parent="." instance=ExtResource("2_pole")]
+position = Vector3(-3.35, 0, 3.35)
+
+[node name="PoleSE" parent="." instance=ExtResource("2_pole")]
+position = Vector3(3.35, 0, 3.35)

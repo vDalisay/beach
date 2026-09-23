@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="UpgradeDefinition" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/data/upgrade_definition.gd" id="1_upgrade"]
+[resource]
+script = ExtResource("1_upgrade")
+upgrade_id = &"sand_cleaner_2"
+display_name = "Sand cleaner II"
+level = 2
+price = 450
+prerequisite = &"sand_cleaner"
+source = 0
+affected_stat = &"sand_cleaner_count"
+exact_value = 12.0
+secondary_stat = &"sand_cleaner_radius"
+secondary_value = 1.5
+effect_text = "Up to 12 exposed items per click, 1.5 m radius"
+implemented = true

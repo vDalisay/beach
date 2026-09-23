@@ -1,0 +1,34 @@
+[gd_resource type="Resource" format=3]
+
+[resource]
+resource_name = "beach_01_section_quotas_v1"
+metadata/content_version = "beach-content-5"
+metadata/sections = {
+&"arrival:start": {"pmd": 40, "organic": 13, "general": 18, "glass": 9, "props": 10},
+&"arrival:dunes": {"pmd": 285, "organic": 95, "general": 127, "glass": 63, "props": 20},
+&"sports:courts": {"pmd": 200, "organic": 67, "general": 89, "glass": 44, "props": 24},
+&"sports:snack_edge": {"pmd": 175, "organic": 58, "general": 78, "glass": 39, "props": 16},
+&"lounges:west": {"pmd": 160, "organic": 53, "general": 71, "glass": 36, "props": 34},
+&"lounges:central": {"pmd": 165, "organic": 55, "general": 73, "glass": 37, "props": 33},
+&"lounges:east": {"pmd": 150, "organic": 50, "general": 67, "glass": 33, "props": 33},
+&"sandplay:cove": {"pmd": 165, "organic": 55, "general": 73, "glass": 37, "props": 40},
+&"sandplay:hut": {"pmd": 160, "organic": 53, "general": 71, "glass": 36, "props": 40},
+&"pier:approach": {"pmd": 150, "organic": 50, "general": 67, "glass": 33, "props": 10},
+&"pier:deck": {"pmd": 150, "organic": 50, "general": 67, "glass": 33, "props": 10},
+&"pier:moorings": {"pmd": 100, "organic": 33, "general": 45, "glass": 22, "props": 10},
+&"shallows:west": {"pmd": 150, "organic": 50, "general": 67, "glass": 33, "props": 10},
+&"shallows:east": {"pmd": 150, "organic": 50, "general": 67, "glass": 33, "props": 10},
+&"reef_west:outer": {"pmd": 125, "organic": 42, "general": 55, "glass": 28, "props": 0},
+&"reef_west:coral": {"pmd": 125, "organic": 42, "general": 55, "glass": 28, "props": 0},
+&"reef_east:outer": {"pmd": 125, "organic": 42, "general": 55, "glass": 28, "props": 0},
+&"reef_east:coral": {"pmd": 125, "organic": 42, "general": 55, "glass": 28, "props": 0}
+}
+metadata/prop_families_by_zone = {
+&"arrival": {&"beach_chair": 8, &"lounger": 4, &"parasol": 4, &"cooler": 2, &"beach_ball": 4, &"bucket": 2, &"spade": 2, &"portable_inflatable": 2, &"speaker": 2},
+&"sports": {&"beach_chair": 6, &"parasol": 2, &"cooler": 4, &"beach_ball": 6, &"volleyball": 12, &"surfboard": 2, &"speaker": 4, &"portable_tent": 2, &"paddle": 2},
+&"lounges": {&"beach_chair": 44, &"lounger": 36, &"parasol": 12, &"cooler": 4, &"portable_inflatable": 2, &"portable_tent": 2},
+&"sandplay": {&"parasol": 2, &"cooler": 6, &"beach_ball": 14, &"bucket": 28, &"spade": 22, &"portable_inflatable": 8},
+&"pier": {&"beach_chair": 12, &"lounger": 10, &"surfboard": 4, &"lifebuoy": 2, &"paddle": 2},
+&"shallows": {&"surfboard": 10, &"lifebuoy": 6, &"small_rowboat": 4}
+}
+metadata/global_totals = {"pmd": 2700, "organic": 900, "general": 1200, "glass": 600, "props": 300, "required": 5700, "valuables": 40, "buried_waste": 300, "attachments": 24, "residue": 120, "dirty_props": 60}

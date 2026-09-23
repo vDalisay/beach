@@ -1,0 +1,104 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/section.gd" id="1_section"]
+[ext_resource type="Script" path="res://scripts/world/spawn_anchor.gd" id="2_anchor"]
+[ext_resource type="Script" path="res://scripts/world/placement_slot.gd" id="3_slot"]
+[ext_resource type="Script" path="res://scripts/world/recovery_anchor.gd" id="4_recovery"]
+
+[node name="Shallows" type="Node3D"]
+[node name="RestorationVisuals" type="Node3D" parent="."]
+[node name="West" type="Node3D" parent="RestorationVisuals"]
+[node name="East" type="Node3D" parent="RestorationVisuals"]
+[node name="Sections" type="Node3D" parent="."]
+[node name="West" type="Node3D" parent="Sections" node_paths=PackedStringArray("restoration_visual_root")]
+position = Vector3(-8.75, 0, 0)
+script = ExtResource("1_section")
+section_id = &"shallows:west"
+zone_id = &"shallows"
+required_waste = 300
+required_props = 10
+restoration_visual_root = NodePath("../../RestorationVisuals/West")
+[node name="East" type="Node3D" parent="Sections" node_paths=PackedStringArray("restoration_visual_root")]
+position = Vector3(8.75, 0, 22)
+script = ExtResource("1_section")
+section_id = &"shallows:east"
+zone_id = &"shallows"
+required_waste = 300
+required_props = 10
+restoration_visual_root = NodePath("../../RestorationVisuals/East")
+[node name="SpawnAnchors" type="Node3D" parent="."]
+[node name="WestSurface" type="Marker3D" parent="SpawnAnchors" groups=["spawn_anchors"]]
+position = Vector3(-8.75, 0.1, 0)
+script = ExtResource("2_anchor")
+anchor_id = &"spawn:shallows:west:surface"
+section_id = &"shallows:west"
+tags = PackedStringArray("water_surface", "single")
+[node name="WestAttachment" type="Marker3D" parent="SpawnAnchors" groups=["spawn_anchors"]]
+position = Vector3(-5, -1.5, 10)
+script = ExtResource("2_anchor")
+anchor_id = &"spawn:shallows:west:attachment"
+section_id = &"shallows:west"
+tags = PackedStringArray("seabed", "attachment")
+clearance_class = 1
+[node name="EastSurface" type="Marker3D" parent="SpawnAnchors" groups=["spawn_anchors"]]
+position = Vector3(8.75, 0.1, 22)
+script = ExtResource("2_anchor")
+anchor_id = &"spawn:shallows:east:surface"
+section_id = &"shallows:east"
+tags = PackedStringArray("water_surface", "single")
+[node name="EastSeabed" type="Marker3D" parent="SpawnAnchors" groups=["spawn_anchors"]]
+position = Vector3(5, -2.8, 37)
+script = ExtResource("2_anchor")
+anchor_id = &"spawn:shallows:east:seabed"
+section_id = &"shallows:east"
+tags = PackedStringArray("seabed", "pile")
+clearance_class = 1
+[node name="Storage" type="Node3D" parent="."]
+[node name="Shelf01" type="Marker3D" parent="Storage" groups=["placement_pools"]]
+position = Vector3(-18, 0.8, -22)
+script = ExtResource("3_slot")
+pool_id = &"shelf:shallows:01"
+accepted_families = PackedStringArray("bucket", "spade", "beach_ball", "volleyball", "speaker")
+capacity = 6
+layout = 1
+[node name="Shelf02" type="Marker3D" parent="Storage" groups=["placement_pools"]]
+position = Vector3(-12, 0.8, -22)
+script = ExtResource("3_slot")
+pool_id = &"shelf:shallows:02"
+accepted_families = PackedStringArray("bucket", "spade", "beach_ball", "volleyball", "speaker")
+capacity = 6
+layout = 1
+[node name="Surfboards" type="Marker3D" parent="Storage" groups=["placement_pools"]]
+position = Vector3(-8, 0, -18)
+script = ExtResource("3_slot")
+pool_id = &"upright:shallows:surfboards"
+accepted_families = PackedStringArray("surfboard")
+capacity = 10
+spacing = 0.9
+layout = 2
+[node name="Inflatables" type="Marker3D" parent="Storage" groups=["placement_pools"]]
+position = Vector3(8, 0.1, -5)
+script = ExtResource("3_slot")
+pool_id = &"row:shallows:inflatables"
+accepted_families = PackedStringArray("portable_inflatable")
+capacity = 10
+spacing = 1.5
+[node name="Lifebuoys" type="Marker3D" parent="Storage" groups=["placement_pools"]]
+position = Vector3(20, 0, -18)
+script = ExtResource("3_slot")
+pool_id = &"row:shallows:lifebuoys"
+accepted_families = PackedStringArray("lifebuoy")
+capacity = 6
+[node name="Rowboats" type="Marker3D" parent="Storage" groups=["placement_pools"]]
+position = Vector3(20, 0.1, 6)
+script = ExtResource("3_slot")
+pool_id = &"mooring:shallows:rowboats"
+accepted_families = PackedStringArray("small_rowboat")
+capacity = 6
+spacing = 3.2
+layout = 3
+[node name="RecoveryShallows" type="Marker3D" parent="." groups=["recovery_anchors"]]
+position = Vector3(0, 0.05, -20)
+script = ExtResource("4_recovery")
+anchor_id = &"recovery:shallows"
+zone_id = &"shallows"

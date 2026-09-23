@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+definition_id = &"waste_towel"
+display_name = "Discarded beach towel"
+kind = 0
+waste_category = 2
+material_tags = Array[StringName]([&"fabric", &"towel"])
+visual_scene_path = "res://art/synty/wrappers/waste_towel.tscn"
+collision_profile = 2
+float_mode = 1
+base_sale_value = 1
+eligible_spawn_tags = Array[StringName]([&"sand", &"deck"])
+spawn_weight = 2

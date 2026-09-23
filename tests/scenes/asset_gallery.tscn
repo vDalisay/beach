@@ -1,0 +1,89 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://tests/scenes/asset_gallery.gd" id="1_gallery"]
+
+[sub_resource type="Environment" id="Environment_gallery"]
+background_mode = 1
+background_color = Color(0.42, 0.73, 0.86, 1)
+ambient_light_source = 3
+ambient_light_color = Color(0.74, 0.83, 0.9, 1)
+ambient_light_energy = 0.8
+tonemap_mode = 2
+
+[sub_resource type="PlaneMesh" id="Plane_ground"]
+size = Vector2(40, 35)
+
+[sub_resource type="StandardMaterial3D" id="Material_ground"]
+albedo_color = Color(0.74, 0.68, 0.5, 1)
+roughness = 0.95
+
+[sub_resource type="BoxMesh" id="Box_meter"]
+size = Vector3(1, 0.03, 0.12)
+
+[sub_resource type="StandardMaterial3D" id="Material_meter_a"]
+albedo_color = Color(0.95, 0.95, 0.95, 1)
+
+[sub_resource type="StandardMaterial3D" id="Material_meter_b"]
+albedo_color = Color(0.12, 0.2, 0.24, 1)
+
+[node name="AssetGallery" type="Node3D"]
+script = ExtResource("1_gallery")
+
+[node name="Environment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_gallery")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-52, -32, 0)
+shadow_enabled = true
+
+[node name="Ground" type="MeshInstance3D" parent="."]
+mesh = SubResource("Plane_ground")
+material_override = SubResource("Material_ground")
+
+[node name="MeterMarkerA" type="MeshInstance3D" parent="."]
+position = Vector3(-0.5, 0.02, 5)
+mesh = SubResource("Box_meter")
+material_override = SubResource("Material_meter_a")
+
+[node name="MeterMarkerB" type="MeshInstance3D" parent="."]
+position = Vector3(0.5, 0.02, 5)
+mesh = SubResource("Box_meter")
+material_override = SubResource("Material_meter_b")
+
+[node name="MeterLabel" type="Label3D" parent="."]
+position = Vector3(0, 0.35, 5)
+text = "2 × 1 m markers"
+font_size = 28
+outline_size = 8
+billboard = 1
+
+[node name="StagedAssets" type="Node3D" parent="."]
+unique_name_in_owner = true
+
+[node name="MissingAssets" type="Node3D" parent="."]
+unique_name_in_owner = true
+
+[node name="Camera" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.945519, 0.325568, 0, -0.325568, 0.945519, 0, 9, 23)
+fov = 66.0
+
+[node name="GalleryUI" type="CanvasLayer" parent="."]
+
+[node name="Panel" type="PanelContainer" parent="GalleryUI"]
+offset_left = 24.0
+offset_top = 24.0
+offset_right = 520.0
+offset_bottom = 126.0
+
+[node name="Text" type="VBoxContainer" parent="GalleryUI/Panel"]
+
+[node name="Title" type="Label" parent="GalleryUI/Panel/Text"]
+theme_override_font_sizes/font_size = 24
+text = "SYNTY ASSET GALLERY"
+
+[node name="SummaryLabel" type="Label" parent="GalleryUI/Panel/Text"]
+unique_name_in_owner = true
+text = "Loading staged assets…"
+
+[node name="Hint" type="Label" parent="GalleryUI/Panel/Text"]
+text = "Foreground spacing and striped bars are metre references."

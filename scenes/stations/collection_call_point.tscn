@@ -1,0 +1,27 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/stations/collection_call_point.gd" id="1_call"]
+[ext_resource type="PackedScene" path="res://art/synty/wrappers/collection_phone.tscn" id="2_synty"]
+
+[sub_resource type="BoxShape3D" id="PhoneShape"]
+size = Vector3(0.72, 1.85, 0.72)
+
+[node name="CollectionCallPoint" type="StaticBody3D" groups=["collection_call_points"]]
+collision_layer = 8
+collision_mask = 0
+script = ExtResource("1_call")
+
+[node name="SyntyPhone" parent="." instance=ExtResource("2_synty")]
+scale = Vector3(1.4, 1.0, 1.4)
+
+[node name="Collision" type="CollisionShape3D" parent="."]
+position = Vector3(0, 0.91, 0)
+shape = SubResource("PhoneShape")
+
+[node name="Label" type="Label3D" parent="."]
+position = Vector3(0, 2.15, 0.42)
+billboard = 1
+text = "CALL COLLECTION"
+font_size = 48
+pixel_size = 0.002
+outline_size = 8

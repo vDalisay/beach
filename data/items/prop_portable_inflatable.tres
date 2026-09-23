@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+definition_id = &"prop_portable_inflatable"
+display_name = "Portable inflatable"
+kind = 1
+waste_category = 4
+material_tags = Array[StringName]([&"inflatable"])
+sorting_family = &"portable_inflatable"
+visual_scene_path = "res://art/synty/wrappers/prop_portable_inflatable.tscn"
+collision_profile = 3
+hand_cost = 2
+float_mode = 0
+eligible_spawn_tags = Array[StringName]([&"sand", &"water_surface"])

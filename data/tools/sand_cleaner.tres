@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ToolDefinition" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/data/tool_definition.gd" id="1_tool"]
+[resource]
+script = ExtResource("1_tool")
+tool_id = &"sand_cleaner"
+display_name = "Sand cleaner"
+scene_path = "res://scenes/tools/sand_cleaner.tscn"
+handheld = true
+allowed_target_tags = Array[StringName]([&"exposed_sand_waste"])
+range = 2.5
+radius = 1.0
+max_items_per_use = 6
+shop_price = 250
+upgrade_prerequisite = &"oxygen_tank"
+effect_text = "Collect up to 6 exposed sand items per click, 1 m radius"
+implemented = true

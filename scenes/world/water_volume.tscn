@@ -1,0 +1,16 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/water_volume.gd" id="1_water"]
+
+[sub_resource type="BoxShape3D" id="WaterBounds"]
+size = Vector3(160, 10, 185)
+
+[node name="SwimVolume" type="Area3D" groups=["water_volumes"]]
+collision_layer = 0
+collision_mask = 0
+monitoring = false
+monitorable = false
+script = ExtResource("1_water")
+
+[node name="Collision" type="CollisionShape3D" parent="."]
+shape = SubResource("WaterBounds")

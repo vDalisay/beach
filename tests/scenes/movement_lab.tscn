@@ -1,0 +1,220 @@
+[gd_scene load_steps=23 format=3]
+
+[ext_resource type="Script" path="res://tests/scenes/movement_lab.gd" id="1_lab"]
+[ext_resource type="Script" path="res://scripts/ui/settings_store.gd" id="2_store"]
+[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="3_player"]
+
+[sub_resource type="ProceduralSkyMaterial" id="SkyMaterial_lab"]
+sky_top_color = Color(0.12, 0.5, 0.75, 1)
+sky_horizon_color = Color(0.75, 0.9, 0.95, 1)
+ground_bottom_color = Color(0.05, 0.12, 0.14, 1)
+ground_horizon_color = Color(0.72, 0.72, 0.6, 1)
+
+[sub_resource type="Sky" id="Sky_lab"]
+sky_material = SubResource("SkyMaterial_lab")
+
+[sub_resource type="Environment" id="Environment_lab"]
+background_mode = 2
+sky = SubResource("Sky_lab")
+ambient_light_source = 3
+ambient_light_color = Color(0.76, 0.85, 0.9, 1)
+ambient_light_energy = 0.7
+tonemap_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="Material_sand"]
+albedo_color = Color(0.76, 0.62, 0.36, 1)
+roughness = 0.95
+
+[sub_resource type="StandardMaterial3D" id="Material_structure"]
+albedo_color = Color(0.12, 0.42, 0.5, 1)
+roughness = 0.8
+
+[sub_resource type="StandardMaterial3D" id="Material_obstacle"]
+albedo_color = Color(0.78, 0.25, 0.14, 1)
+roughness = 0.8
+
+[sub_resource type="BoxMesh" id="Mesh_floor"]
+material = SubResource("Material_sand")
+size = Vector3(24, 0.2, 24)
+
+[sub_resource type="BoxShape3D" id="Shape_floor"]
+size = Vector3(24, 0.2, 24)
+
+[sub_resource type="BoxMesh" id="Mesh_wall"]
+material = SubResource("Material_obstacle")
+size = Vector3(14, 3, 0.3)
+
+[sub_resource type="BoxShape3D" id="Shape_wall"]
+size = Vector3(14, 3, 0.3)
+
+[sub_resource type="BoxMesh" id="Mesh_roof"]
+material = SubResource("Material_structure")
+size = Vector3(3, 0.2, 3)
+
+[sub_resource type="BoxShape3D" id="Shape_roof"]
+size = Vector3(3, 0.2, 3)
+
+[sub_resource type="BoxMesh" id="Mesh_ramp"]
+material = SubResource("Material_structure")
+size = Vector3(2.5, 0.2, 5)
+
+[sub_resource type="BoxShape3D" id="Shape_ramp"]
+size = Vector3(2.5, 0.2, 5)
+
+[sub_resource type="BoxMesh" id="Mesh_step"]
+material = SubResource("Material_structure")
+size = Vector3(2.5, 0.2, 0.65)
+
+[sub_resource type="BoxMesh" id="Mesh_step2"]
+material = SubResource("Material_structure")
+size = Vector3(2.5, 0.4, 0.65)
+
+[sub_resource type="BoxMesh" id="Mesh_step3"]
+material = SubResource("Material_structure")
+size = Vector3(2.5, 0.6, 0.65)
+
+[sub_resource type="BoxMesh" id="Mesh_step4"]
+material = SubResource("Material_structure")
+size = Vector3(2.5, 0.8, 0.65)
+
+[sub_resource type="BoxShape3D" id="Shape_stair_ramp"]
+size = Vector3(2.4, 0.2, 2.6)
+
+[node name="MovementLab" type="Node3D"]
+script = ExtResource("1_lab")
+
+[node name="SettingsStore" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("2_store")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_lab")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+rotation = Vector3(-0.9, -0.55, 0)
+shadow_enabled = true
+directional_shadow_max_distance = 40.0
+
+[node name="Floor" type="StaticBody3D" parent="."]
+position = Vector3(0, -0.1, 0)
+[node name="Mesh" type="MeshInstance3D" parent="Floor"]
+mesh = SubResource("Mesh_floor")
+[node name="Collision" type="CollisionShape3D" parent="Floor"]
+shape = SubResource("Shape_floor")
+
+[node name="BackWall" type="StaticBody3D" parent="."]
+position = Vector3(0, 1.5, -7)
+[node name="Mesh" type="MeshInstance3D" parent="BackWall"]
+mesh = SubResource("Mesh_wall")
+[node name="Collision" type="CollisionShape3D" parent="BackWall"]
+shape = SubResource("Shape_wall")
+
+[node name="LowCeiling" type="StaticBody3D" parent="."]
+position = Vector3(0, 1.45, 1)
+[node name="Mesh" type="MeshInstance3D" parent="LowCeiling"]
+mesh = SubResource("Mesh_roof")
+[node name="Collision" type="CollisionShape3D" parent="LowCeiling"]
+shape = SubResource("Shape_roof")
+
+[node name="Ramp" type="StaticBody3D" parent="."]
+position = Vector3(4, 0.35, 0)
+rotation = Vector3(0.18, 0, 0)
+[node name="Mesh" type="MeshInstance3D" parent="Ramp"]
+mesh = SubResource("Mesh_ramp")
+[node name="Collision" type="CollisionShape3D" parent="Ramp"]
+shape = SubResource("Shape_ramp")
+
+[node name="Step1" type="Node3D" parent="."]
+position = Vector3(-4, 0.1, 2)
+[node name="Mesh" type="MeshInstance3D" parent="Step1"]
+mesh = SubResource("Mesh_step")
+
+[node name="Step2" type="Node3D" parent="."]
+position = Vector3(-4, 0.2, 1.35)
+[node name="Mesh" type="MeshInstance3D" parent="Step2"]
+mesh = SubResource("Mesh_step2")
+
+[node name="Step3" type="Node3D" parent="."]
+position = Vector3(-4, 0.3, 0.7)
+[node name="Mesh" type="MeshInstance3D" parent="Step3"]
+mesh = SubResource("Mesh_step3")
+
+[node name="Step4" type="Node3D" parent="."]
+position = Vector3(-4, 0.4, 0.05)
+[node name="Mesh" type="MeshInstance3D" parent="Step4"]
+mesh = SubResource("Mesh_step4")
+
+[node name="StairRamp" type="StaticBody3D" parent="."]
+position = Vector3(-4, 0.29, 1)
+rotation = Vector3(0.3, 0, 0)
+[node name="Collision" type="CollisionShape3D" parent="StairRamp"]
+shape = SubResource("Shape_stair_ramp")
+
+[node name="Player" parent="." instance=ExtResource("3_player")]
+unique_name_in_owner = true
+position = Vector3(0, 0.05, 7)
+
+[node name="Labels" type="Node3D" parent="."]
+[node name="Ceiling" type="Label3D" parent="Labels"]
+position = Vector3(0, 2.2, 1)
+text = "CROUCH TUNNEL"
+font_size = 42
+outline_size = 10
+[node name="Stairs" type="Label3D" parent="Labels"]
+position = Vector3(-4, 1.8, 0.8)
+text = "PIER STEPS"
+font_size = 42
+outline_size = 10
+[node name="Ramp" type="Label3D" parent="Labels"]
+position = Vector3(4, 1.8, 0)
+text = "RAMP"
+font_size = 42
+outline_size = 10
+[node name="Wall" type="Label3D" parent="Labels"]
+position = Vector3(0, 2.4, -6.8)
+text = "WALL"
+font_size = 42
+outline_size = 10
+
+[node name="UI" type="CanvasLayer" parent="."]
+[node name="Instructions" type="Label" parent="UI"]
+offset_left = 28.0
+offset_top = 24.0
+offset_right = 690.0
+offset_bottom = 90.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 20
+text = "WASD / left stick move  •  mouse / right stick look\nSpace / A jump  •  Ctrl / B crouch  •  Shift / L3 sprint  •  Esc / Menu pause"
+
+[node name="Status" type="Label" parent="UI"]
+unique_name_in_owner = true
+anchors_preset = 12
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 28.0
+offset_top = -58.0
+offset_right = -28.0
+offset_bottom = -24.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_font_sizes/font_size = 20
+text = "Speed 0.00 m/s  |  STANDING  |  FOV 85°"
+
+[node name="PauseLabel" type="Label" parent="UI"]
+unique_name_in_owner = true
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -180.0
+offset_top = -45.0
+offset_right = 180.0
+offset_bottom = 45.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0.92, 0.48, 1)
+theme_override_font_sizes/font_size = 42
+text = "PAUSED\nEsc / Menu to resume"
+horizontal_alignment = 1

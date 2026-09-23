@@ -1,0 +1,167 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/sorting_view.gd" id="1_view"]
+
+[node name="SortingOverlay" type="Control"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_view")
+
+[node name="TopPanel" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 54.0
+grow_horizontal = 2
+
+[node name="TopRow" type="HBoxContainer" parent="TopPanel"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Title" type="Label" parent="TopPanel/TopRow"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "SORTING TABLE"
+
+[node name="Status" type="Label" parent="TopPanel/TopRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 18
+text = "Table 0/240"
+
+[node name="UnloadButton" type="Button" parent="TopPanel/TopRow"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Unload bag"
+
+[node name="ExitButton" type="Button" parent="TopPanel/TopRow"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Exit (B / Esc)"
+
+[node name="Bins" type="HBoxContainer" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 58.0
+offset_bottom = 108.0
+grow_horizontal = 2
+alignment = 1
+theme_override_constants/separation = 12
+
+[node name="PMDButton" type="Button" parent="Bins"]
+layout_mode = 2
+custom_minimum_size = Vector2(140, 42)
+text = "PMD 0/50"
+
+[node name="OrganicButton" type="Button" parent="Bins"]
+layout_mode = 2
+custom_minimum_size = Vector2(140, 42)
+text = "Organic 0/50"
+
+[node name="GeneralButton" type="Button" parent="Bins"]
+layout_mode = 2
+custom_minimum_size = Vector2(140, 42)
+text = "General 0/50"
+
+[node name="GlassButton" type="Button" parent="Bins"]
+layout_mode = 2
+custom_minimum_size = Vector2(140, 42)
+text = "Glass 0/50"
+
+[node name="SidePanel" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -290.0
+offset_top = 122.0
+offset_right = -12.0
+offset_bottom = -78.0
+grow_horizontal = 0
+grow_vertical = 2
+
+[node name="SideColumn" type="VBoxContainer" parent="SidePanel"]
+layout_mode = 2
+
+[node name="SelectedBin" type="Label" parent="SidePanel/SideColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 21
+text = "PMD bin"
+
+[node name="SelectedItem" type="Label" parent="SidePanel/SideColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 64)
+autowrap_mode = 3
+text = "Aim at an item to inspect it."
+
+[node name="BinList" type="ItemList" parent="SidePanel/SideColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+select_mode = 0
+
+[node name="SealButton" type="Button" parent="SidePanel/SideColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Seal selected bin (permanent)"
+
+[node name="ReturnButton" type="Button" parent="SidePanel/SideColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Return selected to table"
+
+[node name="TrayLabel" type="Label" parent="SidePanel/SideColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 3
+text = "Valuables tray: 0"
+
+[node name="TrayList" type="ItemList" parent="SidePanel/SideColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(0, 95)
+select_mode = 0
+
+[node name="SellButton" type="Button" parent="SidePanel/SideColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Sell selected valuable (E)"
+
+[node name="BottomPanel" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -68.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="Hint" type="Label" parent="BottomPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 3
+text = "Click an item to sort into the selected bin, or drag it to a bin. D-pad: focus • A: sort • LB/RB: bin • Y: inspect bin • B: back. Mouse wheel/triggers: zoom • middle drag/right stick: pan."
+
+[node name="DragPreview" type="Label" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_right = 180.0
+offset_bottom = 32.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 19
+text = "Item"

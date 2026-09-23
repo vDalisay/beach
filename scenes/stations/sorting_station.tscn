@@ -1,0 +1,274 @@
+[gd_scene load_steps=19 format=3]
+
+[ext_resource type="Script" path="res://scripts/stations/sorting_station.gd" id="1_station"]
+[ext_resource type="PackedScene" path="res://art/synty/wrappers/sorting_table.tscn" id="2_table"]
+[ext_resource type="PackedScene" path="res://art/synty/wrappers/sorting_bin.tscn" id="3_bin"]
+
+[sub_resource type="StandardMaterial3D" id="TableMaterial"]
+albedo_color = Color(0.42, 0.23, 0.12, 1)
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="TableMesh"]
+material = SubResource("TableMaterial")
+size = Vector3(4.8, 0.18, 2.9)
+
+[sub_resource type="BoxShape3D" id="TableShape"]
+size = Vector3(4.8, 0.18, 2.9)
+
+[sub_resource type="StandardMaterial3D" id="SortingMatMaterial"]
+albedo_color = Color(0.09, 0.19, 0.21, 1)
+roughness = 0.92
+
+[sub_resource type="PlaneMesh" id="SortingMatMesh"]
+material = SubResource("SortingMatMaterial")
+size = Vector2(4, 2.1)
+
+[sub_resource type="BoxMesh" id="LegMesh"]
+material = SubResource("TableMaterial")
+size = Vector3(0.18, 0.8, 0.18)
+
+[sub_resource type="StandardMaterial3D" id="BinBlue"]
+albedo_color = Color(0.12, 0.48, 0.72, 1)
+
+[sub_resource type="StandardMaterial3D" id="BinGreen"]
+albedo_color = Color(0.24, 0.55, 0.26, 1)
+
+[sub_resource type="StandardMaterial3D" id="BinGrey"]
+albedo_color = Color(0.38, 0.4, 0.43, 1)
+
+[sub_resource type="StandardMaterial3D" id="BinTeal"]
+albedo_color = Color(0.28, 0.68, 0.67, 1)
+
+[sub_resource type="BoxMesh" id="BinMesh"]
+size = Vector3(0.9, 0.08, 0.6)
+
+[sub_resource type="BoxShape3D" id="BinOpening"]
+size = Vector3(0.76, 0.28, 0.46)
+
+[sub_resource type="BoxMesh" id="RackShelfMesh"]
+material = SubResource("TableMaterial")
+size = Vector3(0.92, 0.08, 4.2)
+
+[sub_resource type="BoxMesh" id="RackPostMesh"]
+material = SubResource("TableMaterial")
+size = Vector3(0.1, 1.85, 0.1)
+
+[sub_resource type="StandardMaterial3D" id="TrayMaterial"]
+albedo_color = Color(0.12, 0.25, 0.28, 1)
+metallic = 0.12
+roughness = 0.75
+
+[sub_resource type="CylinderMesh" id="TrayMesh"]
+material = SubResource("TrayMaterial")
+top_radius = 0.55
+bottom_radius = 0.53
+height = 0.035
+radial_segments = 20
+
+[node name="SortingStation" type="Node3D" groups=["sorting_stations"]]
+script = ExtResource("1_station")
+
+[node name="SyntyTable" parent="." instance=ExtResource("2_table")]
+rotation = Vector3(0, 1.5708, 0)
+scale = Vector3(1.9, 1.07, 2.3)
+
+[node name="SortingMat" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.83, 0)
+mesh = SubResource("SortingMatMesh")
+
+[node name="Tabletop" type="StaticBody3D" parent="."]
+unique_name_in_owner = true
+collision_layer = 8
+collision_mask = 0
+position = Vector3(0, 0.82, 0)
+
+[node name="Mesh" type="MeshInstance3D" parent="Tabletop"]
+visible = false
+mesh = SubResource("TableMesh")
+
+[node name="Collision" type="CollisionShape3D" parent="Tabletop"]
+shape = SubResource("TableShape")
+
+[node name="LegA" type="MeshInstance3D" parent="."]
+visible = false
+position = Vector3(-2.18, 0.4, -1.2)
+mesh = SubResource("LegMesh")
+
+[node name="LegB" type="MeshInstance3D" parent="."]
+visible = false
+position = Vector3(2.18, 0.4, -1.2)
+mesh = SubResource("LegMesh")
+
+[node name="LegC" type="MeshInstance3D" parent="."]
+visible = false
+position = Vector3(-2.18, 0.4, 1.2)
+mesh = SubResource("LegMesh")
+
+[node name="LegD" type="MeshInstance3D" parent="."]
+visible = false
+position = Vector3(2.18, 0.4, 1.2)
+mesh = SubResource("LegMesh")
+
+[node name="ItemProxies" type="Node3D" parent="."]
+unique_name_in_owner = true
+
+[node name="ValuablesSideTable" parent="." instance=ExtResource("2_table")]
+position = Vector3(-2.85, 0, 0)
+scale = Vector3(0.5, 1.07, 0.5)
+
+[node name="ValuablesTray" type="MeshInstance3D" parent="."]
+position = Vector3(-2.85, 0.87, 0)
+mesh = SubResource("TrayMesh")
+
+[node name="TrayItems" type="Node3D" parent="ValuablesTray"]
+unique_name_in_owner = true
+position = Vector3(0, 0.04, 0)
+
+[node name="OutputRack" type="Node3D" parent="."]
+
+[node name="LowerShelf" type="MeshInstance3D" parent="OutputRack"]
+position = Vector3(3.1, 0.59, -0.075)
+mesh = SubResource("RackShelfMesh")
+
+[node name="UpperShelf" type="MeshInstance3D" parent="OutputRack"]
+position = Vector3(3.1, 1.29, -0.075)
+mesh = SubResource("RackShelfMesh")
+
+[node name="PostA" type="MeshInstance3D" parent="OutputRack"]
+position = Vector3(2.65, 0.92, -2.12)
+mesh = SubResource("RackPostMesh")
+
+[node name="PostB" type="MeshInstance3D" parent="OutputRack"]
+position = Vector3(3.55, 0.92, -2.12)
+mesh = SubResource("RackPostMesh")
+
+[node name="PostC" type="MeshInstance3D" parent="OutputRack"]
+position = Vector3(2.65, 0.92, 1.97)
+mesh = SubResource("RackPostMesh")
+
+[node name="PostD" type="MeshInstance3D" parent="OutputRack"]
+position = Vector3(3.55, 0.92, 1.97)
+mesh = SubResource("RackPostMesh")
+
+[node name="RackLabel" type="Label3D" parent="OutputRack"]
+position = Vector3(3.1, 2.04, -0.075)
+billboard = 1
+text = "SEALED BAGS 0/8"
+font_size = 40
+pixel_size = 0.002
+outline_size = 6
+
+[node name="BinAreas" type="Node3D" parent="."]
+unique_name_in_owner = true
+
+[node name="PMD" type="Area3D" parent="BinAreas"]
+position = Vector3(-1.8, 1.1, -2.05)
+collision_layer = 16
+collision_mask = 4
+monitoring = true
+
+[node name="Opening" type="CollisionShape3D" parent="BinAreas/PMD"]
+shape = SubResource("BinOpening")
+
+[node name="Bin" type="MeshInstance3D" parent="BinAreas/PMD"]
+position = Vector3(0, -0.73, 0)
+mesh = SubResource("BinMesh")
+material_override = SubResource("BinBlue")
+
+[node name="SyntyBin" parent="BinAreas/PMD" instance=ExtResource("3_bin")]
+position = Vector3(0, -0.75, 0)
+scale = Vector3(1.5, 0.74, 1.0)
+
+[node name="Label" type="Label3D" parent="BinAreas/PMD"]
+position = Vector3(0, 0.29, 0)
+billboard = 1
+text = "PMD"
+font_size = 32
+pixel_size = 0.002
+outline_size = 6
+
+[node name="Organic" type="Area3D" parent="BinAreas"]
+position = Vector3(-0.6, 1.1, -2.05)
+collision_layer = 16
+collision_mask = 4
+monitoring = true
+
+[node name="Opening" type="CollisionShape3D" parent="BinAreas/Organic"]
+shape = SubResource("BinOpening")
+
+[node name="Bin" type="MeshInstance3D" parent="BinAreas/Organic"]
+position = Vector3(0, -0.73, 0)
+mesh = SubResource("BinMesh")
+material_override = SubResource("BinGreen")
+
+[node name="SyntyBin" parent="BinAreas/Organic" instance=ExtResource("3_bin")]
+position = Vector3(0, -0.75, 0)
+scale = Vector3(1.5, 0.74, 1.0)
+
+[node name="Label" type="Label3D" parent="BinAreas/Organic"]
+position = Vector3(0, 0.29, 0)
+billboard = 1
+text = "ORGANIC"
+font_size = 32
+pixel_size = 0.002
+outline_size = 6
+
+[node name="General" type="Area3D" parent="BinAreas"]
+position = Vector3(0.6, 1.1, -2.05)
+collision_layer = 16
+collision_mask = 4
+monitoring = true
+
+[node name="Opening" type="CollisionShape3D" parent="BinAreas/General"]
+shape = SubResource("BinOpening")
+
+[node name="Bin" type="MeshInstance3D" parent="BinAreas/General"]
+position = Vector3(0, -0.73, 0)
+mesh = SubResource("BinMesh")
+material_override = SubResource("BinGrey")
+
+[node name="SyntyBin" parent="BinAreas/General" instance=ExtResource("3_bin")]
+position = Vector3(0, -0.75, 0)
+scale = Vector3(1.5, 0.74, 1.0)
+
+[node name="Label" type="Label3D" parent="BinAreas/General"]
+position = Vector3(0, 0.29, 0)
+billboard = 1
+text = "GENERAL"
+font_size = 32
+pixel_size = 0.002
+outline_size = 6
+
+[node name="Glass" type="Area3D" parent="BinAreas"]
+position = Vector3(1.8, 1.1, -2.05)
+collision_layer = 16
+collision_mask = 4
+monitoring = true
+
+[node name="Opening" type="CollisionShape3D" parent="BinAreas/Glass"]
+shape = SubResource("BinOpening")
+
+[node name="Bin" type="MeshInstance3D" parent="BinAreas/Glass"]
+position = Vector3(0, -0.73, 0)
+mesh = SubResource("BinMesh")
+material_override = SubResource("BinTeal")
+
+[node name="SyntyBin" parent="BinAreas/Glass" instance=ExtResource("3_bin")]
+position = Vector3(0, -0.75, 0)
+scale = Vector3(1.5, 0.74, 1.0)
+
+[node name="Label" type="Label3D" parent="BinAreas/Glass"]
+position = Vector3(0, 0.29, 0)
+billboard = 1
+text = "GLASS"
+font_size = 32
+pixel_size = 0.002
+outline_size = 6
+
+[node name="TableCamera" type="Camera3D" parent="."]
+unique_name_in_owner = true
+position = Vector3(0, 5, -0.32)
+rotation = Vector3(-1.5708, 0, 0)
+projection = 1
+size = 4.8
+current = false

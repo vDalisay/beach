@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ToolDefinition" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/data/tool_definition.gd" id="1_tool"]
+[resource]
+script = ExtResource("1_tool")
+tool_id = &"oxygen_tank"
+display_name = "Oxygen tank"
+handheld = false
+shop_price = 220
+upgrade_prerequisite = &"detector"
+effect_text = "Underwater air 10 → 60 seconds"
+implemented = true

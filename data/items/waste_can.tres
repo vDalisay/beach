@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/item_definition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+definition_id = &"waste_can"
+display_name = "Drink can"
+kind = 0
+waste_category = 0
+material_tags = Array[StringName]([&"metal", &"packaging"])
+visual_scene_path = "res://art/synty/wrappers/waste_can.tscn"
+collision_profile = 0
+float_mode = 0
+base_sale_value = 1
+eligible_spawn_tags = Array[StringName]([&"sand", &"deck", &"water_surface", &"seabed"])
+spawn_weight = 3

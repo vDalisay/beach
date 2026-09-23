@@ -1,0 +1,22 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/wildlife/rescue_site.gd" id="1_site"]
+[ext_resource type="PackedScene" path="res://scenes/wildlife/turtle.tscn" id="2_turtle"]
+
+[node name="RescueSite" type="Node3D"]
+script = ExtResource("1_site")
+
+[node name="Animal" parent="." instance=ExtResource("2_turtle")]
+unique_name_in_owner = true
+
+[node name="Attachments" type="Node3D" parent="."]
+unique_name_in_owner = true
+
+[node name="Status" type="Label3D" parent="."]
+unique_name_in_owner = true
+position = Vector3(0, 0.75, 0)
+billboard = 1
+font_size = 32
+pixel_size = 0.003
+outline_size = 6
+text = "RESCUE  0/2"

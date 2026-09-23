@@ -1,0 +1,47 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/stations/waste_container.gd" id="1_container"]
+[ext_resource type="PackedScene" path="res://art/synty/wrappers/waste_container.tscn" id="2_synty"]
+
+[sub_resource type="BoxShape3D" id="OpeningShape"]
+size = Vector3(1.08, 0.26, 0.88)
+
+[sub_resource type="BoxMesh" id="FillMesh"]
+size = Vector3(1.12, 0.65, 0.92)
+
+[sub_resource type="StandardMaterial3D" id="FillMaterial"]
+albedo_color = Color(0.12, 0.16, 0.18, 1)
+
+[node name="WasteContainer" type="StaticBody3D" groups=["waste_containers"]]
+collision_layer = 8
+collision_mask = 0
+script = ExtResource("1_container")
+
+[node name="SyntyContainer" parent="." instance=ExtResource("2_synty")]
+scale = Vector3(1.85, 1.27, 1.18)
+
+[node name="Opening" type="Area3D" parent="."]
+unique_name_in_owner = true
+position = Vector3(0, 1.42, 0)
+collision_layer = 16
+collision_mask = 4
+monitoring = true
+
+[node name="Collision" type="CollisionShape3D" parent="Opening"]
+shape = SubResource("OpeningShape")
+
+[node name="Fill" type="MeshInstance3D" parent="."]
+unique_name_in_owner = true
+visible = false
+position = Vector3(0, 0.55, 0)
+mesh = SubResource("FillMesh")
+material_override = SubResource("FillMaterial")
+
+[node name="Label" type="Label3D" parent="."]
+unique_name_in_owner = true
+position = Vector3(0, 1.73, 0.61)
+billboard = 1
+text = "CONTAINER"
+font_size = 48
+pixel_size = 0.002
+outline_size = 8

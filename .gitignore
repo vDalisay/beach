@@ -18,4 +18,11 @@ mono_crash.*.json
 
 # Local platform exports
 /android/
-Assets/Synty
+/builds/
+
+# Supplied vendor project stays local; only its import boundary is tracked.
+Assets/Synty/*
+!Assets/Synty/.gdignore
+
+# Regenerated from the licensed local source by tools/stage_assets.gd.
+/art/synty/

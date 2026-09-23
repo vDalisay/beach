@@ -1,0 +1,117 @@
+[gd_scene load_steps=10 format=3]
+
+[ext_resource type="PackedScene" path="res://art/synty/wrappers/world_service_wall.tscn" id="1_wall"]
+[ext_resource type="PackedScene" path="res://art/synty/wrappers/world_service_roof.tscn" id="2_roof"]
+[ext_resource type="Script" path="res://scripts/world/service_hut_visual.gd" id="3_visual"]
+[ext_resource type="PackedScene" path="res://art/synty/wrappers/world_lowrise_window.tscn" id="4_window"]
+[ext_resource type="PackedScene" path="res://art/synty/wrappers/world_pier_awning.tscn" id="5_awning"]
+
+[sub_resource type="BoxShape3D" id="Shape_side"]
+size = Vector3(0.25, 3, 6)
+
+[sub_resource type="BoxShape3D" id="Shape_front"]
+size = Vector3(2.5, 3, 0.25)
+
+[sub_resource type="BoxShape3D" id="Shape_back"]
+size = Vector3(8, 3, 0.25)
+
+[sub_resource type="BoxShape3D" id="Shape_floor"]
+size = Vector3(8, 0.2, 6)
+
+[node name="ServiceHut" type="Node3D"]
+script = ExtResource("3_visual")
+
+[node name="SyntyBackWest" parent="." instance=ExtResource("1_wall")]
+position = Vector3(-4, 0, -3)
+scale = Vector3(1.0667, 2, 1)
+[node name="SyntyBackMid" parent="." instance=ExtResource("1_wall")]
+position = Vector3(-1.3333, 0, -3)
+scale = Vector3(1.0667, 2, 1)
+[node name="SyntyBackEast" parent="." instance=ExtResource("1_wall")]
+position = Vector3(1.3333, 0, -3)
+scale = Vector3(1.0667, 2, 1)
+[node name="SyntyFrontWest" parent="." instance=ExtResource("1_wall")]
+position = Vector3(-4, 0, 3)
+scale = Vector3(1, 2, 1)
+[node name="SyntyFrontEast" parent="." instance=ExtResource("1_wall")]
+position = Vector3(1.5, 0, 3)
+scale = Vector3(1, 2, 1)
+[node name="SyntyWindowWest" parent="." instance=ExtResource("4_window")]
+position = Vector3(-3.8, 0, 3.3)
+[node name="SyntyWindowEast" parent="." instance=ExtResource("4_window")]
+position = Vector3(1.7, 0, 3.3)
+[node name="SyntyCanopy00" parent="." instance=ExtResource("5_awning")]
+position = Vector3(-4, 2.75, 3.35)
+scale = Vector3(0.8, 1, 1)
+[node name="SyntyCanopy01" parent="." instance=ExtResource("5_awning")]
+position = Vector3(-2, 2.75, 3.35)
+scale = Vector3(0.8, 1, 1)
+[node name="SyntyCanopy02" parent="." instance=ExtResource("5_awning")]
+position = Vector3(0, 2.75, 3.35)
+scale = Vector3(0.8, 1, 1)
+[node name="SyntyCanopy03" parent="." instance=ExtResource("5_awning")]
+position = Vector3(2, 2.75, 3.35)
+scale = Vector3(0.8, 1, 1)
+[node name="SyntyLeftBack" parent="." instance=ExtResource("1_wall")]
+position = Vector3(-4, 0, -3)
+rotation = Vector3(0, -1.5708, 0)
+scale = Vector3(1.2, 2, 1)
+[node name="SyntyLeftFront" parent="." instance=ExtResource("1_wall")]
+position = Vector3(-4, 0, 0)
+rotation = Vector3(0, -1.5708, 0)
+scale = Vector3(1.2, 2, 1)
+[node name="SyntyRightBack" parent="." instance=ExtResource("1_wall")]
+position = Vector3(4, 0, 0)
+rotation = Vector3(0, 1.5708, 0)
+scale = Vector3(1.2, 2, 1)
+[node name="SyntyRightFront" parent="." instance=ExtResource("1_wall")]
+position = Vector3(4, 0, 3)
+rotation = Vector3(0, 1.5708, 0)
+scale = Vector3(1.2, 2, 1)
+[node name="Roof" type="Node3D" parent="."]
+[node name="SyntyRoof" parent="Roof" instance=ExtResource("2_roof")]
+position = Vector3(-4, 3.2, -3)
+scale = Vector3(3.2, 1, 2.4)
+
+[node name="Floor" type="StaticBody3D" parent="."]
+position = Vector3(0, -0.1, 0)
+[node name="Collision" type="CollisionShape3D" parent="Floor"]
+shape = SubResource("Shape_floor")
+
+[node name="LeftWall" type="StaticBody3D" parent="."]
+position = Vector3(-4, 1.5, 0)
+[node name="Collision" type="CollisionShape3D" parent="LeftWall"]
+shape = SubResource("Shape_side")
+
+[node name="RightWall" type="StaticBody3D" parent="."]
+position = Vector3(4, 1.5, 0)
+[node name="Collision" type="CollisionShape3D" parent="RightWall"]
+shape = SubResource("Shape_side")
+
+[node name="BackWall" type="StaticBody3D" parent="."]
+position = Vector3(0, 1.5, -3)
+[node name="Collision" type="CollisionShape3D" parent="BackWall"]
+shape = SubResource("Shape_back")
+
+[node name="FrontLeft" type="StaticBody3D" parent="."]
+position = Vector3(-2.75, 1.5, 3)
+[node name="Collision" type="CollisionShape3D" parent="FrontLeft"]
+shape = SubResource("Shape_front")
+
+[node name="FrontRight" type="StaticBody3D" parent="."]
+position = Vector3(2.75, 1.5, 3)
+[node name="Collision" type="CollisionShape3D" parent="FrontRight"]
+shape = SubResource("Shape_front")
+
+[node name="InteriorLight" type="OmniLight3D" parent="."]
+position = Vector3(0, 2.45, 0)
+light_color = Color(1, 0.95, 0.84, 1)
+light_energy = 1.1
+omni_range = 8.0
+shadow_enabled = true
+
+[node name="InteriorClearance" type="Marker3D" parent="." groups=["hut_clearances"]]
+position = Vector3(0, 0.05, 0)
+
+[node name="DoorClearance" type="Marker3D" parent="." groups=["hut_clearances"]]
+position = Vector3(0, 0.05, 3.1)

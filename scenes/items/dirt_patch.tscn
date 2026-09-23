@@ -1,0 +1,28 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/items/dirt_visual.gd" id="1_dirt"]
+
+[sub_resource type="StandardMaterial3D" id="DirtMaterial"]
+albedo_color = Color(0.31, 0.17, 0.07, 1)
+roughness = 1.0
+
+[sub_resource type="BoxMesh" id="DirtMesh"]
+material = SubResource("DirtMaterial")
+size = Vector3(0.2, 0.16, 0.018)
+
+[sub_resource type="BoxShape3D" id="DirtShape"]
+size = Vector3(0.2, 0.16, 0.028)
+
+[node name="DirtPatch" type="Area3D"]
+collision_layer = 16
+collision_mask = 0
+monitoring = false
+monitorable = true
+script = ExtResource("1_dirt")
+
+[node name="Mesh" type="MeshInstance3D" parent="."]
+unique_name_in_owner = true
+mesh = SubResource("DirtMesh")
+
+[node name="Collision" type="CollisionShape3D" parent="."]
+shape = SubResource("DirtShape")

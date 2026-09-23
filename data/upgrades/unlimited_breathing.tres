@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="UpgradeDefinition" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/data/upgrade_definition.gd" id="1_upgrade"]
+[resource]
+script = ExtResource("1_upgrade")
+upgrade_id = &"unlimited_breathing"
+display_name = "Unlimited breathing"
+level = 1
+price = 700
+prerequisite = &"oxygen_tank"
+source = 0
+affected_stat = &"air_unlimited"
+exact_value = 1.0
+effect_text = "Stay underwater without an air timer"
+implemented = true

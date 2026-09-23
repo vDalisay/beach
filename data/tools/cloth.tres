@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ToolDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/tool_definition.gd" id="1_tool"]
+
+[resource]
+script = ExtResource("1_tool")
+tool_id = &"cloth"
+display_name = "Cleaning cloth"
+scene_path = "res://scenes/tools/cloth_placeholder.tscn"
+handheld = true
+allowed_target_tags = Array[StringName]([&"furniture_dirt", &"residue"])
+range = 2.5
+shop_price = 30
+effect_text = "Clean one aimed furniture stain per click"
+implemented = true

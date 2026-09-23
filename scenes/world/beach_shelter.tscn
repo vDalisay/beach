@@ -1,0 +1,26 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://art/synty/wrappers/world_beach_shelter.tscn" id="1_shelter"]
+
+[sub_resource type="BoxShape3D" id="Shape_post"]
+size = Vector3(0.4, 3, 0.4)
+
+[node name="BeachShelter" type="StaticBody3D"]
+
+[node name="SyntyShelter" parent="." instance=ExtResource("1_shelter")]
+
+[node name="PostNW" type="CollisionShape3D" parent="."]
+position = Vector3(-1.7, 1.5, -1.7)
+shape = SubResource("Shape_post")
+
+[node name="PostNE" type="CollisionShape3D" parent="."]
+position = Vector3(1.7, 1.5, -1.7)
+shape = SubResource("Shape_post")
+
+[node name="PostSW" type="CollisionShape3D" parent="."]
+position = Vector3(-1.7, 1.5, 1.7)
+shape = SubResource("Shape_post")
+
+[node name="PostSE" type="CollisionShape3D" parent="."]
+position = Vector3(1.7, 1.5, 1.7)
+shape = SubResource("Shape_post")

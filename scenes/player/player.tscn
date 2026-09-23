@@ -1,0 +1,127 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/player/player.gd" id="1_player"]
+[ext_resource type="Script" path="res://scripts/player/input_reader.gd" id="2_input"]
+[ext_resource type="Script" path="res://scripts/player/movement.gd" id="3_movement"]
+[ext_resource type="Script" path="res://scripts/player/hand_rig.gd" id="4_hands"]
+[ext_resource type="Script" path="res://scripts/player/interactor.gd" id="5_interactor"]
+[ext_resource type="Script" path="res://scripts/player/carry.gd" id="6_carry"]
+[ext_resource type="PackedScene" path="res://art/synty/wrappers/disposal_bag.tscn" id="7_bag"]
+[ext_resource type="PackedScene" path="res://art/first_person_hand.tscn" id="8_hand"]
+
+[sub_resource type="CapsuleShape3D" id="Capsule_player"]
+radius = 0.35
+height = 1.8
+
+[node name="Player" type="CharacterBody3D" node_paths=PackedStringArray("input_reader", "movement", "hand_rig", "interactor", "carry")]
+collision_layer = 2
+collision_mask = 9
+script = ExtResource("1_player")
+input_reader = NodePath("InputReader")
+movement = NodePath("Movement")
+hand_rig = NodePath("Head/Camera/HandRig")
+interactor = NodePath("Interactor")
+carry = NodePath("Carry")
+
+[node name="CollisionShape" type="CollisionShape3D" parent="."]
+unique_name_in_owner = true
+position = Vector3(0, 0.9, 0)
+shape = SubResource("Capsule_player")
+
+[node name="InputReader" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("2_input")
+
+[node name="Movement" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("3_movement")
+
+[node name="Interactor" type="Node" parent="." node_paths=PackedStringArray("camera")]
+unique_name_in_owner = true
+script = ExtResource("5_interactor")
+camera = NodePath("../Head/Camera")
+
+[node name="Carry" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("6_carry")
+
+[node name="Head" type="Node3D" parent="."]
+unique_name_in_owner = true
+position = Vector3(0, 1.65, 0)
+
+[node name="Camera" type="Camera3D" parent="Head"]
+unique_name_in_owner = true
+current = true
+fov = 85.0
+near = 0.03
+
+[node name="HandRig" type="Node3D" parent="Head/Camera" node_paths=PackedStringArray("bag_socket", "tool_socket", "left_prop_socket", "right_prop_socket", "large_prop_socket", "bag_placeholder")]
+unique_name_in_owner = true
+script = ExtResource("4_hands")
+bag_socket = NodePath("BagSocket")
+tool_socket = NodePath("ToolSocket")
+left_prop_socket = NodePath("LeftPropSocket")
+right_prop_socket = NodePath("RightPropSocket")
+large_prop_socket = NodePath("LargePropSocket")
+bag_placeholder = NodePath("BagSocket/BagPlaceholder")
+
+[node name="LeftHandAnchor" type="Node3D" parent="Head/Camera/HandRig"]
+position = Vector3(-0.36, -0.44, -0.72)
+rotation = Vector3(-0.18, -0.12, -0.08)
+
+[node name="LeftHand" parent="Head/Camera/HandRig/LeftHandAnchor" instance=ExtResource("8_hand")]
+scale = Vector3(-0.75, 0.75, 0.75)
+
+[node name="Label" type="Label3D" parent="Head/Camera/HandRig/LeftHandAnchor"]
+visible = false
+position = Vector3(0, 0.071, 0.03)
+text = "HAND"
+font_size = 20
+pixel_size = 0.0015
+outline_size = 4
+
+[node name="RightHandAnchor" type="Node3D" parent="Head/Camera/HandRig"]
+position = Vector3(0.36, -0.44, -0.72)
+rotation = Vector3(-0.18, 0.12, 0.08)
+
+[node name="RightHand" parent="Head/Camera/HandRig/RightHandAnchor" instance=ExtResource("8_hand")]
+scale = Vector3(0.75, 0.75, 0.75)
+
+[node name="Label" type="Label3D" parent="Head/Camera/HandRig/RightHandAnchor"]
+visible = false
+position = Vector3(0, 0.071, 0.03)
+text = "HAND"
+font_size = 20
+pixel_size = 0.0015
+outline_size = 4
+
+[node name="BagSocket" type="Marker3D" parent="Head/Camera/HandRig"]
+position = Vector3(-0.43, -0.38, -0.78)
+rotation = Vector3(-0.1, -0.18, 0)
+
+[node name="BagPlaceholder" type="Node3D" parent="Head/Camera/HandRig/BagSocket"]
+
+[node name="SyntyBag" parent="Head/Camera/HandRig/BagSocket/BagPlaceholder" instance=ExtResource("7_bag")]
+position = Vector3(0, -0.17, 0)
+scale = Vector3(0.45, 0.5, 0.35)
+
+[node name="Label" type="Label3D" parent="Head/Camera/HandRig/BagSocket/BagPlaceholder"]
+visible = false
+position = Vector3(0, 0, 0.1)
+text = "BAG"
+font_size = 22
+pixel_size = 0.0018
+outline_size = 5
+
+[node name="ToolSocket" type="Marker3D" parent="Head/Camera/HandRig"]
+position = Vector3(0.37, -0.34, -0.72)
+rotation = Vector3(-0.16, 0.12, 0.04)
+
+[node name="LeftPropSocket" type="Marker3D" parent="Head/Camera/HandRig"]
+position = Vector3(-0.31, -0.27, -0.73)
+
+[node name="RightPropSocket" type="Marker3D" parent="Head/Camera/HandRig"]
+position = Vector3(0.31, -0.27, -0.73)
+
+[node name="LargePropSocket" type="Marker3D" parent="Head/Camera/HandRig"]
+position = Vector3(0, -0.22, -0.9)

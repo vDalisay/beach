@@ -1,0 +1,114 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/section.gd" id="1_section"]
+[ext_resource type="Script" path="res://scripts/world/spawn_anchor.gd" id="2_anchor"]
+[ext_resource type="Script" path="res://scripts/world/placement_slot.gd" id="3_slot"]
+[ext_resource type="Script" path="res://scripts/world/recovery_anchor.gd" id="4_recovery"]
+
+[node name="Lounges" type="Node3D"]
+[node name="RestorationVisuals" type="Node3D" parent="."]
+[node name="West" type="Node3D" parent="RestorationVisuals"]
+[node name="Central" type="Node3D" parent="RestorationVisuals"]
+[node name="East" type="Node3D" parent="RestorationVisuals"]
+[node name="Sections" type="Node3D" parent="."]
+[node name="West" type="Node3D" parent="Sections" node_paths=PackedStringArray("restoration_visual_root")]
+position = Vector3(-7.5, 0, 0)
+script = ExtResource("1_section")
+section_id = &"lounges:west"
+zone_id = &"lounges"
+required_waste = 320
+required_props = 34
+restoration_visual_root = NodePath("../../RestorationVisuals/West")
+[node name="Central" type="Node3D" parent="Sections" node_paths=PackedStringArray("restoration_visual_root")]
+script = ExtResource("1_section")
+section_id = &"lounges:central"
+zone_id = &"lounges"
+required_waste = 330
+required_props = 33
+restoration_visual_root = NodePath("../../RestorationVisuals/Central")
+[node name="East" type="Node3D" parent="Sections" node_paths=PackedStringArray("restoration_visual_root")]
+position = Vector3(7.5, 0, 0)
+script = ExtResource("1_section")
+section_id = &"lounges:east"
+zone_id = &"lounges"
+required_waste = 300
+required_props = 33
+restoration_visual_root = NodePath("../../RestorationVisuals/East")
+[node name="SpawnAnchors" type="Node3D" parent="."]
+[node name="WestRows" type="Marker3D" parent="SpawnAnchors" groups=["spawn_anchors"]]
+position = Vector3(-7.5, 0.15, 8)
+script = ExtResource("2_anchor")
+anchor_id = &"spawn:lounges:west:rows"
+section_id = &"lounges:west"
+tags = PackedStringArray("sand", "single", "seating")
+[node name="CentralPile" type="Marker3D" parent="SpawnAnchors" groups=["spawn_anchors"]]
+position = Vector3(0, 0.15, 12)
+script = ExtResource("2_anchor")
+anchor_id = &"spawn:lounges:central:pile"
+section_id = &"lounges:central"
+tags = PackedStringArray("sand", "pile", "seating")
+clearance_class = 1
+[node name="EastBuried" type="Marker3D" parent="SpawnAnchors" groups=["spawn_anchors"]]
+position = Vector3(7.5, -0.25, 8)
+script = ExtResource("2_anchor")
+anchor_id = &"spawn:lounges:east:buried"
+section_id = &"lounges:east"
+tags = PackedStringArray("sand", "buried")
+[node name="Storage" type="Node3D" parent="."]
+[node name="Shelf01" type="Marker3D" parent="Storage" groups=["placement_pools"]]
+position = Vector3(-26, 0.8, -15)
+script = ExtResource("3_slot")
+pool_id = &"shelf:lounges:01"
+accepted_families = PackedStringArray("bucket", "spade", "beach_ball", "volleyball", "speaker")
+capacity = 6
+layout = 1
+[node name="Shelf02" type="Marker3D" parent="Storage" groups=["placement_pools"]]
+position = Vector3(-20, 0.8, -15)
+script = ExtResource("3_slot")
+pool_id = &"shelf:lounges:02"
+accepted_families = PackedStringArray("bucket", "spade", "beach_ball", "volleyball", "speaker")
+capacity = 6
+layout = 1
+[node name="Shelf03" type="Marker3D" parent="Storage" groups=["placement_pools"]]
+position = Vector3(-14, 0.8, -15)
+script = ExtResource("3_slot")
+pool_id = &"shelf:lounges:03"
+accepted_families = PackedStringArray("bucket", "spade", "beach_ball", "volleyball", "speaker")
+capacity = 6
+layout = 1
+[node name="ChairTerraces" type="Marker3D" parent="Storage" groups=["placement_pools"]]
+position = Vector3(0, 0, 10)
+script = ExtResource("3_slot")
+pool_id = &"row:lounges:chairs"
+accepted_families = PackedStringArray("beach_chair")
+capacity = 54
+spacing = 1.2
+columns = 16
+[node name="LoungerTerraces" type="Marker3D" parent="Storage" groups=["placement_pools"]]
+position = Vector3(0, 0, 19)
+script = ExtResource("3_slot")
+pool_id = &"row:lounges:loungers"
+accepted_families = PackedStringArray("lounger")
+capacity = 44
+spacing = 1.4
+columns = 16
+[node name="ParasolTerraces" type="Marker3D" parent="Storage" groups=["placement_pools"]]
+position = Vector3(0, 0, 28)
+script = ExtResource("3_slot")
+pool_id = &"row:lounges:parasols"
+accepted_families = PackedStringArray("parasol")
+capacity = 14
+spacing = 2.2
+columns = 7
+[node name="Tents" type="Marker3D" parent="Storage" groups=["placement_pools"]]
+position = Vector3(34, 0, -12)
+script = ExtResource("3_slot")
+pool_id = &"row:lounges:tents"
+accepted_families = PackedStringArray("portable_tent")
+capacity = 2
+spacing = 3.0
+[node name="RecoveryLounges" type="Marker3D" parent="." groups=["recovery_anchors"]]
+position = Vector3(0, 0.05, -2)
+script = ExtResource("4_recovery")
+anchor_id = &"recovery:lounges"
+zone_id = &"lounges"

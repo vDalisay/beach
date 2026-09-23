@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ToolDefinition" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/data/tool_definition.gd" id="1_tool"]
+[resource]
+script = ExtResource("1_tool")
+tool_id = &"vacuum"
+display_name = "Vacuum"
+scene_path = "res://scenes/tools/vacuum.tscn"
+handheld = true
+allowed_target_tags = Array[StringName]([&"exposed_small_waste"])
+range = 3.0
+use_interval = 0.125
+cone_degrees = 25.0
+shop_price = 450
+upgrade_prerequisite = &"oxygen_tank"
+effect_text = "Collect up to 8 small items/sec in a 25° cone, 3 m range"
+implemented = true

@@ -1,0 +1,44 @@
+class_name ItemDefinition
+extends Resource
+
+enum Kind { WASTE, PROP, VALUABLE }
+enum WasteCategory { PMD, ORGANIC, GENERAL, GLASS, NONE }
+enum CollisionProfile { SMALL, LARGE, FLAT, FLOATING }
+enum FloatMode { FLOAT, SINK, NEUTRAL }
+
+@export var definition_id: StringName
+@export var display_name := ""
+@export var kind: Kind = Kind.WASTE
+@export var waste_category: WasteCategory = WasteCategory.NONE
+@export var material_tags: Array[StringName] = []
+@export var sorting_family: StringName
+@export_file("*.tscn") var visual_scene_path := ""
+@export var collision_profile: CollisionProfile = CollisionProfile.SMALL
+@export_range(1, 2) var hand_cost := 1
+@export var float_mode: FloatMode = FloatMode.NEUTRAL
+@export var required_tool: StringName
+@export var base_sale_value := 0
+@export var eligible_spawn_tags: Array[StringName] = []
+@export_range(1, 100) var spawn_weight := 1
+@export var dirt_patch_anchors: Array[Vector3] = []
+
+
+func validation_errors() -> PackedStringArray:
+	var errors: PackedStringArray = []
+	if definition_id.is_empty():
+		errors.append("definition_id is empty")
+	if display_name.is_empty():
+		errors.append("display_name is empty for %s" % definition_id)
+	if hand_cost < 1 or hand_cost > 2:
+		errors.append("hand_cost must be 1 or 2 for %s" % definition_id)
+	if kind == Kind.WASTE and waste_category == WasteCategory.NONE:
+		errors.append("waste category is missing for %s" % definition_id)
+	if kind != Kind.WASTE and waste_category != WasteCategory.NONE:
+		errors.append("non-waste definition has a waste category: %s" % definition_id)
+	if base_sale_value < 0:
+		errors.append("base_sale_value is negative for %s" % definition_id)
+	if spawn_weight < 1:
+		errors.append("spawn_weight must be positive for %s" % definition_id)
+	if dirt_patch_anchors.size() > 3:
+		errors.append("at most three dirt anchors are supported for %s" % definition_id)
+	return errors

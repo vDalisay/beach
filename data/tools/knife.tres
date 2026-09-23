@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ToolDefinition" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/data/tool_definition.gd" id="1_tool"]
+[resource]
+script = ExtResource("1_tool")
+tool_id = &"knife"
+display_name = "Rescue knife"
+scene_path = "res://art/synty/wrappers/tool_knife.tscn"
+handheld = true
+allowed_target_tags = Array[StringName]([&"rescue_attachment"])
+range = 2.5
+shop_price = 60
+upgrade_prerequisite = &"cloth"
+effect_text = "Remove one aimed animal attachment per click"
+implemented = true

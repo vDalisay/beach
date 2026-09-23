@@ -1,0 +1,37 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/items/disposal_bag.gd" id="1_bag"]
+[ext_resource type="PackedScene" path="res://art/synty/wrappers/disposal_bag.tscn" id="2_synty"]
+
+[sub_resource type="BoxMesh" id="BagMesh"]
+size = Vector3(0.34, 0.07, 0.025)
+
+[sub_resource type="BoxShape3D" id="BagShape"]
+size = Vector3(0.46, 0.5, 0.32)
+
+[node name="DisposalBag" type="RigidBody3D"]
+collision_layer = 8
+collision_mask = 0
+mass = 0.8
+script = ExtResource("1_bag")
+
+[node name="SyntyBag" parent="." instance=ExtResource("2_synty")]
+scale = Vector3(0.8, 0.78, 0.58)
+
+[node name="BagMesh" type="MeshInstance3D" parent="."]
+unique_name_in_owner = true
+position = Vector3(0, 0.35, 0.18)
+mesh = SubResource("BagMesh")
+
+[node name="Collision" type="CollisionShape3D" parent="."]
+position = Vector3(0, 0.25, 0)
+shape = SubResource("BagShape")
+
+[node name="BagLabel" type="Label3D" parent="."]
+unique_name_in_owner = true
+position = Vector3(0, 0.35, 0.18)
+billboard = 1
+text = "BAG"
+font_size = 28
+pixel_size = 0.002
+outline_size = 6

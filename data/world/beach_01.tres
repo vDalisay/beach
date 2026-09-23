@@ -1,0 +1,79 @@
+[gd_resource type="Resource" script_class="BeachDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/beach_definition.gd" id="1_beach"]
+[ext_resource type="Resource" path="res://data/world/spawn_anchors.tres" id="2_anchors"]
+
+[resource]
+script = ExtResource("1_beach")
+beach_id = &"beach_01"
+version = "5"
+scene_path = "res://scenes/world/beach.tscn"
+spawn_anchor_resource = ExtResource("2_anchors")
+ordered_zones = Array[StringName]([&"arrival", &"sports", &"lounges", &"sandplay", &"pier", &"shallows", &"reef_west", &"reef_east"])
+ordered_sections = Array[StringName]([&"arrival:start", &"arrival:dunes", &"sports:courts", &"sports:snack_edge", &"lounges:west", &"lounges:central", &"lounges:east", &"sandplay:cove", &"sandplay:hut", &"pier:approach", &"pier:deck", &"pier:moorings", &"shallows:west", &"shallows:east", &"reef_west:outer", &"reef_west:coral", &"reef_east:outer", &"reef_east:coral"])
+zone_budgets = {
+&"arrival": {"waste": 650, "props": 30},
+&"sports": {"waste": 750, "props": 40},
+&"lounges": {"waste": 950, "props": 100},
+&"sandplay": {"waste": 650, "props": 80},
+&"pier": {"waste": 800, "props": 30},
+&"shallows": {"waste": 600, "props": 20},
+&"reef_west": {"waste": 500, "props": 0},
+&"reef_east": {"waste": 500, "props": 0}
+}
+section_budgets = {
+&"arrival:start": {"zone": &"arrival", "waste": 80, "props": 10},
+&"arrival:dunes": {"zone": &"arrival", "waste": 570, "props": 20},
+&"sports:courts": {"zone": &"sports", "waste": 400, "props": 24},
+&"sports:snack_edge": {"zone": &"sports", "waste": 350, "props": 16},
+&"lounges:west": {"zone": &"lounges", "waste": 320, "props": 34},
+&"lounges:central": {"zone": &"lounges", "waste": 330, "props": 33},
+&"lounges:east": {"zone": &"lounges", "waste": 300, "props": 33},
+&"sandplay:cove": {"zone": &"sandplay", "waste": 330, "props": 40},
+&"sandplay:hut": {"zone": &"sandplay", "waste": 320, "props": 40},
+&"pier:approach": {"zone": &"pier", "waste": 300, "props": 10},
+&"pier:deck": {"zone": &"pier", "waste": 300, "props": 10},
+&"pier:moorings": {"zone": &"pier", "waste": 200, "props": 10},
+&"shallows:west": {"zone": &"shallows", "waste": 300, "props": 10},
+&"shallows:east": {"zone": &"shallows", "waste": 300, "props": 10},
+&"reef_west:outer": {"zone": &"reef_west", "waste": 250, "props": 0},
+&"reef_west:coral": {"zone": &"reef_west", "waste": 250, "props": 0},
+&"reef_east:outer": {"zone": &"reef_east", "waste": 250, "props": 0},
+&"reef_east:coral": {"zone": &"reef_east", "waste": 250, "props": 0}
+}
+slot_inventories = {
+&"shared_small_shelves": {"sections": 20, "capacity": 120, "families": PackedStringArray("bucket", "spade", "beach_ball", "volleyball", "speaker")},
+&"beach_chair": {"capacity": 72},
+&"lounger": {"capacity": 54},
+&"parasol": {"capacity": 24},
+&"cooler": {"capacity": 18},
+&"surfboard": {"capacity": 18},
+&"portable_inflatable": {"capacity": 14},
+&"lifebuoy": {"capacity": 10},
+&"portable_tent": {"capacity": 6},
+&"small_rowboat": {"capacity": 6},
+&"paddle": {"capacity": 6}
+}
+recovery_anchors = {
+&"recovery:arrival": Vector3(-67.5, 0.05, -2),
+&"recovery:sports": Vector3(-43.75, 0.05, -2),
+&"recovery:lounges": Vector3(-18.75, 0.05, -2),
+&"recovery:sandplay": Vector3(11.25, 0.05, -2),
+&"recovery:pier": Vector3(52.5, 0.05, 2),
+&"recovery:shallows": Vector3(28.75, 0.05, 20)
+}
+restoration_recipes = {
+&"arrival": "Zones/Arrival/RestorationVisuals",
+&"sports": "Zones/Sports/RestorationVisuals",
+&"lounges": "Zones/Lounges/RestorationVisuals",
+&"sandplay": "Zones/Sandplay/RestorationVisuals",
+&"pier": "Zones/Pier/RestorationVisuals",
+&"shallows": "Zones/Shallows/RestorationVisuals",
+&"reef_west": "Zones/ReefWest/RestorationVisuals",
+&"reef_east": "Zones/ReefEast/RestorationVisuals"
+}
+starting_state = {
+"player_spawn": Vector3(-73, 0.05, 7),
+"service_points": {&"S1": Vector3(-68.75, 0, -8), &"S2": Vector3(6.25, 0, -8), &"S3": Vector3(58.75, 0, -5)},
+"walk_route": [Vector3(-73, 0, 7), Vector3(-62.5, 0, 7), Vector3(-51.25, 0, 7), Vector3(-38.75, 0, 7), Vector3(-26.25, 0, 7), Vector3(-13.75, 0, 7), Vector3(0, 0, 7), Vector3(13.75, 0, 7), Vector3(27.5, 0, 7), Vector3(41.25, 0, 7), Vector3(53.75, 0, 7), Vector3(65, 0, 7), Vector3(75, 0, 8)]
+}

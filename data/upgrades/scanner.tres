@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="UpgradeDefinition" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/data/upgrade_definition.gd" id="1_upgrade"]
+[resource]
+script = ExtResource("1_upgrade")
+upgrade_id = &"scanner"
+display_name = "Scanner"
+level = 1
+price = 150
+source = 1
+affected_stat = &"scanner_unlocked"
+exact_value = 1.0
+effect_text = "Filter known types/materials and pulse for remaining items"
+implemented = true

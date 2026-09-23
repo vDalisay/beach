@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="UpgradeDefinition" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/data/upgrade_definition.gd" id="1_upgrade"]
+[resource]
+script = ExtResource("1_upgrade")
+upgrade_id = &"walking_2"
+display_name = "Walking II"
+level = 2
+price = 220
+prerequisite = &"walking_1"
+source = 1
+affected_stat = &"walk_speed"
+exact_value = 4.9
+effect_text = "Walk speed 4.2 → 4.9 m/s"

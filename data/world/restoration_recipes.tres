@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="RestorationRecipes" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/restoration_recipes.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+section_kinds = {
+&"arrival": "palm",
+&"sports": "palm",
+&"lounges": "palm",
+&"sandplay": "palm",
+&"pier": "buoy",
+&"shallows": "coral",
+&"reef_west": "coral",
+&"reef_east": "coral"
+}
+zone_kinds = {
+&"arrival": "palm",
+&"sports": "palm",
+&"lounges": "palm",
+&"sandplay": "palm",
+&"pier": "buoy",
+&"shallows": "fish",
+&"reef_west": "fish",
+&"reef_east": "fish"
+}
