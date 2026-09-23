@@ -47,38 +47,32 @@ func _ready() -> void:
 		island_vertices.append(island.transform * vertex)
 	island_shape.points = island_vertices
 	_add_solid("LighthouseIsland", Vector3.ZERO, island_shape)
-	_add_modules(PLATFORM, "Platform", 144, func(index: int) -> Transform3D:
+	_add_modules(PLATFORM, "Platform", 72, func(index: int) -> Transform3D:
 		return Transform3D(Basis.IDENTITY, Vector3(245 + (index % 4) * 2.5, 1.25, 37 + (index / 4) * 2.5))
 	)
-	_add_modules(PLATFORM, "Platform", 88, func(index: int) -> Transform3D:
-		var side := index / 44
-		var local_index := index % 44
-		return Transform3D(Basis.IDENTITY, Vector3((235 if side == 0 else 255) + (local_index % 4) * 2.5, 1.25, 100 + (local_index / 4) * 2.5))
+	_add_modules(PLATFORM, "Platform", 77, func(index: int) -> Transform3D:
+		return Transform3D(Basis.IDENTITY, Vector3(241 + (index % 7) * 2.5, 1.25, 67 + (index / 7) * 2.5))
 	, "PierHeadPlatform")
-	_add_modules(POLE, "Pole", 22, func(index: int) -> Transform3D:
-		var x := (246.5 if index % 2 == 0 else 253.5) if index < 16 else (237.0 if index % 2 == 0 else 263.0)
-		var z := 45.0 + float(index / 2) * 10.0 if index < 16 else 105.0 + float((index - 16) / 2) * 10.0
+	_add_modules(POLE, "Pole", 12, func(index: int) -> Transform3D:
+		var x := (246.5 if index % 2 == 0 else 253.5) if index < 8 else (243.0 if index % 2 == 0 else 257.0)
+		var z := 45.0 + float(index / 2) * 10.0 if index < 8 else 74.0 + float((index - 8) / 2) * 15.0
 		return Transform3D(Basis.IDENTITY.scaled(Vector3(1, 1.3, 1)), Vector3(x, -3.4, z))
 	, "PierPoles")
 	_add_modules(PLATFORM, "Platform", 40, func(index: int) -> Transform3D:
 		var z := 13.0 + float(index / 4) * 2.5
 		return Transform3D(Basis(Vector3.RIGHT, -0.05), Vector3(245 + (index % 4) * 2.5, -0.08 + 0.05 * (z - 13.0), z))
 	, "Approach")
-	_add_modules(RAILING, "Railing", 50, func(index: int) -> Transform3D:
-		if index < 25:
+	_add_modules(RAILING, "Railing", 24, func(index: int) -> Transform3D:
+		if index < 12:
 			return Transform3D(Basis(Vector3.UP, -PI / 2.0), Vector3(245, 1.45, 37 + index * 2.5))
-		return Transform3D(Basis(Vector3.UP, PI / 2.0), Vector3(255, 1.45, 99.5 - (index - 25) * 2.5))
+		return Transform3D(Basis(Vector3.UP, PI / 2.0), Vector3(255, 1.45, 64.5 - (index - 12) * 2.5))
 	)
-	_add_modules(RAILING, "Railing", 42, func(index: int) -> Transform3D:
+	_add_modules(RAILING, "Railing", 29, func(index: int) -> Transform3D:
 		if index < 11:
-			return Transform3D(Basis(Vector3.UP, -PI / 2.0), Vector3(235, 1.45, 100 + index * 2.5))
+			return Transform3D(Basis(Vector3.UP, -PI / 2.0), Vector3(241, 1.45, 67 + index * 2.5))
 		if index < 22:
-			return Transform3D(Basis(Vector3.UP, PI / 2.0), Vector3(265, 1.45, 127.5 - (index - 11) * 2.5))
-		if index < 34:
-			return Transform3D(Basis.IDENTITY, Vector3(235 + (index - 22) * 2.5, 1.45, 127.5))
-		if index < 38:
-			return Transform3D(Basis.IDENTITY, Vector3(235 + (index - 34) * 2.5, 1.45, 100))
-		return Transform3D(Basis.IDENTITY, Vector3(255 + (index - 38) * 2.5, 1.45, 100))
+			return Transform3D(Basis(Vector3.UP, PI / 2.0), Vector3(259, 1.45, 92 - (index - 11) * 2.5))
+		return Transform3D(Basis.IDENTITY, Vector3(241 + (index - 22) * 2.5, 1.45, 94.5))
 	, "PierHeadRailing")
 	_add_modules(RAILING, "Railing", 20, func(index: int) -> Transform3D:
 		var z := 13.0 + float(index % 10) * 2.5
@@ -104,26 +98,26 @@ func _ready() -> void:
 	for index in 10:
 		var awning := AWNING.instantiate() as Node3D
 		awning.name = "PierAwning%02d" % index
-		awning.position = Vector3(256.25 - index * 1.25, 5.7, 111.35)
+		awning.position = Vector3(256.25 - index * 1.25, 5.7, 78.35)
 		awning.rotation.y = PI
 		awning.scale.x = 0.5
 		(awning.get_node("Visual/Awning") as MeshInstance3D).material_override = awning_red if index % 2 == 0 else awning_cream
 		add_child(awning)
 	for side in [-1, 1]:
-		for z in [104.0, 122.0]:
+		for z in [70.0, 91.0]:
 			var lamp := LAMP.instantiate() as Node3D
 			lamp.name = "PierLamp_%d_%d" % [side, int(z)]
-			lamp.position = Vector3(250 + side * 12.5, 1.45, z)
+			lamp.position = Vector3(250 + side * 8.5, 1.45, z)
 			add_child(lamp)
 			_add_solid(lamp.name, lamp.position + Vector3(0, 2.1, 0), lamp_shape)
-		for z in [78.0, 90.0]:
+		for z in [55.0, 65.0]:
 			var bench := BENCH.instantiate() as Node3D
 			bench.name = "PierBench_%d_%d" % [side, int(z)]
 			bench.position = Vector3(250 + side * 3.3, 1.45, z)
 			bench.rotation.y = -PI / 2.0 if side < 0 else PI / 2.0
 			add_child(bench)
 			_add_solid(bench.name, bench.position + Vector3(0, 0.4, 0), bench_shape, bench.rotation.y)
-	var terrace_centers := [Vector2(239.5, 108), Vector2(260.5, 108), Vector2(239.5, 120), Vector2(260.5, 120)]
+	var terrace_centers := [Vector2(243, 75), Vector2(257, 75), Vector2(243, 87), Vector2(257, 87)]
 	var chair_offsets := [Vector2(-1.45, 0), Vector2(1.45, 0), Vector2(0, -1.6), Vector2(0, 1.6)]
 	for terrace_index in terrace_centers.size():
 		var center: Vector2 = terrace_centers[terrace_index]

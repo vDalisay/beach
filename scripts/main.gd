@@ -318,6 +318,9 @@ func load_run(run_id: String, slot_id: StringName) -> Dictionary:
 	var state := candidate.state as RunState
 	seed_input.text = state.seed_text
 	_open_run(state, candidate.definitions as Dictionary, state.initial_manifest_hash)
+	if pause_menu.slot_picker.item_count == 0:
+		pause_menu.set_slot_summaries(save_service.checkpoint_summaries())
+	pause_menu.slot_picker.select(maxi([&"manual", &"manual_2", &"manual_3"].find(slot_id), 0))
 	if not str(candidate.notice).is_empty():
 		_show_gameplay_feedback(str(candidate.notice))
 	return candidate
@@ -341,7 +344,10 @@ func _show_load_panel() -> void:
 	_refresh_saves()
 	save_list.clear()
 	for entry in _listed_saves:
-		var description := "%s  ·  %s  ·  %s%s" % [str(entry.get("seed", "Unknown seed")), str(entry.slot_id).capitalize(), str(entry.run_id), "  ·  DAMAGED" if bool(entry.get("damaged", false)) else ""]
+		var slot_index := [&"manual", &"manual_2", &"manual_3"].find(StringName(str(entry.slot_id)))
+		var slot_name := "Checkpoint %d" % (slot_index + 1) if slot_index >= 0 else str(entry.slot_id).capitalize()
+		var detail := "DAMAGED" if bool(entry.get("damaged", false)) else "%s — %d/%d" % [Time.get_datetime_string_from_unix_time(int(entry.saved_at), true), int(entry.get("completed", 0)), int(entry.get("required", 0))]
+		var description := "%s  ·  %s  ·  %s  ·  %s" % [str(entry.get("seed", "Unknown seed")), slot_name, detail, str(entry.run_id)]
 		save_list.add_item(description)
 	menu_container.hide()
 	load_panel.show()

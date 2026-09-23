@@ -2,7 +2,8 @@ class_name ManifestGenerator
 extends RefCounted
 
 const GENERATOR_VERSION := "manifest-1"
-const CONTENT_VERSION := "beach-content-6"
+const CONTENT_VERSION := "beach-content-7"
+const REEF_DRESSING := preload("res://scripts/world/reef_dressing.gd")
 const BEACH_PATH := "res://data/world/beach_01.tres"
 const QUOTAS_PATH := "res://data/world/section_quotas.tres"
 const ANCHORS_PATH := "res://data/world/spawn_anchors.tres"
@@ -105,7 +106,13 @@ func generate(
 	_assign_dirty_props(rows_by_section, seed_text, content_hash)
 	_assign_piles(rows_by_section, anchors, definitions, seed_text, content_hash)
 	_add_valuables(rows, rows_by_section, beach, anchors, definitions, seed_text, content_hash)
-	_clear_walk_route(rows, beach, anchors, definitions)
+	_clear_walk_route(rows, beach.starting_state.get("walk_route", []) as Array, anchors, definitions)
+	_clear_walk_route(rows, beach.starting_state.get("pier_carry_route", []) as Array, anchors, definitions)
+	for service_value in (beach.starting_state.get("service_points", {}) as Dictionary).values():
+		var service := service_value as Vector3
+		_clear_walk_route(rows, [service + Vector3(0, 0, 5), service + Vector3(0, 0, -2)], anchors, definitions)
+	if not _clear_reef_structures(rows, packs, columns, int(anchors.get_meta(&"grid_rows")), spacing):
+		return _failure(["No clear reef anchor for required item."])
 	rows.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return str(a.id) < str(b.id))
 
 	var canonical_data := {
@@ -216,6 +223,8 @@ func compute_content_hash(definitions: Dictionary, beach: BeachDefinition, quota
 		beach.ordered_sections,
 		beach.slot_inventories,
 		beach.starting_state.get("walk_route", []),
+		beach.starting_state.get("pier_carry_route", []),
+		beach.starting_state.get("service_points", {}),
 		quotas.get_meta(&"sections"),
 		quotas.get_meta(&"prop_families_by_zone"),
 		quotas.get_meta(&"global_totals"),
@@ -229,8 +238,7 @@ func compute_content_hash(definitions: Dictionary, beach: BeachDefinition, quota
 	]).sha256_text()
 
 
-func _clear_walk_route(rows: Array[Dictionary], beach: BeachDefinition, anchors: Resource, definitions: Dictionary) -> void:
-	var route := beach.starting_state.get("walk_route", []) as Array
+func _clear_walk_route(rows: Array[Dictionary], route: Array, anchors: Resource, definitions: Dictionary) -> void:
 	if route.size() < 2:
 		return
 	var packs := anchors.get_meta(&"packs") as Dictionary
@@ -332,6 +340,72 @@ func _route_tangent(point: Vector2, route: Array) -> Vector2:
 
 func _pose_key(position: Array) -> String:
 	return "%d/%d/%d" % [position[0], position[1], position[2]]
+
+
+func _clear_reef_structures(rows: Array[Dictionary], packs: Dictionary, columns: int, grid_rows: int, spacing: int) -> bool:
+	var groups := {}
+	var occupied := {}
+	for row in rows:
+		var position := row.reveal_position_mm as Array if not (row.reveal_position_mm as Array).is_empty() else row.position_mm as Array
+		occupied[_pose_key(position)] = true
+		if not str(row.section_id).begins_with("reef_"):
+			continue
+		var group_id := str(row.pile_id) if not str(row.pile_id).is_empty() else str(row.attachment_id).get_slice("/", 0) if not str(row.attachment_id).is_empty() else str(row.id)
+		if not groups.has(group_id):
+			groups[group_id] = []
+		(groups[group_id] as Array).append(row)
+	for group_value in groups.values():
+		var group := group_value as Array
+		var blocked := false
+		for row_value in group:
+			var row := row_value as Dictionary
+			var position := row.reveal_position_mm as Array if not (row.reveal_position_mm as Array).is_empty() else row.position_mm as Array
+			if REEF_DRESSING.blocks_point(position):
+				blocked = true
+				break
+		if not blocked:
+			continue
+		for row_value in group:
+			var row := row_value as Dictionary
+			var position := row.reveal_position_mm as Array if not (row.reveal_position_mm as Array).is_empty() else row.position_mm as Array
+			occupied.erase(_pose_key(position))
+		var first := group[0] as Dictionary
+		var first_position := first.reveal_position_mm as Array if not (first.reveal_position_mm as Array).is_empty() else first.position_mm as Array
+		var pack := packs[StringName(str(first.section_id))] as Dictionary
+		var origin := pack.origin_mm as PackedInt32Array
+		var best_distance := INF
+		var best_offset := Vector2i.ZERO
+		var found := false
+		for cell in columns * grid_rows:
+			var candidate := Vector2i(origin[0] + (cell % columns) * spacing, origin[2] + (cell / columns) * spacing)
+			var offset := candidate - Vector2i(int(first_position[0]), int(first_position[2]))
+			var distance := offset.length_squared()
+			if distance >= best_distance:
+				continue
+			var clear := true
+			for row_value in group:
+				var row := row_value as Dictionary
+				var position := row.reveal_position_mm as Array if not (row.reveal_position_mm as Array).is_empty() else row.position_mm as Array
+				var moved := [int(position[0]) + offset.x, int(position[1]), int(position[2]) + offset.y]
+				if REEF_DRESSING.blocks_point(moved) or occupied.has(_pose_key(moved)):
+					clear = false
+					break
+			if clear:
+				best_distance = distance
+				best_offset = offset
+				found = true
+		if not found:
+			return false
+		for row_value in group:
+			var row := row_value as Dictionary
+			row.position_mm[0] = int(row.position_mm[0]) + best_offset.x
+			row.position_mm[2] = int(row.position_mm[2]) + best_offset.y
+			if not (row.reveal_position_mm as Array).is_empty():
+				row.reveal_position_mm[0] = int(row.reveal_position_mm[0]) + best_offset.x
+				row.reveal_position_mm[2] = int(row.reveal_position_mm[2]) + best_offset.y
+			var new_surface := row.reveal_position_mm as Array if not (row.reveal_position_mm as Array).is_empty() else row.position_mm as Array
+			occupied[_pose_key(new_surface)] = true
+	return true
 
 
 func create_run_state(generation: Dictionary, run_id: String) -> RunState:

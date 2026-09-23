@@ -76,9 +76,9 @@ size = Vector3(160, 3, 0.4)
 [sub_resource type="BoxShape3D" id="Shape_side_boundary"]
 size = Vector3(0.4, 3, 250)
 [sub_resource type="BoxShape3D" id="Shape_pier"]
-size = Vector3(10, 0.8, 90)
+size = Vector3(10, 0.8, 45)
 [sub_resource type="BoxShape3D" id="Shape_pier_head"]
-size = Vector3(30, 0.8, 27.5)
+size = Vector3(18, 0.8, 27.5)
 [sub_resource type="BoxShape3D" id="Shape_pier_pavilion"]
 size = Vector3(12.7, 7, 9.3)
 [sub_resource type="BoxShape3D" id="Shape_pier_ramp"]
@@ -276,11 +276,11 @@ rotation = Vector3(-0.05, 0, 0)
 [node name="Collision" type="CollisionShape3D" parent="PierBlockout/Approach"]
 shape = SubResource("Shape_pier_ramp")
 [node name="Deck" type="StaticBody3D" parent="PierBlockout"]
-position = Vector3(250, 1.0, 82)
+position = Vector3(250, 1.0, 59.5)
 [node name="Collision" type="CollisionShape3D" parent="PierBlockout/Deck"]
 shape = SubResource("Shape_pier")
 [node name="PierHead" type="StaticBody3D" parent="PierBlockout"]
-position = Vector3(250, 1, 113.75)
+position = Vector3(250, 1, 80.75)
 [node name="Collision" type="CollisionShape3D" parent="PierBlockout/PierHead"]
 shape = SubResource("Shape_pier_head")
 [node name="Lighthouse" type="StaticBody3D" parent="PierBlockout"]
@@ -288,11 +288,11 @@ position = Vector3(260, 13.65, 95)
 [node name="Collision" type="CollisionShape3D" parent="PierBlockout/Lighthouse"]
 shape = SubResource("Shape_lighthouse")
 [node name="PierPavilion" parent="PierBlockout" instance=ExtResource("10_shop")]
-position = Vector3(250, 1.25, 116)
+position = Vector3(250, 1.25, 83)
 rotation = Vector3(0, 3.14159, 0)
 scale = Vector3(2.8, 2.8, 2.8)
 [node name="PavilionCollision" type="StaticBody3D" parent="PierBlockout"]
-position = Vector3(250, 4.7, 116)
+position = Vector3(250, 4.7, 83)
 [node name="Collision" type="CollisionShape3D" parent="PierBlockout/PavilionCollision"]
 shape = SubResource("Shape_pier_pavilion")
 
@@ -323,7 +323,7 @@ position = Vector3(-37.5, 0, 0)
 [node name="LifeguardEast" parent="ActivityAreas" instance=ExtResource("21_lifeguard")]
 position = Vector3(27.5, 0, 0)
 [node name="BoardParking01" parent="ActivityAreas" instance=ExtResource("24_board")]
-position = Vector3(3, 0.27, 30)
+position = Vector3(-41, 0.27, 35)
 rotation = Vector3(0, 0.45, 0)
 [node name="BoardParking02" parent="ActivityAreas" instance=ExtResource("24_board")]
 position = Vector3(4, 0.27, 29)
@@ -332,7 +332,7 @@ rotation = Vector3(0, 0.7, 0)
 position = Vector3(-5, 0.08, 145)
 rotation = Vector3(0, -0.6, 0)
 [node name="Windsurf" parent="ActivityAreas" instance=ExtResource("38_windsurf")]
-position = Vector3(-27.5, 0.18, 46)
+position = Vector3(-45, 0.18, 42)
 rotation = Vector3(0, 1.3, 0)
 [node name="Jetski" parent="ActivityAreas" instance=ExtResource("26_jetski")]
 position = Vector3(21, 0.08, 72)

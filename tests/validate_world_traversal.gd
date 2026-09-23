@@ -1,5 +1,7 @@
 extends SceneTree
 
+const REEF_DRESSING := preload("res://scripts/world/reef_dressing.gd")
+
 var failures := 0
 var player: BeachPlayer
 
@@ -67,6 +69,64 @@ func run() -> void:
 	var east_reached := await _swim_lane(Vector3(40, -2.1, 118), Vector3(40, -2.1, 137))
 	check(west_reached and east_reached, "player swims through both structural reef channels")
 	var session := main.run_root as RunSession
+	var reef_checked := 0
+	var reef_overlaps := 0
+	var physics_overlaps := 0
+	var pickup_can: ItemRecord
+	var pickup_distance := INF
+	for item_value in session.state.items.values():
+		var item := item_value as ItemRecord
+		if not str(item.home_section_id).begins_with("reef_"):
+			continue
+		if item.location not in [ItemRecord.Location.WORLD, ItemRecord.Location.BURIED, ItemRecord.Location.ATTACHED]:
+			continue
+		var position := item.dig_surface_position if item.buried else item.last_world_transform.origin
+		var point_mm := [roundi(position.x * 1000.0), roundi(position.y * 1000.0), roundi(position.z * 1000.0)]
+		if REEF_DRESSING.blocks_point(point_mm):
+			reef_overlaps += 1
+		if item.location == ItemRecord.Location.WORLD:
+			var query := PhysicsPointQueryParameters3D.new()
+			query.position = position
+			query.collision_mask = 1
+			for hit in player.get_world_3d().direct_space_state.intersect_point(query):
+				if str(hit.collider.name).begins_with("ReefRock"):
+					physics_overlaps += 1
+		reef_checked += 1
+		if item.location == ItemRecord.Location.WORLD and item.definition_id == &"waste_can":
+			var distance := position.distance_to(Vector3(30.6, -2.8, 147.6))
+			if distance < pickup_distance:
+				pickup_distance = distance
+				pickup_can = item
+	check(reef_checked >= 1000 and reef_overlaps == 0 and physics_overlaps == 0, "all reef world, buried-reveal and attachment origins clear structural rock bounds and real colliders")
+	check(pickup_can != null, "reef has a real can near the formerly trapped target")
+	if pickup_can != null:
+		player.set_physics_process(false)
+		session.swim_service.set_physics_process(false)
+		player.global_position = pickup_can.last_world_transform.origin + Vector3(0, 0, 1.4)
+		await _physics_frames(120)
+		var aimed := {}
+		for offset in [Vector3(0, 0, 1.4), Vector3(1.4, 0, 0), Vector3(0, 0, -1.4), Vector3(-1.4, 0, 0)]:
+			player.global_position = pickup_can.last_world_transform.origin + offset
+			player.camera.look_at(pickup_can.last_world_transform.origin)
+			await _physics_frames(2)
+			aimed = player.interactor.update_target()
+			if str(aimed.get("id", "")) == str(pickup_can.item_id):
+				break
+		check(str(aimed.get("id", "")) == str(pickup_can.item_id), "normal pickup ray reaches a reef can near the former rock overlap")
+		if str(aimed.get("id", "")) == str(pickup_can.item_id):
+			player.set_physics_process(true)
+			var press := InputEventMouseButton.new()
+			press.button_index = MOUSE_BUTTON_LEFT
+			press.pressed = true
+			Input.parse_input_event(press)
+			await _physics_frames(3)
+			var release := press.duplicate() as InputEventMouseButton
+			release.pressed = false
+			Input.parse_input_event(release)
+			await physics_frame
+			check(pickup_can.location == ItemRecord.Location.BAG, "normal primary input collects reef can into the original bag")
+		player.set_physics_process(true)
+		session.swim_service.set_physics_process(true)
 	var chair_id := StringName()
 	for item_value in session.state.items.values():
 		var item := item_value as ItemRecord
@@ -75,13 +135,13 @@ func run() -> void:
 			player.global_position = item.last_world_transform.origin + Vector3(0, 0.5, 1.5)
 			break
 	check(not chair_id.is_empty() and session.item_store.try_hold(&"local", chair_id).ok, "player picks up a real large prop before pier travel")
-	player.global_position = Vector3(59, 1.5, 34)
+	player.global_position = Vector3(62.5, 1.5, 34)
 	player.velocity = Vector3.ZERO
-	var carried_onto_pier := await _walk_lane(Vector3(59, 1.5, 62))
-	var carried_off_pier := await _walk_lane(Vector3(59, 1.5, 31))
+	var carried_onto_pier := await _walk_lane(Vector3(62.5, 1.5, 62))
+	var carried_off_pier := await _walk_lane(Vector3(62.5, 1.5, 31))
 	check(carried_onto_pier and carried_off_pier and (session.state.items[chair_id] as ItemRecord).location == ItemRecord.Location.HELD, "player carries a real chair onto and off the pier")
 
-	print("P05_TRAVERSAL waypoints=%d distance=%.1fm huts=%d reefs=%d pier_carry=%d failures=%d" % [route.size(), traversed, hut_entries, int(west_reached) + int(east_reached), int(carried_onto_pier and carried_off_pier), failures])
+	print("P05_TRAVERSAL waypoints=%d distance=%.1fm huts=%d reefs=%d reef_items=%d reef_overlaps=%d pier_carry=%d failures=%d" % [route.size(), traversed, hut_entries, int(west_reached) + int(east_reached), reef_checked, reef_overlaps + physics_overlaps, int(carried_onto_pier and carried_off_pier), failures])
 	quit(failures)
 
 

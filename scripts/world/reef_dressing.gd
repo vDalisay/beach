@@ -19,6 +19,16 @@ const STRUCTURES := [
 ]
 
 
+static func blocks_point(position_mm: Array, margin_mm := 1200.0) -> bool:
+	var point := Vector2(float(position_mm[0]), float(position_mm[2])) / 1000.0
+	for index in STRUCTURES.size():
+		var rock := STRUCTURES[index] as Vector4
+		var local := (point - Vector2(rock.x, rock.y)).rotated(-rock.z)
+		if absf(local.x) <= (3.5 + float(index % 3) * 0.3) * 0.5 + margin_mm / 1000.0 and absf(local.y) <= (2.5 + float(index % 2) * 0.3) * 0.5 + margin_mm / 1000.0:
+			return true
+	return false
+
+
 func _ready() -> void:
 	var wrapper := RIDGE.instantiate() as Node3D
 	var source := wrapper.get_node("Visual/Ridge") as MeshInstance3D

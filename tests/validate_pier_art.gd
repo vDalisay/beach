@@ -31,12 +31,12 @@ func _run() -> void:
 	var head_rail := pier.get_node("SyntyPierHeadRailing") as MultiMeshInstance3D
 	var approach_rail := pier.get_node("SyntyApproachRailing") as MultiMeshInstance3D
 	var tower := pier.get_node("SyntyLighthouse") as Node3D
-	check(tower != null and platform.multimesh.mesh != null and platform.multimesh.instance_count == 144 and head_platform.multimesh.instance_count == 88 and support_poles.multimesh.instance_count == 22 and approach.multimesh.instance_count == 40 and rail.multimesh.instance_count == 50 and head_rail.multimesh.instance_count == 42 and approach_rail.multimesh.instance_count == 20, "staged Synty lighthouse and dock modules assemble in the playable beach")
+	check(tower != null and platform.multimesh.mesh != null and platform.multimesh.instance_count == 72 and head_platform.multimesh.instance_count == 77 and support_poles.multimesh.instance_count == 12 and approach.multimesh.instance_count == 40 and rail.multimesh.instance_count == 24 and head_rail.multimesh.instance_count == 29 and approach_rail.multimesh.instance_count == 20, "shortened Synty pier and cafe head assemble in the playable beach")
 	check(tower.find_children("RedBand*", "MeshInstance3D", false, false).size() == 3, "Synty lighthouse has reference-style painted bands")
 	check(tower.global_position.distance_to(Vector3(72.5, 1.65, 95)) < 0.01 and pier.has_node("SyntyLighthouseIsland/Visual/Ridge") and pier.has_node("SyntyIslandPalm01/Visual/Palm") and pier.has_node("LighthouseIslandCollision/Collision"), "Synty lighthouse sits on a solid planted island offshore")
 	check((pier.get_node("Deck/Collision") as CollisionShape3D).shape != null and (pier.get_node("PierHead/Collision") as CollisionShape3D).shape != null and (pier.get_node("PavilionCollision/Collision") as CollisionShape3D).shape != null and (pier.get_node("Lighthouse/Collision") as CollisionShape3D).shape != null, "pier head, pavilion and lighthouse remain solid")
-	check(pier.has_node("PierAwning00") and pier.has_node("PierAwning09") and pier.has_node("PierLamp_-1_104") and pier.has_node("PierBench_1_90") and pier.has_node("PierUmbrella03") and pier.has_node("PierTable03") and pier.has_node("PierChair03_3"), "Synty cafe awnings and terrace furniture dress the pier head")
-	check(pier.has_node("PierBench_1_90Collision/Collision") and pier.has_node("PierTable03Collision/Collision") and pier.has_node("PierChair03_3Collision/Collision"), "pier terrace furniture blocks the player")
+	check(pier.has_node("PierAwning00") and pier.has_node("PierAwning09") and pier.has_node("PierLamp_-1_70") and pier.has_node("PierBench_1_65") and pier.has_node("PierUmbrella03") and pier.has_node("PierTable03") and pier.has_node("PierChair03_3"), "Synty cafe awnings and terrace furniture dress the pier head")
+	check(pier.has_node("PierBench_1_65Collision/Collision") and pier.has_node("PierTable03Collision/Collision") and pier.has_node("PierChair03_3Collision/Collision"), "pier terrace furniture blocks the player")
 	var beach := session.get_node("Beach") as Node3D
 	await physics_frame
 	var island_hit := beach.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(78.5, 5, 95), Vector3(78.5, -2, 95)))
@@ -76,7 +76,7 @@ func _run() -> void:
 	await physics_frame
 	if "--capture" in OS.get_cmdline_user_args():
 		await _capture("P25-lighthouse-first.png")
-	player.global_position = Vector3(62.5, 2.2, 118)
+	player.global_position = Vector3(62.5, 2.2, 87)
 	player.camera.look_at(Vector3(62.5, 1.8, 64))
 	await physics_frame
 	if "--capture" in OS.get_cmdline_user_args():
@@ -100,17 +100,17 @@ func _run() -> void:
 		await _view(player, Vector3(4, 15, 68), Vector3(0, 0, 0), "reference-beach-cluster.png")
 		await _view(player, Vector3(66, 2.6, 68), Vector3(72.5, 16, 95), "reference-lighthouse.png")
 		await _view(player, Vector3(62.5, 18, 75), Vector3(62.5, 2, 111), "reference-pier-head.png")
-	player.global_position = Vector3(62.5, 2.2, 94)
+	player.global_position = Vector3(62.5, 2.2, 70)
 	player.velocity = Vector3.ZERO
-	player.look_at(Vector3(62.5, 2.2, 116))
+	player.look_at(Vector3(62.5, 2.2, 90))
 	Input.action_press(&"move_forward")
 	for frame in 240:
 		await physics_frame
 	Input.action_release(&"move_forward")
-	check(player.global_position.z > 103.0 and player.global_position.z < 111.5 and player.global_position.y > 1.4, "player walks onto solid pier head and stops at Synty pavilion")
+	check(player.global_position.z > 74.0 and player.global_position.z < 81.0 and player.global_position.y > 1.4, "player walks onto solid pier head and stops at Synty pavilion")
 	check(session.state.validate_invariants(session.definitions).is_empty(), "art-only replacement leaves run ownership valid")
 	main.free()
-	print("P25_PIER lighthouse=1 tiles=232 rails=92 collision=1 failures=%d" % failures)
+	print("P25_PIER lighthouse=1 tiles=149 rails=53 collision=1 failures=%d" % failures)
 	quit(failures)
 
 

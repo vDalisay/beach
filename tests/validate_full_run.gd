@@ -4,8 +4,8 @@ const REVIEW_VIEWS := [
 	{"name": "aerial", "origin": Vector3(-15, 65, 135), "target": Vector3(0, 0, 0)},
 	{"name": "sports-eye", "origin": Vector3(-45, 2.1, 32), "target": Vector3(-43.75, 1.7, 12)},
 	{"name": "reef", "origin": Vector3(2.5, -1.25, 101), "target": Vector3(2.5, -2.25, 107.5)},
-	{"name": "along-shore", "origin": Vector3(-65, 2.1, 45), "target": Vector3(60, 6, 72)},
-	{"name": "lounge-pocket", "origin": Vector3(-24.5, 2.1, 14), "target": Vector3(-24.5, 1.2, 20)},
+	{"name": "along-shore", "origin": Vector3(-65, 2.1, 32), "target": Vector3(60, 2.1, 37)},
+	{"name": "lounge-pocket", "origin": Vector3(-34, 2.1, 0), "target": Vector3(-22, 1.2, 18)},
 ]
 
 var review_lines := PackedStringArray()
@@ -17,6 +17,7 @@ func _init() -> void:
 func _run() -> void:
 	var started := Time.get_ticks_msec()
 	var review_pair := "--review-pair" in OS.get_cmdline_user_args()
+	var audit_slots := "--audit-slots" in OS.get_cmdline_user_args()
 	var main := (load("res://scenes/main.tscn") as PackedScene).instantiate() as BeachMain
 	root.add_child(main)
 	main.save_service.save_root = "user://test_runs/c04_review" if review_pair else "user://test_runs/c03_full_run"
@@ -158,7 +159,7 @@ func _run() -> void:
 		return
 	for frame in 3:
 		await physics_frame
-	if review_pair:
+	if review_pair or audit_slots:
 		var populated_ids := PackedStringArray()
 		for item_id in session.item_view_manager.views:
 			populated_ids.append(str(item_id))
@@ -205,6 +206,9 @@ func _run() -> void:
 	if paused or session.results_open or not _same_receipt(session.state.completion_receipt, persisted_receipt):
 		_fail("completed run could not continue roaming with its receipt")
 		return
+	if audit_slots and not await _audit_occupied_slots(session):
+		_fail("occupied destinations have blocked targets or intersecting colliders")
+		return
 	if review_pair and not await _exercise_review_lounge(session):
 		_fail("completed lounge pocket could not remove, preview, throw-capture and restore a real chair")
 		return
@@ -233,25 +237,170 @@ func _run() -> void:
 	quit()
 
 
+func _audit_occupied_slots(session: RunSession) -> bool:
+	var placement := session.placement_service
+	var player := session.get_node("Player") as BeachPlayer
+	var previous_position := player.global_position
+	var previous_processing := player.is_physics_processing()
+	player.set_physics_process(false)
+	var families := {}
+	for item_value in session.state.items.values():
+		var item := item_value as ItemRecord
+		if item.location != ItemRecord.Location.SLOTTED:
+			continue
+		var family := str((session.definitions[item.definition_id] as ItemDefinition).sorting_family)
+		if not families.has(family):
+			families[family] = []
+		(families[family] as Array).append(item.item_id)
+	var reachable := 0
+	var total := 0
+	var blocked := PackedStringArray()
+	for family in families.keys():
+		var family_reachable := 0
+		for item_id in families[family]:
+			total += 1
+			var found := false
+			var seen := PackedStringArray()
+			var record := session.state.items[item_id] as ItemRecord
+			var body := placement.slotted_views.get(item_id) as StaticBody3D
+			if body != null:
+				var shape := body.get_child(1) as CollisionShape3D
+				if shape != null:
+					var target := shape.global_position
+					for offset in [Vector3(0, 0, 1.8), Vector3(1.8, 0, 0), Vector3(0, 0, -1.8), Vector3(-1.8, 0, 0)]:
+						player.global_position = placement.slot_transform(record.slot_id).origin + offset
+						player.camera.look_at(target)
+						await physics_frame
+						var aimed := player.interactor.update_target()
+						seen.append("%s:%s" % [offset, aimed.get("id", "")])
+						if str(aimed.get("id", "")) == str(item_id):
+							found = true
+							break
+			if found:
+				reachable += 1
+				family_reachable += 1
+			else:
+				blocked.append(str(record.slot_id))
+				print("C04_SLOT_BLOCKED slot=%s position=%s seen=%s" % [record.slot_id, placement.slot_transform(record.slot_id).origin, seen])
+		print("C04_SLOT_AUDIT family=%s reachable=%d/%d" % [family, family_reachable, (families[family] as Array).size()])
+	var overlaps := PackedStringArray()
+	var seen_pairs := {}
+	for item_value in session.state.items.values():
+		var item := item_value as ItemRecord
+		if item.location != ItemRecord.Location.SLOTTED:
+			continue
+		var body := placement.slotted_views.get(item.item_id) as StaticBody3D
+		if body == null:
+			continue
+		var shape := body.get_child(1) as CollisionShape3D
+		if shape == null:
+			continue
+		var probe := PhysicsShapeQueryParameters3D.new()
+		probe.shape = shape.shape
+		probe.transform = shape.global_transform
+		probe.collision_mask = 4 | 8
+		var excluded: Array[RID] = [body.get_rid()]
+		probe.exclude = excluded
+		for hit in body.get_world_3d().direct_space_state.intersect_shape(probe, 32):
+			var other := hit.collider as StaticBody3D
+			if other == null or not other.has_meta(&"placement_slot_id"):
+				continue
+			var ids := [str(item.slot_id), str(other.get_meta(&"placement_slot_id"))]
+			ids.sort()
+			var pair := "%s / %s" % ids
+			if ids[0] != ids[1] and not seen_pairs.has(pair):
+				seen_pairs[pair] = true
+				overlaps.append(pair)
+	player.global_position = previous_position
+	player.set_physics_process(previous_processing)
+	if not blocked.is_empty():
+		push_error("C04 SLOT AUDIT: %d blocked targets; first IDs: %s" % [blocked.size(), ", ".join(blocked.slice(0, 12))])
+	if not overlaps.is_empty():
+		push_error("C04 SLOT AUDIT: %d overlapping occupied collider pairs; first IDs: %s" % [overlaps.size(), ", ".join(overlaps.slice(0, 12))])
+	print("C04_SLOT_AUDIT targets=%d/%d families=%d overlaps=%d" % [reachable, total, families.size(), overlaps.size()])
+	return reachable == total and overlaps.is_empty()
+
+
 func _exercise_review_lounge(session: RunSession) -> bool:
-	var slot_id := &"row:lounges:chairs:09:000"
+	var slot_id := &"row:lounges:chairs:11:000"
 	var placement := session.placement_service
 	var item_id := placement.occupant_for(slot_id)
 	if item_id.is_empty():
 		return false
 	var player := session.get_node("Player") as BeachPlayer
-	player.global_position = placement.slot_transform(slot_id).origin + Vector3(0, 0.3, 1.8)
-	if not placement.try_remove(&"local", slot_id).ok:
+	var body := placement.slotted_views.get(item_id) as StaticBody3D
+	if body == null:
 		return false
+	var target := (body.get_child(1) as CollisionShape3D).global_position
+	var slot_origin := placement.slot_transform(slot_id).origin
+	var walk_target := slot_origin + Vector3(0, 0, -1.8)
+	player.global_position = slot_origin + Vector3(-3, 0, -5)
+	player.velocity = Vector3.ZERO
+	player.look_at(Vector3(walk_target.x, player.global_position.y, walk_target.z), Vector3.UP)
+	_stick(-1.0)
+	for frame in 120:
+		await physics_frame
+		if Vector2(player.global_position.x - walk_target.x, player.global_position.z - walk_target.z).length() < 1.25:
+			break
+	_stick(0.0)
+	player.velocity = Vector3.ZERO
+	if Vector2(player.global_position.x - walk_target.x, player.global_position.z - walk_target.z).length() >= 1.25:
+		print("C04_LOUNGE_APPROACH stopped=%s target=%s" % [player.global_position, walk_target])
+		return false
+	player.set_physics_process(false)
+	var aimed := false
+	for offset in [Vector3(0, 0, 1.8), Vector3(1.8, 0, 0), Vector3(0, 0, -1.8), Vector3(-1.8, 0, 0)]:
+		player.global_position = placement.slot_transform(slot_id).origin + offset
+		player.camera.look_at(target)
+		await physics_frame
+		if str(player.interactor.update_target().get("id", "")) == str(item_id):
+			aimed = true
+			break
+	player.set_physics_process(true)
+	if not aimed:
+		return false
+	await _click()
+	if (session.state.items[item_id] as ItemRecord).location != ItemRecord.Location.HELD:
+		return false
+	for frame in 20:
+		await physics_frame
 	var preview := placement.preview_slot(&"local", slot_id)
 	var area := (placement.slots[slot_id] as Dictionary).area as Area3D
 	if not preview.ok or not (area.get_node("GhostRoot") as Node3D).visible:
 		return false
-	if not session.item_store.try_throw(&"local", placement.slot_transform(slot_id), Vector3.ZERO).ok:
+	player.camera.look_at((area.get_node("CaptureShape") as CollisionShape3D).global_position)
+	await physics_frame
+	var placing := player.interactor.update_target()
+	if str(placing.get("id", "")) != str(slot_id) or not (placing.get("actions", PackedStringArray()) as PackedStringArray).has("place"):
 		return false
-	for frame in 12:
+	await _click()
+	if placement.occupant_for(slot_id) != item_id:
+		return false
+	for frame in 20:
 		await physics_frame
-	return placement.occupant_for(slot_id) == item_id and session.progress_service.completed_props == 300 and session.state.validate_invariants(session.definitions).is_empty()
+	body = placement.slotted_views.get(item_id) as StaticBody3D
+	if body == null:
+		return false
+	player.camera.look_at((body.get_child(1) as CollisionShape3D).global_position)
+	await physics_frame
+	if str(player.interactor.update_target().get("id", "")) != str(item_id):
+		return false
+	await _click()
+	if (session.state.items[item_id] as ItemRecord).location != ItemRecord.Location.HELD:
+		return false
+	for frame in 20:
+		await physics_frame
+	if not placement.preview_slot(&"local", slot_id).ok:
+		return false
+	player.camera.look_at((area.get_node("CaptureShape") as CollisionShape3D).global_position)
+	await physics_frame
+	await _click(MOUSE_BUTTON_RIGHT)
+	for frame in 90:
+		await physics_frame
+	var captured := placement.occupant_for(slot_id) == item_id and session.progress_service.completed_props == 300 and session.state.validate_invariants(session.definitions).is_empty()
+	if not captured:
+		print("C04_LOUNGE_THROW item_location=%s player=%s world_view=%s slot=%s" % [(session.state.items[item_id] as ItemRecord).location, player.global_position, session.item_view_manager.view_for(item_id), placement.slot_transform(slot_id).origin])
+	return captured
 
 
 func _capture_review(main: BeachMain, session: RunSession, state_name: String) -> bool:
@@ -362,19 +511,27 @@ func _finish_with_special_input(session: RunSession, player: BeachPlayer, statio
 	return session.item_store.try_hold_bag(&"local", bag_id).ok and container.try_deposit_bag(&"local", bag_id).ok and truck.try_collect_containers(&"local").ok
 
 
-func _click() -> void:
+func _click(button_index: MouseButton = MOUSE_BUTTON_LEFT) -> void:
 	var press := InputEventMouseButton.new()
-	press.button_index = MOUSE_BUTTON_LEFT
+	press.button_index = button_index
 	press.pressed = true
 	Input.parse_input_event(press)
 	Input.flush_buffered_events()
 	for _index in range(3):
 		await physics_frame
 	var release := InputEventMouseButton.new()
-	release.button_index = MOUSE_BUTTON_LEFT
+	release.button_index = button_index
 	Input.parse_input_event(release)
 	Input.flush_buffered_events()
 	await physics_frame
+
+
+func _stick(value: float) -> void:
+	var event := InputEventJoypadMotion.new()
+	event.axis = JOY_AXIS_LEFT_Y
+	event.axis_value = value
+	Input.parse_input_event(event)
+	Input.flush_buffered_events()
 
 
 func _same_receipt(a: Dictionary, b: Dictionary) -> bool:

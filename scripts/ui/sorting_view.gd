@@ -170,6 +170,9 @@ func _input(event: InputEvent) -> void:
 			_zoom(0.25)
 	if not event.is_pressed() or event.is_echo():
 		return
+	var focused := get_viewport().gui_get_focus_owner()
+	if event.is_action_pressed(&"ui_accept") and focused != null and focused != self and is_ancestor_of(focused):
+		return
 	if event.is_action_pressed(&"pause"):
 		focus_before_pause = get_viewport().gui_get_focus_owner()
 		_cancel_drag()

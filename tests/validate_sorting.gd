@@ -77,16 +77,16 @@ func _run() -> void:
 	_collect(run_root, candidates.slice(20, 200))
 	await _physics_frames(2)
 	var remapped_confirm := InputEventJoypadButton.new()
-	remapped_confirm.button_index = JOY_BUTTON_X
+	remapped_confirm.button_index = JOY_BUTTON_Y
 	remapped_confirm.pressed = true
-	main.settings_store.rebind(&"ui_accept", remapped_confirm)
+	check(main.settings_store.rebind(&"ui_accept", remapped_confirm).is_empty(), "Y is a supported confirm remap alongside table inspect")
 	var remapped_back := InputEventJoypadButton.new()
 	remapped_back.button_index = JOY_BUTTON_BACK
 	remapped_back.pressed = true
 	main.settings_store.rebind(&"ui_cancel", remapped_back)
 	check(view.exit_button.text.contains(main.settings_store.binding_text(&"ui_cancel")), "table exit prompt follows the remapped controller back binding")
 	view.unload_button.grab_focus()
-	await _joy(JOY_BUTTON_X)
+	await _joy(JOY_BUTTON_Y)
 	check(station.free_cell_count() == 40 and station.item_at(199) == candidates[199], "remapped controller confirm unloads into stable table cells")
 	view.grab_focus()
 	await _joy(JOY_BUTTON_BACK)
@@ -234,6 +234,17 @@ func _run() -> void:
 	var loaded := main.load_run(run_id, &"manual_2")
 	check(bool(loaded.ok), "table save loads from second checkpoint")
 	if bool(loaded.ok):
+		check(main.pause_menu.slot_picker.selected == 1, "loaded Checkpoint 2 remains the Save destination")
+		var first_sequence := int((main.save_service.load_slot(&"beach_01", run_id, &"manual") as Dictionary).sequence)
+		var second_sequence := int((main.save_service.load_slot(&"beach_01", run_id, &"manual_2") as Dictionary).sequence)
+		var resumed_player := main.run_root.get_node("Player") as BeachPlayer
+		resumed_player.set_paused(true)
+		await process_frame
+		main.pause_menu.save_button.grab_focus()
+		await _joy(JOY_BUTTON_A)
+		check(int(main.save_service.load_slot(&"beach_01", run_id, &"manual").sequence) == first_sequence and int(main.save_service.load_slot(&"beach_01", run_id, &"manual_2").sequence) > second_sequence, "Save after loading Checkpoint 2 advances only that slot")
+		main.pause_menu.resume_button.grab_focus()
+		await _joy(JOY_BUTTON_A)
 		var resumed := main.run_root as RunSession
 		var resumed_station := resumed.sorting_stations[&"sorting:S1"] as SortingStation
 		check(not resumed_station.active and not main.sorting_view.visible and resumed_station.free_cell_count() == SortingStation.CELL_COUNT - table_count and (resumed_station.bin_record(&"glass").items as Array).size() == glass_count and valuable_id in (resumed_station.table_record().tray as Array) and resumed.state.validate_invariants(resumed.definitions).is_empty(), "load returns to world at station with table, bin and tray ownership intact")
@@ -242,8 +253,13 @@ func _run() -> void:
 		await _joy(JOY_BUTTON_DPAD_DOWN)
 		check(view.selected_valuable == valuable_id, "controller selects the saved valuable in the native tray list")
 		view.sell_button.grab_focus()
-		await _joy(JOY_BUTTON_A)
+		var y_confirm := InputEventJoypadButton.new()
+		y_confirm.button_index = JOY_BUTTON_Y
+		y_confirm.pressed = true
+		main.settings_store.rebind(&"ui_accept", y_confirm)
+		await _joy(JOY_BUTTON_Y)
 		check((resumed.state.valuable_sales as Array).size() == 1 and (resumed_station.table_record().tray as Array).is_empty(), "focused Sell activates once and pays for the original valuable")
+		main.settings_store.reset_all()
 		view.bin_buttons[3].grab_focus()
 		await _joy(JOY_BUTTON_A)
 		var loaded_cell := -1
@@ -259,11 +275,37 @@ func _run() -> void:
 			await _joy(JOY_BUTTON_A)
 			check(resumed_station.item_at(loaded_cell).is_empty() and (resumed.state.items[loaded_item] as ItemRecord).location == ItemRecord.Location.BIN, "controller sorts a restored cell without leaving its saved owner behind")
 		view.seal_button.grab_focus()
-		await _joy(JOY_BUTTON_A)
+		var shoulder_confirm := InputEventJoypadButton.new()
+		shoulder_confirm.button_index = JOY_BUTTON_LEFT_SHOULDER
+		shoulder_confirm.pressed = true
+		main.settings_store.rebind(&"ui_accept", shoulder_confirm)
+		await _joy(JOY_BUTTON_LEFT_SHOULDER)
 		check((resumed_station.bin_record(&"glass").items as Array).is_empty() and (resumed_station.rack_record().slots as Dictionary).size() == 2, "focused Seal creates a partial physical bag after reload")
 		view.exit_button.grab_focus()
-		await _joy(JOY_BUTTON_A)
+		await _joy(JOY_BUTTON_LEFT_SHOULDER)
 		check(not resumed_station.active and (resumed.get_node("Player") as BeachPlayer).input_enabled and resumed.state.validate_invariants(resumed.definitions).is_empty(), "controller Exit returns to world without duplicating table ownership")
+		main.settings_store.reset_all()
+		resumed_player.set_paused(true)
+		await process_frame
+		main.pause_menu.slot_picker.select(2)
+		main.pause_menu.save_button.grab_focus()
+		await _joy(JOY_BUTTON_A)
+		var second_before_quit := int(main.save_service.load_slot(&"beach_01", run_id, &"manual_2").sequence)
+		var third_before_quit := int(main.save_service.load_slot(&"beach_01", run_id, &"manual_3").sequence)
+		check(bool(main.load_run(run_id, &"manual_3").ok) and main.pause_menu.slot_picker.selected == 2, "loading Checkpoint 3 selects its own Save destination")
+		var third_player := main.run_root.get_node("Player") as BeachPlayer
+		third_player.global_position += Vector3(1, 0, 0)
+		third_player.set_paused(true)
+		await process_frame
+		main.pause_menu.save_quit_button.grab_focus()
+		await _joy(JOY_BUTTON_A)
+		check(main.run_root == null and int(main.save_service.load_slot(&"beach_01", run_id, &"manual_2").sequence) == second_before_quit and int(main.save_service.load_slot(&"beach_01", run_id, &"manual_3").sequence) > third_before_quit, "Save and quit after loading Checkpoint 3 advances only that slot")
+		main._show_load_panel()
+		var named_slots := 0
+		for index in main.save_list.item_count:
+			if main.save_list.get_item_text(index).contains("Checkpoint ") and main.save_list.get_item_text(index).contains("/5700"):
+				named_slots += 1
+		check(named_slots >= 3, "Load lists checkpoint names, saved times and progress")
 	print("P12_TABLE cells=20->200->240 unload=atomic sort=wrong/correct controller=sort/correct mouse=drag catch=physical bin=50->sealed tray=valuable failures=%d" % failures)
 	main.free()
 	quit(failures)

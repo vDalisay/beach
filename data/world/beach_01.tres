@@ -6,7 +6,7 @@
 [resource]
 script = ExtResource("1_beach")
 beach_id = &"beach_01"
-version = "6"
+version = "7"
 scene_path = "res://scenes/world/beach.tscn"
 spawn_anchor_resource = ExtResource("2_anchors")
 ordered_zones = Array[StringName]([&"arrival", &"sports", &"lounges", &"sandplay", &"pier", &"shallows", &"reef_west", &"reef_east"])
@@ -75,5 +75,6 @@ restoration_recipes = {
 starting_state = {
 "player_spawn": Vector3(-73, 0.05, 7),
 "service_points": {&"S1": Vector3(-68.75, 0, -8), &"S2": Vector3(6.25, 0, -8), &"S3": Vector3(58.75, 0, -5)},
-"walk_route": [Vector3(-73, 0, 7), Vector3(-62.5, 0, 7), Vector3(-51.25, 0, 7), Vector3(-38.75, 0, 7), Vector3(-26.25, 0, 7), Vector3(-13.75, 0, 7), Vector3(0, 0, 7), Vector3(13.75, 0, 7), Vector3(27.5, 0, 7), Vector3(41.25, 0, 7), Vector3(53.75, 0, 7), Vector3(65, 0, 7), Vector3(75, 0, 8)]
+"walk_route": [Vector3(-73, 0, 7), Vector3(-62.5, 0, 7), Vector3(-51.25, 0, 7), Vector3(-38.75, 0, 7), Vector3(-26.25, 0, 7), Vector3(-13.75, 0, 7), Vector3(0, 0, 7), Vector3(13.75, 0, 7), Vector3(27.5, 0, 7), Vector3(41.25, 0, 7), Vector3(53.75, 0, 7), Vector3(65, 0, 7), Vector3(75, 0, 8)],
+"pier_carry_route": [Vector3(62.5, 1.5, 34), Vector3(62.5, 1.5, 75)]
 }

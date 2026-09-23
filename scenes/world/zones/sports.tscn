@@ -146,6 +146,7 @@ script = ExtResource("3_slot")
 pool_id = &"row:sports:coolers"
 accepted_families = PackedStringArray("cooler")
 capacity = 8
+spacing = 1.5
 [node name="Tents" type="Marker3D" parent="Storage" groups=["placement_pools"]]
 position = Vector3(22, 0, -13)
 script = ExtResource("3_slot")

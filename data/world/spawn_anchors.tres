@@ -2,7 +2,7 @@
 
 [resource]
 resource_name = "beach_01_spawn_packs_v2"
-metadata/content_version = "beach-content-6"
+metadata/content_version = "beach-content-7"
 metadata/grid_columns = 16
 metadata/grid_rows = 48
 metadata/grid_spacing_mm = 700
@@ -18,7 +18,7 @@ metadata/packs = {
 &"sandplay:hut": {"anchor_id": &"pack:sandplay:hut", "origin_mm": PackedInt32Array(13750, 150, -6000), "tags": PackedStringArray("sand", "single", "pile", "buried"), "min_depth_mm": 0, "max_depth_mm": 700},
 &"pier:approach": {"anchor_id": &"pack:pier:approach", "origin_mm": PackedInt32Array(37500, 150, -6000), "tags": PackedStringArray("sand", "single", "pile", "buried"), "min_depth_mm": 0, "max_depth_mm": 700},
 &"pier:deck": {"anchor_id": &"pack:pier:deck", "origin_mm": PackedInt32Array(57500, 1150, 45000), "tags": PackedStringArray("deck", "single", "pile"), "min_depth_mm": 0, "max_depth_mm": 0},
-&"pier:moorings": {"anchor_id": &"pack:pier:moorings", "origin_mm": PackedInt32Array(44000, -1200, 60000), "prop_origin_mm": PackedInt32Array(57500, 1150, 85000), "tags": PackedStringArray("deck", "water_surface", "seabed", "single", "pile", "attachment", "buried"), "min_depth_mm": 500, "max_depth_mm": 3500},
+&"pier:moorings": {"anchor_id": &"pack:pier:moorings", "origin_mm": PackedInt32Array(44000, -1200, 60000), "prop_origin_mm": PackedInt32Array(57000, 1150, 23000), "tags": PackedStringArray("deck", "water_surface", "seabed", "single", "pile", "attachment", "buried"), "min_depth_mm": 500, "max_depth_mm": 3500},
 &"shallows:west": {"anchor_id": &"pack:shallows:west", "origin_mm": PackedInt32Array(18750, -1200, 40000), "tags": PackedStringArray("water_surface", "seabed", "single", "pile", "attachment", "buried"), "min_depth_mm": 500, "max_depth_mm": 3500},
 &"shallows:east": {"anchor_id": &"pack:shallows:east", "origin_mm": PackedInt32Array(30000, -1800, 62000), "tags": PackedStringArray("water_surface", "seabed", "single", "pile", "attachment", "buried"), "min_depth_mm": 500, "max_depth_mm": 4500},
 &"reef_west:outer": {"anchor_id": &"pack:reef_west:outer", "origin_mm": PackedInt32Array(0, -2800, 85000), "tags": PackedStringArray("seabed", "single", "pile", "attachment", "buried"), "min_depth_mm": 1800, "max_depth_mm": 6000},

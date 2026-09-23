@@ -199,7 +199,8 @@ func list_slots(target_beach: StringName) -> Array[Dictionary]:
 				continue
 			var envelope := selected.envelope as Dictionary
 			var payload := envelope.payload as Dictionary
-			entries.append({"beach_id": str(target_beach), "run_id": run_id, "slot_id": slot_name, "seed": str(payload.get("seed_text", "")), "saved_at": float(envelope.saved_at), "sequence": int(envelope.sequence), "damaged": false})
+			var progress := _progress_summary(payload)
+			entries.append({"beach_id": str(target_beach), "run_id": run_id, "slot_id": slot_name, "seed": str(payload.get("seed_text", "")), "saved_at": float(envelope.saved_at), "sequence": int(envelope.sequence), "completed": progress.completed, "required": progress.required, "damaged": false})
 	entries.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
 		return str(a.run_id) > str(b.run_id) if int(a.saved_at) == int(b.saved_at) else int(a.saved_at) > int(b.saved_at)
 	)
@@ -215,12 +216,17 @@ func checkpoint_summaries() -> Array[Dictionary]:
 			continue
 		var envelope := selected.envelope as Dictionary
 		var payload := envelope.payload as Dictionary
-		var completed := 0
-		for section_value in (payload.get("section_states", {}) as Dictionary).values():
-			var section := section_value as Dictionary
-			completed += int(section.get("collected_waste", 0)) + int(section.get("slotted_props", 0))
-		summaries.append({"saved_at": int(envelope.saved_at), "completed": completed, "required": int(payload.get("required_total", 0))})
+		var progress := _progress_summary(payload)
+		summaries.append({"saved_at": int(envelope.saved_at), "completed": progress.completed, "required": progress.required})
 	return summaries
+
+
+func _progress_summary(payload: Dictionary) -> Dictionary:
+	var completed := 0
+	for section_value in (payload.get("section_states", {}) as Dictionary).values():
+		var section := section_value as Dictionary
+		completed += int(section.get("collected_waste", 0)) + int(section.get("slotted_props", 0))
+	return {"completed": completed, "required": int(payload.get("required_total", 0))}
 
 
 func _select_generation(folder: String) -> Dictionary:

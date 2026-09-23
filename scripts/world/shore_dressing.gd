@@ -43,8 +43,8 @@ func _build_outer_dunes() -> void:
 	instances.transform_format = MultiMesh.TRANSFORM_3D
 	instances.mesh = source.mesh
 	var dunes := [
-		Vector3(-104, 0, 4), Vector3(-135, 0, 20), Vector3(-167, 0, 5),
-		Vector3(105, 0, 9), Vector3(137, 0, 28), Vector3(170, 0, 8),
+		Vector3(-104, 0, 4), Vector3(-135, 0, 20), Vector3(-145, 0, 33),
+		Vector3(105, 0, 9), Vector3(137, 0, 28), Vector3(145, 0, 33),
 	]
 	instances.instance_count = dunes.size()
 	for index in dunes.size():
@@ -67,7 +67,10 @@ func _build_sand_surface() -> void:
 	for index in 241:
 		var x := float(index * 2.5 - 300)
 		var shore_z := Coastline.shore_z(x)
-		var points := [Vector2(-36.0, 0.012), Vector2(shore_z - 2.0, 0.012), Vector2(shore_z + 28.0, -2.5), Vector2(shore_z + 55.0, -3.2), Vector2(800.0, -3.2)]
+		var flank := maxf(absf(x) - 80.0, 0.0)
+		var taper_width := maxf(2.0, 12.0 - maxf(absf(x) - 180.0, 0.0) * 0.2)
+		var inland_z := minf(-36.0 + flank * 0.9, shore_z - taper_width)
+		var points := [Vector2(inland_z, 0.012), Vector2(shore_z - 2.0, 0.012), Vector2(shore_z + 28.0, -2.5), Vector2(shore_z + 55.0, -3.2), Vector2(800.0, -3.2)]
 		var tints := [Color.WHITE, Color.WHITE, Color(0.8, 0.95, 1), Color(0.35, 0.75, 0.85), Color(0.35, 0.75, 0.85)]
 		for point_index in points.size():
 			var point := points[point_index] as Vector2
