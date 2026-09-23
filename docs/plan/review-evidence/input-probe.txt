@@ -1,0 +1,19 @@
+Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org
+OpenGL API 3.3.0 NVIDIA 595.79 - Compatibility - Using Device: NVIDIA - NVIDIA GeForce RTX 3070
+
+REVIEW_PROP tool=stick correct_target=true actions=["hold"] held=true
+REVIEW_PROP tool=cloth correct_target=true actions=["hold"] held=true
+REVIEW_PROP tool=sand_cleaner correct_target=true actions=["hold"] held=false
+REVIEW_PROP tool=vacuum correct_target=true actions=["hold"] held=false
+REVIEW_PROP tool=detector correct_target=true actions=["hold"] held=false
+REVIEW_PROP tool=knife correct_target=true actions=["hold"] held=false
+REVIEW_PICKUP definition=waste_buried_metal tool=stick correct_target=true actions=[] reason=Needs Detector location=WORLD
+REVIEW_PICKUP definition=waste_buried_metal tool=detector correct_target=true actions=["collect"] reason= location=WORLD
+REVIEW_PICKUP definition=waste_rescue_ring tool=stick correct_target=true actions=[] reason=Needs Knife location=WORLD
+REVIEW_PICKUP definition=waste_rescue_ring tool=knife correct_target=true actions=["collect"] reason= location=WORLD
+REVIEW_PICKUP definition=valuable_keys tool=stick correct_target=true actions=[] reason=Needs Detector location=WORLD
+REVIEW_PICKUP definition=valuable_keys tool=detector correct_target=true actions=["collect"] reason= location=WORLD
+REVIEW_LIFO collect_waste=true collect_valuable=true expected=valuable:arrival:dunes:00001 actual=item:arrival:dunes:00002
+REVIEW_TABLE focused_unload=true bag_after_A=1 table_cells=0 hint=Empty cell
+REVIEW_TABLE focused_seal=true bin_after_A=1 bags=0 hint=Empty cell
+REVIEW_TABLE start_opens_pause=false sorting_active=true

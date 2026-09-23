@@ -1,6 +1,8 @@
 # Beach — full-release implementation plan
 
-Status: ready for implementation. No gameplay has been implemented by this planning task.
+Current status — 23 September 2026: most gameplay systems are implemented, but normal-input completion and controller sorting have reproduced blockers. Visual alignment and release evidence remain incomplete. Start with the [implementation and screenshot review](06-implementation-review.md), then follow the [completion plan C00–C09](07-completion-plan.md).
+
+The P00–P30 index below is the original implementation specification, not a current completion checklist. The starting-point and planning-validation sections record the historical 22 September planning pass. Use the review's packet reconciliation for current status; the confirmed requirements remain authoritative. This review added documentation and evidence, not gameplay fixes.
 
 This plan incorporates both clarification rounds and the final instruction: **build only the full-release version; there is no demo deliverable**. Internal test scenes are verification tools, not a separate product. There are no schedules, estimates, or staffing assumptions.
 

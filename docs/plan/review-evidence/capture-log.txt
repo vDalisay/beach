@@ -1,0 +1,10 @@
+Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org
+OpenGL API 3.3.0 NVIDIA 595.79 - Compatibility - Using Device: NVIDIA - NVIDIA GeForce RTX 3070
+
+REVIEW_CAPTURE aerial-current result=0
+REVIEW_CAPTURE beach-current result=0
+REVIEW_CAPTURE reef-current result=0
+REVIEW_CLEAN source=accelerated-full-run placed=true completed=5700 errors=0
+REVIEW_CAPTURE aerial-restored result=0
+REVIEW_CAPTURE beach-restored result=0
+REVIEW_CAPTURE reef-restored result=0

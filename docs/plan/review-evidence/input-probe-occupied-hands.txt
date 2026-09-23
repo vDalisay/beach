@@ -1,0 +1,16 @@
+23 September 2026 — supplemental rendered diagnostic
+Godot 4.6.3.stable.official.7d41c59c4; Compatibility/OpenGL; RTX 3070.
+
+Used the same main-scene setup and mouse-event injection as input-probe.gd.
+After its post-reveal pickup cases and before its LIFO/table checks:
+1. Reposition the existing revealed buried-metal record with pose().
+2. Select/own detector with equip().
+3. Stage an occupied hand through session.item_store.try_hold(local, bucket.item_id).
+4. Inject the normal primary click through click(player).
+
+Observed console output:
+REVIEW_OCCUPIED_HANDS held_setup=true detector_loose_pickup=true
+
+This staged case confirms the hands-occupied fallback described in F01.
+It does not demonstrate earning/arranging that state through a full human run.
+The original input-probe.txt remains the separate empty-hands baseline.
