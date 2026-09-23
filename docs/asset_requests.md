@@ -1,29 +1,22 @@
-# Asset requests
+# Asset register — C00, 23 September 2026
 
-Current audit status: the P01 sample was too narrow. The playable beach now stages 84 Synty wrappers (240-file selected closure), including the supplied `SM_Prop_Drink_Bottle_01` for glass litter, a tinted drink-bottle mesh for plastic litter, crushed cans, drink cups, ice cream, sandwiches, rolled discarded towels and glass jars, plus deck chairs, outdoor table, parasols, bins and containers, sandcastles, shade structures, boats, a windsurf board with sail, skyline, pier, lighthouse and a scaled Synty pole shaft for the starter poking stick. The later reference-image pass added Synty city, low-rise, villa and art-deco window façades with their separate glass meshes, roofs, sidewalk, mountain range, planter benches, boulevard curb trim, a cloud ring, modular service-hut walls/roofs and a furnished pier-head cafe with pack-made awnings, lamps, benches, umbrellas, outdoor tables, chairs and support poles. Thirty-one of 34 item definitions use Synty meshes or Synty-based compositions; the two rescue attachments and residue stain use project-owned shapes, not cubes. The source conversion's missing material is `Lit`; it affects `SM_Env_Drawbridge_Base_01`, the left/right counter doors, one ferris-wheel glass compartment, `SM_Prop_Street_Sign_02`, and `SM_Veh_Hot_Dog_Cart_01`. None is in the selected closure.
+`data/asset_manifest.json` stages **86 Synty wrapper roles / 244 source and dependency files** from the locally licensed Palm City conversion. The wrapper scene and every source component are named there. `tools/stage_assets.gd` regenerates `art/synty/`; `tests/run_checks.gd` verifies the closure and loads every wrapper. Generated/vendor files stay out of Git.
 
-No item definition now points to the generic cube. The rowboat uses Synty's inflatable RIB hull as an explicit visual substitute, the portable tent uses the pack's scaled `SM_Prop_Shelter_02`, and fruit scrap uses the pack's banana-food prop. These are not claims that exact rowboat, collapsible tent or fruit-peel prefabs exist. `data/asset_manifest.json` remains the machine-readable source for open fidelity requests.
+The manifest's 27 `missing_assets` rows name each open role, its current status, the actual runtime consumer, and a replacement path. **A path is not a connection:** where the consumer is a script, passive tool, or `none`, adding a model at `replacement_path` alone will not display it. C05/C07/C08 must wire and inspect it. A direct scene replacement must preserve the gameplay node contract and scale. The gallery shows these requests as placeholders; it does not prove that cubes appear in gameplay.
 
-| ID | Requested replacement | Cube | Approximate size (m) | Intended use | Search result |
-|---|---|---|---|---|---|
-| A01 | Turtle with swimming and beach-walking poses | green | 1.4 × 0.45 × 1.0 | Restoration wildlife and entanglement rescue | No turtle-named scene found. |
-| A02 | Small reef fish variants | blue | 0.45 × 0.25 × 0.18 | Underwater wildlife routes | No living fish scene found. |
-| A03 | Starfish | orange | 0.35 × 0.08 × 0.35 | Reef restoration | No starfish scene found. |
-| A04 | Coral, seaweed, and seagrass set | pink | 0.8 × 0.9 × 0.8 | Permanent reef restoration | No matching scenes found. |
-| A05 | Shore bird/seagull | white | 0.45 × 0.5 × 0.25 | Shore wildlife | No matching scene found. |
-| A06 | Poking stick | yellow | 0.08 × 1.2 × 0.08 | Starter handheld tool | The live hand now uses a scaled Synty `SM_Prop_Sign_Pole_01` shaft; no dedicated cleanup-stick model was found. |
-| A07 | Vacuum and sand cleaner | purple | 0.65 × 0.9 × 0.45 | Purchased cleanup tools | No matching models found. |
-| A08 | Detector | cyan | 0.35 × 1.1 × 0.25 | Buried-item detection | No matching model found. |
-| A09 | Flippers and oxygen tank | orange | 0.65 × 0.8 × 0.35 | Swimming equipment | No matching equipment found. |
-| A10 | Cleaning cloth | white | 0.35 × 0.04 × 0.35 | Furniture cleaning | No cloth found; a beach towel is not a suitable substitute. |
-| A11 | Six-pack rings, tangled net, rescue variants | red | 0.6 × 0.12 × 0.6 | Knife-removable attachments | Project-owned ring/net silhouettes replace cubes for gameplay; faithful Synty rescue art remains open. Can-pack and sports-net meshes are not verified rescue art. |
-| A12 | Straw, wrap/bag and cup forms | cyan | 0.3 × 0.25 × 0.3 | PMD waste variants | Synty bottle and drink-cup geometry is staged; straw and wrap/bag forms remain open. The cup is explicitly categorized as PMD despite its composite material. |
-| A13 | Fries and hamburger | orange | 0.28 × 0.18 × 0.28 | Food waste | Synty hotdog, banana food, ice cream and panini are staged; no burger/fries scene found. |
-| A14 | Oil container | dark grey | 0.35 × 0.55 × 0.25 | General waste | Burn barrel is not a valid substitute. |
-| A15 | Seagull residue and dirt visuals | brown | 0.3 × 0.08 × 0.3 | Residue pickup and furniture stains | Project-owned flat stain replaces the cube; exact residue mesh and furniture variants remain open. |
-| A16 | Lifeguard tower, rowboat, portable tent, storage shelf | blue | 1.2 × 1.2 × 1.2 | Beach service roles | Synty dock modules/flag form lookouts; RIB dinghy and scaled `SM_Prop_Shelter_02` replace rowboat/tent cubes. A collapsible tent and storage shelf remain unverified. |
-| A17 | First-person hands and grips | skin | 0.22 × 0.12 × 0.45 | Visible hands/tools | The two plain capsule placeholders were replaced with project-owned low-poly palms, fingers, thumbs and forearms. Character FBX exists, but no suitable Synty first-person rig was verified; an exact rig remains open. |
+| Roles | What renders now | Runtime connection / remaining work |
+|---|---|---|
+| A01 turtle | Project-owned low-poly scene | `scenes/wildlife/turtle.tscn` is loaded by restoration; direct visual replacement is possible. |
+| A02 fish, A03 starfish | Project-owned procedural meshes | `fish_school.gd` and `starfish.gd` construct their visuals; supplied models need integration there. |
+| A04C coral, A04P seaweed/seagrass | Repeated procedural coral; no plant beds | `restoration_section.gd` builds coral; C07 must add distinct plant beds. |
+| A05 shore bird | None | No runtime consumer yet; C07 adds one if art is supplied. |
+| A06 stick | Scaled Synty sign pole, an explicit substitute | `progression.gd` loads the generated wrapper; a new model needs a scene-path edit. |
+| A07V vacuum, A07S sand cleaner, A08 detector, A10 cloth | Project-owned primitive visual scenes | Each `data/tools/*.tres` points to its named `scenes/tools/*.tscn`; those scenes can be replaced in place. |
+| A09F flippers, A09T tank | Passive gameplay only; no worn models | The tool resources have no visual scene contract; C08 must add presentation when models exist. |
+| A11R rings, A11N net | Project-owned rescue silhouettes | Each item definition points to its matching `art/replacements/waste/*.tscn`; direct replacement is possible. |
+| A12S straw, A12W wrap/bag, A13F fries, A13H hamburger, A14 oil container | No distinct item or model | C05 adds definitions/allocation within existing quotas and wires each visual. Staged Synty cup and other food forms cover different roles. |
+| A15R residue, A15D furniture stain | Flat project-owned residue/stain | Residue item points to `residue_stain.tscn`; `dirt_visual.gd` constructs furniture stains and needs a scene hook. |
+| A16L lookout, A16B rowboat, A16T tent, A16S shelf | Synty dock/flag lookout, RIB hull, scaled Synty shelter, project-owned storage | Lookout scene and tent visual can be replaced in place. Rowboat definition points to the Synty wrapper; shelf geometry is in the beach scene. |
+| A17 hands | Project-owned low-poly scene | `scenes/player/player.tscn` instances `art/first_person_hand.tscn`; direct visual replacement is possible. |
 
-A18 is resolved: the live sorting station uses Synty's outdoor table, trash bins and sealed trash bag; its large category containers use a scaled Synty bin mesh. Physics openings and collision shells remain project-owned so sorting and bag capture continue to work.
-
-Replacement scenes should be placed at the `replacement_path` declared for each entry in `data/asset_manifest.json`; open roles keep their current functional presentation until a replacement is validated.
+The 86 staged roles include exact pack meshes and explicit substitutes. Exact named cleanup, marine, food and equipment art is **not** present in this licensed source. Some substitutions are suitable for gameplay but remain open for final fidelity. The current save/generator identity is independent of pure visual swaps; preserve wrapper paths where possible and retest runtime consumers after each swap.
