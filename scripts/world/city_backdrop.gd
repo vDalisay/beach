@@ -264,8 +264,7 @@ func _add_boulevard_details() -> void:
 
 func _add_clouds() -> void:
 	var cloud_finish := StandardMaterial3D.new()
-	cloud_finish.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	cloud_finish.albedo_color = Color(0.95, 0.98, 1)
+	cloud_finish.albedo_color = Color(0.87, 0.91, 0.94)
 	cloud_finish.cull_mode = BaseMaterial3D.CULL_DISABLED
 	for index in 2:
 		var clouds := CLOUD_RING.instantiate() as Node3D
