@@ -1,6 +1,6 @@
 # Asset register — C00, 23 September 2026
 
-`data/asset_manifest.json` stages **86 Synty wrapper roles / 244 source and dependency files** from the locally licensed Palm City conversion. The wrapper scene and every source component are named there. `tools/stage_assets.gd` regenerates `art/synty/`; `tests/run_checks.gd` verifies the closure and loads every wrapper. Generated/vendor files stay out of Git.
+`data/asset_manifest.json` stages **87 Synty wrapper roles / 245 source and dependency files** from the locally licensed Palm City conversion. The wrapper scene and every source component are named there. `tools/stage_assets.gd` regenerates `art/synty/`; `tests/run_checks.gd` verifies the closure and loads every wrapper. Generated/vendor files stay out of Git.
 
 The manifest's 28 `missing_assets` rows name each open role, its current status, the actual runtime consumer, and a replacement path. **A path is not a connection:** where the consumer is a script, passive tool, or `none`, adding a model at `replacement_path` alone will not display it. C07/C08 must wire and inspect those roles. A direct scene replacement must preserve the gameplay node contract and scale. The gallery shows these requests as placeholders; it does not prove that cubes appear in gameplay.
 
@@ -19,4 +19,4 @@ The manifest's 28 `missing_assets` rows name each open role, its current status,
 | A16L lookout, A16B rowboat, A16T tent, A16S shelf | Synty dock/flag lookout, RIB hull, scaled Synty shelter, project-owned storage | Lookout scene and tent visual can be replaced in place. Rowboat definition points to the Synty wrapper; shelf geometry is in the beach scene. |
 | A17 hands | Project-owned low-poly scene | `scenes/player/player.tscn` instances `art/first_person_hand.tscn`; direct visual replacement is possible. |
 
-The 86 staged roles include exact pack meshes and explicit substitutes. Exact named cleanup, marine, food and equipment art is **not** present in this licensed source. Some substitutions are suitable for gameplay but remain open for final fidelity. The current save/generator identity is independent of pure visual swaps; preserve wrapper paths where possible and retest runtime consumers after each swap.
+The 87 staged roles include exact pack meshes and explicit substitutes. Exact named cleanup, marine, food and equipment art is **not** present in this licensed source. Some substitutions are suitable for gameplay but remain open for final fidelity. The current save/generator identity is independent of pure visual swaps; preserve wrapper paths where possible and retest runtime consumers after each swap.

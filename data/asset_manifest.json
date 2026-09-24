@@ -337,6 +337,11 @@
       "visual_position": [0, 0, 0], "gallery_position": [105, 0, -10], "label_height": 0.6
     },
     {
+      "id": "world_reef_mound", "label": "Reef substrate mound", "wrapper_scene": "res://art/synty/wrappers/world_reef_mound.tscn",
+      "components": [{"name": "Mound", "source_scene": "SM_Env_Sand_Pile_02.tscn"}],
+      "visual_position": [0, 0, 0], "gallery_position": [110, 0, -10], "label_height": 0.6
+    },
+    {
       "id": "waste_fruit_scrap", "label": "Banana food scrap", "wrapper_scene": "res://art/synty/wrappers/waste_fruit_scrap.tscn",
       "components": [{"name": "BananaFood", "source_scene": "SM_Prop_Food_Banana_Split_01.tscn"}],
       "visual_position": [0, 0, 0], "gallery_position": [110, 0, -10], "label_height": 0.3

@@ -1,9 +1,0 @@
-[gd_scene load_steps=2 format=3]
-
-[ext_resource type="PackedScene" path="res://art/synty/POLYGON_Palm_City/meshes/tscn_separate/SM_Env_Sand_Pile_02.tscn" id="1_asset"]
-
-[node name="WorldReefMound" type="Node3D"]
-
-[node name="Visual" type="Node3D" parent="."]
-
-[node name="Mound" parent="Visual" instance=ExtResource("1_asset")]
