@@ -253,16 +253,19 @@ outline_size = 12
 [node name="SpawnExclusions" type="Node3D" parent="."]
 [node name="S1" type="Area3D" parent="SpawnExclusions" groups=["spawn_exclusions"]]
 position = Vector3(-68.75, 2.5, -8)
+collision_layer = 0
 metadata/exclusion_id = &"exclusion:service:S1"
 [node name="Collision" type="CollisionShape3D" parent="SpawnExclusions/S1"]
 shape = SubResource("Shape_exclusion")
 [node name="S2" type="Area3D" parent="SpawnExclusions" groups=["spawn_exclusions"]]
 position = Vector3(6.25, 2.5, -8)
+collision_layer = 0
 metadata/exclusion_id = &"exclusion:service:S2"
 [node name="Collision" type="CollisionShape3D" parent="SpawnExclusions/S2"]
 shape = SubResource("Shape_exclusion")
 [node name="S3" type="Area3D" parent="SpawnExclusions" groups=["spawn_exclusions"]]
 position = Vector3(58.75, 2.5, -5)
+collision_layer = 0
 metadata/exclusion_id = &"exclusion:service:S3"
 [node name="Collision" type="CollisionShape3D" parent="SpawnExclusions/S3"]
 shape = SubResource("Shape_exclusion")

@@ -106,12 +106,8 @@ func try_take_last_bag(player_id: StringName) -> ActionResult:
 func _on_interact_requested(target: Dictionary) -> void:
 	if StringName(str(target.get("id", ""))) != container_id:
 		return
-	var held := (session.state.players[&"local"] as Dictionary).held_objects as Array[Dictionary]
-	var bag_id := StringName()
-	for object_ref in held:
-		if str(object_ref.get("kind", "")) == "bag":
-			bag_id = StringName(str(object_ref.get("id", "")))
-			break
+	var selected := player.carry.selected_held_item()
+	var bag_id := selected if session.state.bag_records.has(selected) else StringName()
 	var result := try_deposit_bag(&"local", bag_id) if not bag_id.is_empty() else try_take_last_bag(&"local")
 	feedback_requested.emit("Bag deposited" if result.ok and not bag_id.is_empty() else "Bag retrieved" if result.ok else result.message)
 

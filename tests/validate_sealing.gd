@@ -48,9 +48,14 @@ func _run() -> void:
 	var second_seal := station.try_seal(&"glass")
 	var bag_two := StringName(str(second_seal.receipt.get("bag_id", "")))
 	check(second_seal.ok and station.bag_view_for(bag_two) != null, "second distinct category bag occupies another rack slot")
+	check((station.bag_view_for(bag_one).collision_layer & player.collision_mask) == 0 and (station.bag_view_for(bag_two).collision_layer & player.collision_mask) == 0, "rack bags remain pickable without blocking the carrying aisle")
 	check(session.item_store.try_hold_bag(&"local", bag_one).ok and session.item_store.try_hold_bag(&"local", bag_two).ok and (player_record.held_objects as Array).size() == 2, "two sealed bags each use one hand")
 	player.carry.refresh_hand_visuals()
 	check(_count_bag_visuals(player.hand_rig) == 2, "both held disposal bags have labelled hand visuals")
+	var glass_container := session.waste_containers[&"container:S1:glass"] as WasteContainer
+	glass_container._on_interact_requested({"id": glass_container.container_id})
+	check(str((session.state.bag_records[bag_two] as Dictionary).location) == "CONTAINER" and str((session.state.bag_records[bag_one] as Dictionary).location) == "HELD", "container interact deposits the selected second bag")
+	check(glass_container.try_take_last_bag(&"local").ok, "selected bag returns to the hand for the throw route")
 	player.global_position = station.global_position + Vector3(0, 0, 7.0)
 	player.camera.look_at(player.global_position + Vector3(0, 1.65, 10))
 	await _physics_frames(2)
@@ -64,7 +69,6 @@ func _run() -> void:
 	check(str(recovered.location) == "WORLD" and not session.item_view_manager.recovery_bounds.is_outside((station.bag_view_for(bag_two) as DisposalBag).global_position) and recovered.item_ids == [candidates[1]], "out-of-bounds bag recovers with the same identity and sealed contents")
 	check(session.item_store.try_hold_bag(&"local", bag_two).ok, "recovered bag can be picked up")
 	var pmd_container := session.waste_containers[&"container:S1:pmd"] as WasteContainer
-	var glass_container := session.waste_containers[&"container:S1:glass"] as WasteContainer
 	var wrong := pmd_container.try_deposit_bag(&"local", bag_two)
 	check(not wrong.ok and wrong.reason == ActionResult.Reason.INVALID_CATEGORY and str((session.state.bag_records[bag_two] as Dictionary).location) == "HELD", "mismatched container rejects without losing the carried bag")
 	check(glass_container.try_deposit_bag(&"local", bag_two).ok and bag_two in glass_container.contents(), "matching container accepts a carried sealed bag")

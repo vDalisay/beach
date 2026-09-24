@@ -1,0 +1,93 @@
+Godot Engine v4.6.1.stable.mono.official.14d19694e - https://godotengine.org
+OpenGL API 3.3.0 NVIDIA 595.79 - Compatibility - Using Device: NVIDIA - NVIDIA GeForce RTX 3070
+
+C05_START candidates=80 spawn=(-73.0, 0.022778, 7.0)
+C05_SKIP item:arrival:start:00028 distance=0.33 target=item:arrival:start:00011
+C05_PICK 1/3 item:arrival:start:00011 pos=(-71.18454, 0.012569, 6.565814)
+C05_PICK 2/4 item:arrival:start:00056 pos=(-71.18454, 0.012569, 6.565814)
+C05_PICK 3/5 item:arrival:start:00012 pos=(-71.22791, 0.012569, 5.63349)
+C05_PICK 4/6 item:arrival:start:00035 pos=(-71.22791, 0.012569, 5.63349)
+C05_PICK 5/7 item:arrival:start:00049 pos=(-71.37814, 0.012569, 4.241572)
+C05_PICK 6/8 item:arrival:start:00073 pos=(-71.37814, 0.012569, 4.241572)
+C05_PICK 7/9 item:arrival:start:00008 pos=(-71.37814, 0.012569, 4.241572)
+C05_PICK 8/10 item:arrival:start:00044 pos=(-71.37814, 0.012569, 4.241572)
+C05_PICK 9/11 item:arrival:start:00059 pos=(-71.37814, 0.012569, 4.241572)
+C05_PICK 10/12 item:arrival:start:00036 pos=(-71.37814, 0.012569, 4.241572)
+C05_PICK 11/13 item:arrival:start:00047 pos=(-71.37814, 0.012569, 4.241572)
+C05_PICK 12/14 item:arrival:start:00054 pos=(-71.37814, 0.012569, 4.241572)
+C05_PICK 13/15 item:arrival:start:00023 pos=(-71.37814, 0.012569, 4.241572)
+C05_PICK 14/16 item:arrival:start:00002 pos=(-70.47688, 0.012569, 3.998982)
+C05_PICK 15/17 item:arrival:start:00022 pos=(-70.47688, 0.012569, 3.998982)
+C05_PICK 16/18 item:arrival:start:00001 pos=(-70.47688, 0.012569, 3.998982)
+C05_PICK 17/19 item:arrival:start:00041 pos=(-70.21314, 0.012569, 3.103685)
+C05_PICK 18/20 item:arrival:start:00029 pos=(-68.88073, 0.012569, 2.67393)
+C05_PICK 19/21 item:arrival:start:00069 pos=(-68.88073, 0.012569, 2.67393)
+C05_PICK 20/22 item:arrival:start:00077 pos=(-68.20182, 0.012569, 2.03346)
+C05_OPENING collected=20 attempted=22 bag=20/20 pos=(-68.20182, 0.012569, 2.03346) invariants=0
+C05_CAPTURE first-bag 0
+C05_STATION reached=true pos=(-68.77785, 0.012569, -6.197948) target=sorting:S1
+C05_TABLE entered=true
+C05_UNLOAD bag=0 table=20
+C05_TABLE exited=true
+C05_PICK_2 1/1 item:arrival:start:00053 pos=(-67.96479, 0.012569, -0.186009)
+C05_PICK_2 2/2 item:arrival:start:00048 pos=(-68.82592, 0.012569, 0.173943)
+C05_PICK_2 3/3 item:arrival:start:00068 pos=(-70.63388, 0.012569, 0.765635)
+C05_PICK_2 4/4 item:arrival:start:00025 pos=(-69.47563, 0.012569, 4.802766)
+C05_PICK_2 5/5 item:arrival:start:00014 pos=(-69.47563, 0.012569, 4.802766)
+C05_PICK_2 6/6 item:arrival:start:00032 pos=(-68.9162, 0.012569, 5.54986)
+C05_PICK_2 7/7 item:arrival:start:00076 pos=(-68.9162, 0.012569, 5.54986)
+C05_PICK_2 8/8 item:arrival:start:00065 pos=(-67.6766, 0.012569, 4.899195)
+C05_PICK_2 9/9 item:arrival:start:00061 pos=(-66.75083, 0.012569, 5.017817)
+C05_PICK_2 10/10 item:arrival:start:00058 pos=(-66.75083, 0.012569, 5.017817)
+C05_PICK_2 11/11 item:arrival:start:00057 pos=(-66.58162, 0.012569, 4.099951)
+C05_PICK_2 12/12 item:arrival:start:00050 pos=(-67.08012, 0.012569, 6.855217)
+C05_PICK_2 13/13 item:arrival:start:00052 pos=(-67.08012, 0.012569, 6.855217)
+C05_PICK_2 14/14 item:arrival:start:00072 pos=(-68.71721, 0.012569, 7.752089)
+C05_PICK_2 15/15 item:arrival:start:00040 pos=(-69.62955, 0.012569, 7.948935)
+C05_PICK_2 16/16 item:arrival:start:00074 pos=(-69.91337, 0.012569, 8.838066)
+C05_PICK_2 17/17 item:arrival:start:00071 pos=(-69.91337, 0.012569, 8.838066)
+C05_SKIP item:arrival:start:00026 distance=0.74 target=item:arrival:start:00055
+C05_PICK_2 18/19 item:arrival:start:00055 pos=(-69.61627, 0.012569, 9.44979)
+C05_PICK_2 19/20 item:arrival:start:00062 pos=(-70.22516, 0.012569, 10.3629)
+C05_PICK_2 20/21 item:arrival:start:00080 pos=(-71.06246, 0.012569, 9.240876)
+C05_STATION_2 reached=true pos=(-68.71367, 0.012569, -6.036294) target=sorting:S1
+C05_SECOND collected=20 attempted=21 bag=0 table=40 invariants=0
+C05_CAPTURE table-40 0
+C05_SEAL category=pmd count=14 rack=1
+C05_SEAL category=organic count=8 rack=2
+C05_SEAL category=general count=12 rack=3
+C05_SEAL category=glass count=6 rack=4
+C05_SORT sorted=40 table=0 bags=4 invariants=0
+C05_CAPTURE rack-four 0
+C05_RACK_WALK target=(-68.75, 0.0, -5.7) reached=true pos=(-68.71021, 0.816555, -6.043672)
+C05_RACK_WALK target=(-67.95, 0.0, -6.2) reached=true pos=(-68.23598, 1.432443, -6.013914)
+C05_RACK_WALK target=(-65.8, 0.0, -6.2) reached=true pos=(-66.11328, 0.012938, -6.184194)
+C05_RACK_WALK target=(-65.8, 0.0, -8.9) reached=true pos=(-65.79776, 0.012938, -8.567512)
+C05_RACK_AIM bag:000001 bag:000001 dist=1.14 bag_pos=(-65.65, 0.65, -9.65)
+C05_CONTAINER_AIM bag:000001 container:S1:pmd reached=false pos=(-72.11707, 0.013, -1.751) dist=1.05
+C05_DEPOSIT bag:000001 category=pmd location=CONTAINER
+C05_RACK_WALK target=(-68.75, 0.0, -5.7) reached=true pos=(-68.92301, 0.012998, -5.422437)
+C05_RACK_WALK target=(-67.95, 0.0, -6.2) reached=true pos=(-68.20013, 0.012998, -6.007185)
+C05_RACK_WALK target=(-65.8, 0.0, -6.2) reached=true pos=(-66.12797, 0.012998, -6.183347)
+C05_RACK_WALK target=(-65.8, 0.0, -8.0) reached=true pos=(-65.79879, 0.012998, -7.696154)
+C05_RACK_AIM bag:000002 bag:000002 dist=0.99 bag_pos=(-65.65, 0.65, -8.6)
+C05_CONTAINER_AIM bag:000002 container:S1:organic reached=true pos=(-71.87524, 0.012998, 0.917937) dist=1.73
+C05_DEPOSIT bag:000002 category=organic location=CONTAINER
+C05_RACK_WALK target=(-68.75, 0.0, -5.7) reached=true pos=(-68.86929, 0.012984, -5.404065)
+C05_RACK_WALK target=(-67.95, 0.0, -6.2) reached=true pos=(-68.1804, 0.012984, -6.016789)
+C05_RACK_WALK target=(-65.8, 0.0, -6.2) reached=true pos=(-66.10996, 0.012984, -6.186072)
+C05_RACK_WALK target=(-65.8, 0.0, -6.95) reached=true pos=(-65.76997, 0.012984, -6.65172)
+C05_RACK_AIM bag:000003 bag:000003 dist=0.99 bag_pos=(-65.65, 0.65, -7.55)
+C05_CONTAINER_AIM bag:000003 container:S1:general reached=false pos=(-65.38383, 0.013, -1.750998) dist=1.05
+C05_DEPOSIT bag:000003 category=general location=CONTAINER
+C05_RACK_WALK target=(-68.75, 0.0, -5.7) reached=true pos=(-68.57755, 0.012876, -5.423147)
+C05_RACK_WALK target=(-67.95, 0.0, -6.2) reached=true pos=(-68.23418, 0.012876, -6.041283)
+C05_RACK_WALK target=(-65.8, 0.0, -6.2) reached=true pos=(-66.14742, 0.012876, -6.182892)
+C05_RACK_WALK target=(-65.8, 0.0, -6.2) reached=true pos=(-66.14742, 0.012876, -6.182892)
+C05_RACK_AIM bag:000004 bag:000004 dist=0.79 bag_pos=(-65.65, 0.65, -6.5)
+C05_CONTAINER_AIM bag:000004 container:S1:glass reached=true pos=(-65.63647, 0.012876, 0.920477) dist=1.73
+C05_DEPOSIT bag:000004 category=glass location=CONTAINER
+C05_BAGS deposited=4/4 invariants=0
+C05_TRUCK_AIM collection:S1 pos=(-63.2516, 0.012876, -1.161679)
+C05_TRUCK receipts=1 items=40 correct=40 pay=80 money=80 completed=40 invariants=0
+C05_CAPTURE paid-40 0

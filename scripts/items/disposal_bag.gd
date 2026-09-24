@@ -53,7 +53,7 @@ func restore_from_record() -> void:
 	var is_world := str(record.location) == "WORLD"
 	freeze = not is_world or bool(record.sleeping)
 	sleeping = bool(record.sleeping)
-	collision_layer = 4 if is_world else 8
+	collision_layer = 4 if is_world or str(record.location) == "RACK" else 8
 	collision_mask = 1 | 4 | 8 if is_world else 0
 	_reported_outside = false
 	set_physics_process(is_world)

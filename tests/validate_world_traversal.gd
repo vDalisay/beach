@@ -59,6 +59,16 @@ func run() -> void:
 		if absf(local.x) < 1.2 and local.z < 2.7 and local.z > -2.6:
 			hut_entries += 1
 	check(hut_entries == 3, "controller enters all three service huts through the carry-width doors")
+	for service_id in ["S1", "S2", "S3"]:
+		var exclusion := main.run_root.get_node("Beach/SpawnExclusions/%s" % service_id) as Area3D
+		check((exclusion.collision_layer & PlayerInteractor.TARGET_MASK) == 0, "%s spawn exclusion cannot hide an interactable" % service_id)
+	for category in ["organic", "glass"]:
+		var container := (main.run_root as RunSession).waste_containers[StringName("container:S1:%s" % category)] as WasteContainer
+		player.global_position = container.global_position + Vector3(0, 0.05, 1.7)
+		player.velocity = Vector3.ZERO
+		player.camera.look_at(container.global_position + Vector3.UP * 1.2)
+		await physics_frame
+		check(str(player.interactor.update_target().get("id", "")) == str(container.container_id), "S1 %s back-row container is aimable from the beach" % category)
 	var shop := main.run_root.get_node("Beach/ServicePoints/EquipmentShop/ShopStations") as EquipmentShop
 	player.global_position = Vector3(10.5, 0.05, 3.0)
 	player.velocity = Vector3.ZERO
