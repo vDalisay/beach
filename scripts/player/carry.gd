@@ -278,7 +278,7 @@ func _view_manager() -> ItemViewManager:
 func _scale_hand_visual(node: Node3D, definition: ItemDefinition) -> void:
 	if node == null:
 		return
-	var scale_value := 0.65 if definition.hand_cost == 2 else 0.35
+	var scale_value := 0.4 if definition.hand_cost == 2 else 0.35
 	node.scale = Vector3.ONE * scale_value
 
 
