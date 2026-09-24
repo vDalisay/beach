@@ -10,8 +10,8 @@ func _ready() -> void:
 	var uvs := PackedVector2Array()
 	var shore_values := PackedVector2Array()
 	var indices := PackedInt32Array()
-	for index in 241:
-		var x := float(index * 2.5 - 300)
+	for index in 401:
+		var x := float(index * 2.5 - 500)
 		var near_z := Coastline.shore_z(x)
 		for z in [near_z, 800.0]:
 			vertices.append(Vector3(x, 0.08, z))
