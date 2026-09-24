@@ -2,6 +2,7 @@ extends Node3D
 const Coastline = preload("res://scripts/world/coastline.gd")
 
 const DUNE := preload("res://art/synty/wrappers/world_reef_ridge.tscn")
+const PALM := preload("res://art/synty/wrappers/foliage_palm.tscn")
 
 @export var sand_material: Material
 
@@ -9,6 +10,7 @@ const DUNE := preload("res://art/synty/wrappers/world_reef_ridge.tscn")
 func _ready() -> void:
 	_build_sand_surface()
 	_build_outer_dunes()
+	_build_outer_palms()
 
 
 func _build_outer_dunes() -> void:
@@ -31,6 +33,21 @@ func _build_outer_dunes() -> void:
 	visual.material_override = sand_material
 	add_child(visual)
 	wrapper.free()
+
+
+func _build_outer_palms() -> void:
+	var positions := [
+		Vector3(-98, 0, 11), Vector3(-108, 0, 27), Vector3(-119, 0, 10),
+		Vector3(-124, 0, 35), Vector3(-137, 0, 27), Vector3(-146, 0, 39),
+		Vector3(98, 0, 11), Vector3(108, 0, 27), Vector3(119, 0, 10),
+		Vector3(124, 0, 35), Vector3(137, 0, 27), Vector3(146, 0, 39),
+	]
+	for index in positions.size():
+		var palm := PALM.instantiate() as Node3D
+		palm.position = positions[index]
+		palm.rotation.y = float(index) * 1.13
+		palm.scale = Vector3.ONE * (0.78 + float(index % 4) * 0.11)
+		add_child(palm)
 
 
 func _build_sand_surface() -> void:
