@@ -133,6 +133,6 @@ func _move_in_water(move_input: Vector2, swim_up: bool, swim_down: bool, delta: 
 		local_direction = local_direction.normalized()
 	var direction := body.global_basis * Vector3(local_direction.x, 0.0, local_direction.z)
 	direction.y = local_direction.y
-	var target := direction.normalized() * swim_speed if not direction.is_zero_approx() else Vector3.ZERO
+	var target := direction.normalized() * swim_speed * carry_speed_multiplier if not direction.is_zero_approx() else Vector3.ZERO
 	body.velocity = body.velocity.move_toward(target, swim_acceleration * delta)
 	body.move_and_slide()

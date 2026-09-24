@@ -211,20 +211,32 @@ func run() -> void:
 			player.global_position = item.last_world_transform.origin + Vector3(0, 0.5, 1.5)
 			break
 	check(not chair_id.is_empty() and session.item_store.try_hold(&"local", chair_id).ok, "player picks up a real large prop before pier travel")
+	player.carry.refresh_hand_visuals()
 	player.global_position = Vector3(62.5, 1.5, 34)
 	player.velocity = Vector3.ZERO
 	var carried_onto_pier := await _walk_lane(Vector3(62.5, 1.5, 62))
 	var carried_off_pier := await _walk_lane(Vector3(62.5, 1.5, 31))
 	check(carried_onto_pier and carried_off_pier and (session.state.items[chair_id] as ItemRecord).location == ItemRecord.Location.HELD, "player carries a real chair onto and off the pier")
+	player.global_position = Vector3(0, -1.2, 80)
+	player.velocity = Vector3.ZERO
+	player.rotation.y = PI
+	await _physics_frames(5)
+	_send_stick(-1.0)
+	await _physics_frames(20)
+	var swim_start := player.global_position.z
+	await _physics_frames(120)
+	_send_stick(0.0)
+	var carried_swim_speed := (player.global_position.z - swim_start) / 2.0
+	check(player.movement.is_swimming and absf(carried_swim_speed - 2.0) < 0.08 and (session.state.items[chair_id] as ItemRecord).location == ItemRecord.Location.HELD, "two-handed chair slows the real player swim to 80% without losing ownership")
 
-	print("P05_TRAVERSAL waypoints=%d distance=%.1fm huts=%d shop=%d reefs=%d reef_items=%d reef_overlaps=%d catalog=%d/6 pier_carry=%d failures=%d" % [route.size(), traversed, hut_entries, int(shop_reached), int(west_reached) + int(east_reached), reef_checked, reef_overlaps + physics_overlaps, collected_new.size(), int(carried_onto_pier and carried_off_pier), failures])
+	print("P05_TRAVERSAL waypoints=%d distance=%.1fm huts=%d shop=%d reefs=%d reef_items=%d reef_overlaps=%d catalog=%d/6 pier_carry=%d chair_swim=%.2fm/s failures=%d" % [route.size(), traversed, hut_entries, int(shop_reached), int(west_reached) + int(east_reached), reef_checked, reef_overlaps + physics_overlaps, collected_new.size(), int(carried_onto_pier and carried_off_pier), carried_swim_speed, failures])
 	quit(failures)
 
 
 func _walk_lane(target: Vector3) -> bool:
 	player.look_at(target, Vector3.UP)
 	_send_stick(-1.0)
-	for frame in 600:
+	for frame in 720:
 		await physics_frame
 		if Vector2(player.global_position.x - target.x, player.global_position.z - target.z).length() < 1.8:
 			_send_stick(0.0)
