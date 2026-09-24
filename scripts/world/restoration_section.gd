@@ -113,7 +113,7 @@ func _build_section(section: BeachSection) -> void:
 				section.restoration_visual_root.add_child(coral)
 			var offset := CORAL_OFFSETS[index] as Vector2
 			coral.global_position = origin + Vector3(offset.x, 0.0, offset.y)
-			coral.scale = Vector3.ONE * (0.9 + (index % 3) * 0.18)
+			coral.scale = Vector3.ONE * [1.25, 0.85, 0.65][index % 3]
 		for index in range(2):
 			var starfish := STARFISH_SCENE.instantiate() as Node3D
 			section.restoration_visual_root.add_child(starfish)
@@ -188,22 +188,54 @@ func _coral_cluster(index: int) -> Node3D:
 	var target := [Color("ef8b91"), Color("95c7a1"), Color("d3a1d5")][index % 3] as Color
 	material.albedo_color = Color("405257")
 	material.emission_enabled = true
-	material.emission = target * 0.55
-	material.emission_energy_multiplier = 0.6
+	material.emission = target * 0.25
+	material.emission_energy_multiplier = 0.35
 	cluster.set_meta(&"target_color", target)
 	cluster.set_meta(&"material", material)
-	for branch in range(5):
-		var stem := MeshInstance3D.new()
-		var mesh := CylinderMesh.new()
-		mesh.top_radius = 0.055
-		mesh.bottom_radius = 0.11
-		mesh.height = 0.45 + branch * 0.11
-		stem.mesh = mesh
-		stem.material_override = material
-		stem.position = Vector3(cos(branch * TAU / 5.0) * 0.2, mesh.height * 0.5, sin(branch * TAU / 5.0) * 0.2)
-		stem.rotation.z = 0.18 * (branch - 2)
-		cluster.add_child(stem)
+	var vertices := PackedVector3Array()
+	var normals := PackedVector3Array()
+	var indices := PackedInt32Array()
+	for stem in 5:
+		var angle := (float(stem) + float(index) * 0.31) * TAU / 5.0
+		var outward := Vector3(cos(angle), 0, sin(angle))
+		var base := outward * 0.19
+		var fork := base + outward * 0.12 + Vector3.UP * (0.75 + float(stem % 3) * 0.14)
+		var crown := fork + outward * (0.16 + float(stem % 2) * 0.1) + Vector3.UP * (0.48 + float(index % 3) * 0.12)
+		_append_coral_branch(vertices, normals, indices, base, fork, 0.048, 0.028)
+		_append_coral_branch(vertices, normals, indices, fork, crown, 0.028, 0.006)
+		_append_coral_branch(vertices, normals, indices, fork - Vector3.UP * 0.12, fork - outward * 0.17 + Vector3.UP * 0.33, 0.022, 0.005)
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = vertices
+	arrays[Mesh.ARRAY_NORMAL] = normals
+	arrays[Mesh.ARRAY_INDEX] = indices
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	var visual := MeshInstance3D.new()
+	visual.mesh = mesh
+	visual.material_override = material
+	cluster.add_child(visual)
 	return cluster
+
+
+func _append_coral_branch(vertices: PackedVector3Array, normals: PackedVector3Array, indices: PackedInt32Array, base: Vector3, tip: Vector3, base_radius: float, tip_radius: float) -> void:
+	var axis := (tip - base).normalized()
+	var side := Vector3.RIGHT if absf(axis.y) > 0.9 else axis.cross(Vector3.UP).normalized()
+	var depth := axis.cross(side).normalized()
+	var first := vertices.size()
+	for face in 6:
+		var angle := float(face) * TAU / 6.0
+		var radial := side * cos(angle) + depth * sin(angle)
+		vertices.append(base + radial * base_radius)
+		vertices.append(tip + radial * tip_radius)
+		normals.append(radial)
+		normals.append(radial)
+	for face in 6:
+		var bottom := first + face * 2
+		var top := bottom + 1
+		var next_bottom := first + ((face + 1) % 6) * 2
+		var next_top := next_bottom + 1
+		indices.append_array(PackedInt32Array([bottom, next_bottom, top, next_bottom, next_top, top]))
 
 
 func _build_reef_plants(section: BeachSection) -> void:
