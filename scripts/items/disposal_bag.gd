@@ -36,6 +36,8 @@ func configure(bag_record: Dictionary, bounds_check: Callable = Callable(), held
 	mesh.material_override = material
 	label.text = "%s\n%d/%d" % [str(category).to_upper(), int(record.correct_count), (record.item_ids as Array).size()]
 	if held_visual:
+		label.hide()
+		mesh.scale.x = 0.45
 		freeze = true
 		collision_layer = 0
 		collision_mask = 0

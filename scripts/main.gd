@@ -451,7 +451,9 @@ func _update_context(session: RunSession) -> void:
 		var index := clampi(int(record.selected_held_index), 0, held.size() - 1)
 		var object_ref := held[index] as Dictionary
 		if str(object_ref.get("kind", "")) == "bag":
-			holding = "Holding sealed bag %d / %d" % [index + 1, held.size()]
+			var bag_id := StringName(str(object_ref.get("id", "")))
+			var category := str((session.state.bag_records[bag_id] as Dictionary).category).capitalize()
+			holding = "Holding %s bag %d / %d" % [category, index + 1, held.size()]
 		else:
 			var item := session.state.items.get(StringName(str(object_ref.get("id", "")))) as ItemRecord
 			if item != null:
