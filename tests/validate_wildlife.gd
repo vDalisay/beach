@@ -25,14 +25,18 @@ func _run() -> void:
 	var zone_root := nature.zone_roots[&"reef_west"] as Node3D
 	var outer_plant := outer.get_node_or_null("SeagrassBed01") as Node3D
 	check(outer_plant != null and (outer_plant.get_meta(&"material") as StandardMaterial3D).albedo_color.g < 0.4 and _nonblocking(outer_plant), "subdued nonblocking seagrass is present before reef restoration")
-	check(nature.populations.size() == 13 and (nature.populations[&"ambient:reef_west"] as FishSchool).mover.looping and (nature.populations[&"ambient:reef_east"] as FishSchool).mover.looping, "two ambient schools coexist with four local and six regional restoration schools and one turtle route")
+	var outer_coral := outer.get_node_or_null("CoralCluster00") as Node3D
+	check(outer_coral != null and (outer_coral.get_meta(&"material") as StandardMaterial3D).albedo_color.r < 0.4 and _nonblocking(outer_coral), "subdued coral structure is present before reef restoration")
+	check(nature.populations.size() == 15 and (nature.populations[&"ambient:reef_west"] as FishSchool).mover.looping and (nature.populations[&"ambient:reef_east"] as FishSchool).mover.looping, "two ambient schools coexist with four local and six regional restoration schools and three turtle routes")
+	var reef_turtle := nature.populations[&"zone:reef_west:turtle"] as PathAnimal
+	check(not reef_turtle.looping and not (nature.populations[&"zone:reef_east:turtle"] as PathAnimal).looping, "reef turtles wait for their respective zone completion")
 	var ambient := nature.populations[&"ambient:reef_west"] as FishSchool
 	var fish_start := ambient.mover.position
 	for frame in range(20):
 		await process_frame
 	var fish_motion := ambient.mover.position - fish_start
 	check(fish_motion.length() > 0.01 and ambient.mover.basis.z.dot(fish_motion.normalized()) > 0.75 and (ambient.mover.get_node("Fish_01") as Node3D).basis.x.normalized().dot(Vector3.BACK) > 0.99, "fish swim head-first along their live route")
-	check(not outer.restoration_visual_root.visible and not coral.restoration_visual_root.visible and not zone_root.visible, "unrestored reef art and regional fish remain hidden")
+	check(not outer.restoration_visual_root.visible and not coral.restoration_visual_root.visible and not zone_root.visible, "unrestored local and regional reef rewards remain hidden")
 	var origin := (nature.anchors[&"reef_west:outer"] as Array)[0] as Vector3
 	player.global_position = origin + Vector3(0, 0.2, -4.0)
 	player.camera.look_at(origin + Vector3(0, 0.55, 2.5))
@@ -42,7 +46,7 @@ func _run() -> void:
 		await _capture("P21-reef-before.png")
 	_complete_section(session, &"reef_west:outer")
 	check(bool((session.state.section_states[&"reef_west:outer"] as Dictionary).restored_once) and outer.restoration_visual_root.visible and not zone_root.visible and (nature.populations[&"section:reef_west:outer:fish"] as FishSchool).mover.looping and not (nature.populations[&"zone:reef_west:01"] as FishSchool).mover.looping, "first restored reef section reveals local habitat and fish before the whole zone completes")
-	check(outer.restoration_visual_root.get_child_count() == 16 and coral.restoration_visual_root.get_child_count() == 16, "each reef section has a clarity patch, twelve coral clusters, two starfish and one local school")
+	check(outer.restoration_visual_root.get_child_count() == 4 and coral.restoration_visual_root.get_child_count() == 4 and outer.get_node_or_null("CoralCluster11") != null and coral.get_node_or_null("CoralCluster11") != null, "each reef section retains twelve permanent coral clusters plus a clarity patch, two starfish and one local school")
 	var partial_state := RunState.from_snapshot(session.state.to_snapshot())
 	var partial_session := RunSession.new()
 	partial_session.initialize(partial_state, session.definitions)
@@ -54,9 +58,11 @@ func _run() -> void:
 	partial_nature.configure(partial_session, partial_beach, main.settings_store)
 	check((partial_nature.populations[&"section:reef_west:outer:fish"] as FishSchool).mover.looping and not (partial_nature.populations[&"section:reef_west:coral:fish"] as FishSchool).mover.looping and not (partial_nature.zone_roots[&"reef_west"] as Node3D).visible, "partial reef reload resumes only the restored section's fish")
 	check(((partial_nature.sections[&"reef_west:outer"] as BeachSection).get_node("SeagrassBed01").get_meta(&"material") as StandardMaterial3D).albedo_color.g > 0.65 and ((partial_nature.sections[&"reef_west:coral"] as BeachSection).get_node("SeagrassBed05").get_meta(&"material") as StandardMaterial3D).albedo_color.g < 0.4, "partial reef reload restores only the completed section's plant colour")
+	check((((partial_nature.sections[&"reef_west:outer"] as BeachSection).get_node("CoralCluster00") as Node3D).get_meta(&"material") as StandardMaterial3D).albedo_color.r > 0.8 and (((partial_nature.sections[&"reef_west:coral"] as BeachSection).get_node("CoralCluster00") as Node3D).get_meta(&"material") as StandardMaterial3D).albedo_color.r < 0.4, "partial reef reload restores only the completed section's coral colour")
 	partial_session.free()
 	await create_timer(1.3).timeout
 	check((outer_plant.get_meta(&"material") as StandardMaterial3D).albedo_color.g > 0.65 and (coral.get_node("SeagrassBed05").get_meta(&"material") as StandardMaterial3D).albedo_color.g < 0.4, "only the restored section brightens its existing seagrass")
+	check((outer_coral.get_meta(&"material") as StandardMaterial3D).albedo_color.r > 0.8 and ((coral.get_node("CoralCluster00") as Node3D).get_meta(&"material") as StandardMaterial3D).albedo_color.r < 0.4, "only the restored section brightens its existing coral")
 	check(player.camera.global_transform.is_equal_approx(camera_pose), "before/after reef viewpoints stay identical")
 	if "--capture" in OS.get_cmdline_user_args():
 		await _capture("P21-reef-after.png")
@@ -65,11 +71,28 @@ func _run() -> void:
 	player.set_input_enabled(false)
 	_complete_section(session, &"reef_west:coral")
 	check(bool((session.state.zone_states[&"reef_west"] as Dictionary).restored_once) and zone_root.visible and (nature.populations[&"zone:reef_west:01"] as FishSchool).mover.looping, "second section unlocks regional fish schools once")
+	Engine.time_scale = 12.0
+	for frame in range(60):
+		await physics_frame
+	Engine.time_scale = 1.0
+	check(reef_turtle.looping and session.swim_service.water.contains_horizontal(reef_turtle.global_position), "west reef turtle begins its bounded water loop after zone completion")
+	for route_value in [reef_turtle, nature.populations[&"zone:reef_east:turtle"]]:
+		var reef_route := route_value as PathAnimal
+		for point in reef_route.loop_points:
+			var world_point := (reef_route.get_parent() as Node3D).to_global(point)
+			var ground_hit := player.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(world_point + Vector3.UP * 2.0, world_point + Vector3.DOWN * 8.0, 1))
+			check(not ground_hit.is_empty() and session.swim_service.water.contains_horizontal(world_point) and world_point.y > (ground_hit.get("position", Vector3.ZERO) as Vector3).y + 0.25 and world_point.y < session.swim_service.water.surface_y - 0.2, "reef turtle water loop stays within water above structure and below surface")
+	if "--capture" in OS.get_cmdline_user_args():
+		player.hand_rig.hide()
+		player.camera.global_position = reef_turtle.global_position + Vector3(-1.6, 0.1, 1.8)
+		player.camera.look_at(reef_turtle.global_position)
+		session.swim_service.step_environment(0.0)
+		await _capture("P21-reef-turtle.png")
 	var population_count := nature.populations.size()
 	var visual_count := outer.restoration_visual_root.get_child_count()
 	session.section_restored.emit(&"reef_west:outer")
 	session.zone_restored.emit(&"reef_west")
-	check(nature.populations.size() == population_count and outer.restoration_visual_root.get_child_count() == visual_count and zone_root.get_child_count() == 2, "replayed restoration signals never duplicate coral or fish")
+	check(nature.populations.size() == population_count and outer.restoration_visual_root.get_child_count() == visual_count and zone_root.get_child_count() == 3, "replayed restoration signals never duplicate coral, fish or reef turtle")
 	check(_nonblocking(zone_root) and _nonblocking(outer.restoration_visual_root), "restoration wildlife and plants have no interaction or physics colliders")
 	check(session.state.validate_invariants(session.definitions).is_empty(), "staged completed reef preserves logical ownership and progress")
 	var restored := RunState.from_snapshot(session.state.to_snapshot())
@@ -82,6 +105,7 @@ func _run() -> void:
 	loaded_session.add_child(loaded_nature)
 	loaded_nature.configure(loaded_session, loaded_beach, main.settings_store)
 	check((loaded_nature.sections[&"reef_west:outer"] as BeachSection).restoration_visual_root.visible and (loaded_nature.zone_roots[&"reef_west"] as Node3D).visible and (loaded_nature.populations[&"section:reef_west:outer:fish"] as FishSchool).mover.looping and (loaded_nature.populations[&"zone:reef_west:01"] as FishSchool).mover.looping, "reload resumes local and regional fish without replaying reward")
+	check((loaded_nature.populations[&"zone:reef_west:turtle"] as PathAnimal).looping and not (loaded_nature.populations[&"zone:reef_east:turtle"] as PathAnimal).looping, "reload resumes only the completed reef's turtle loop")
 	check(loaded_nature.populations.size() == population_count and restored.validate_invariants(session.definitions).is_empty(), "snapshot preserves stable school keys and restoration latches")
 	loaded_session.free()
 	var turtle := nature.populations[&"zone:lounges:turtle"] as PathAnimal
@@ -111,7 +135,7 @@ func _run() -> void:
 		player.camera.global_position = turtle.global_position + Vector3(-0.8, 0.45, 1.5)
 		player.camera.look_at(turtle.global_position)
 		await _capture("P21-turtle-route.png")
-	print("P21_WILDLIFE ambient=2 local=4 regional=6 turtle=1 reef_clusters=24 starfish=4 failures=%d" % failures)
+	print("P21_WILDLIFE ambient=2 local=4 regional=6 turtle=3 reef_clusters=24 starfish=4 failures=%d" % failures)
 	main.free()
 	quit(failures)
 

@@ -14,6 +14,11 @@ const REEF_PLANT_ROCKS := {
 	&"reef_east:outer": [9, 12, 16],
 	&"reef_east:coral": [11, 13, 14, 17],
 }
+const CORAL_OFFSETS := [
+	Vector2(-2.4, 1.1), Vector2(-1.7, 1.7), Vector2(-2.1, 3.4), Vector2(-2.6, 4.8),
+	Vector2(-0.6, 2.6), Vector2(0.2, 1.1), Vector2(0.5, 4.5), Vector2(0.0, 3.3),
+	Vector2(1.7, 1.4), Vector2(2.5, 2.4), Vector2(1.4, 3.6), Vector2(2.2, 4.8),
+]
 
 var session: RunSession
 var sections: Dictionary = {}
@@ -99,10 +104,15 @@ func _build_section(section: BeachSection) -> void:
 		clarity.set_meta(&"target_color", Color(0.8, 0.88, 0.73, 1.0))
 		section.restoration_visual_root.add_child(clarity)
 		clarity.global_position = origin + Vector3(0, 0.04, 3.0)
-		for index in range(12):
+		for index in CORAL_OFFSETS.size():
 			var coral := _coral_cluster(index)
-			section.restoration_visual_root.add_child(coral)
-			coral.global_position = origin + Vector3((index % 4 - 1.5) * 1.7, 0.0, 1.0 + (index / 4) * 1.8)
+			coral.name = "CoralCluster%02d" % index
+			if str(section.zone_id).begins_with("reef_"):
+				section.add_child(coral)
+			else:
+				section.restoration_visual_root.add_child(coral)
+			var offset := CORAL_OFFSETS[index] as Vector2
+			coral.global_position = origin + Vector3(offset.x, 0.0, offset.y)
 			coral.scale = Vector3.ONE * (0.9 + (index % 3) * 0.18)
 		for index in range(2):
 			var starfish := STARFISH_SCENE.instantiate() as Node3D
@@ -135,6 +145,19 @@ func _build_zone(zone_id: StringName, root: Node3D) -> void:
 	if kind == "fish":
 		for index in range(2):
 			_spawn_school(root, StringName("zone:%s:%02d" % [zone_id, index + 1]), origin + Vector3(index * 2.2, 1.0, 3.0))
+		if str(zone_id).begins_with("reef_"):
+			var turtle_anchor := Node3D.new()
+			turtle_anchor.name = "ReefTurtleRouteAnchor"
+			root.add_child(turtle_anchor)
+			turtle_anchor.global_position = Vector3(2.5, 0, 112) if zone_id == &"reef_west" else Vector3(40, 0, 128)
+			var route := PathAnimal.new()
+			route.name = "ReefTurtleWaterLoop"
+			turtle_anchor.add_child(route)
+			var turtle_visual := TURTLE_SCENE.instantiate() as Node3D
+			turtle_visual.rotation.y = PI
+			route.add_child(turtle_visual)
+			route.configure(StringName("zone:%s:turtle" % zone_id), [Vector3(0, -0.85, 0), Vector3(2, -0.75, 3)], [Vector3(2, -0.75, 3), Vector3(4, -0.7, 6), Vector3(1, -0.8, 10), Vector3(-2, -0.75, 7)], 1.5, _reduced_motion())
+			populations[route.route_id] = route
 	elif kind == "buoy":
 		var buoy := BUOY_SCENE.instantiate() as Node3D
 		root.add_child(buoy)
@@ -283,8 +306,9 @@ func _start_zone_population(zone_id: StringName, loaded: bool) -> void:
 	for key in populations:
 		if str(key).begins_with("zone:%s:" % zone_id) and populations[key] is FishSchool:
 			(populations[key] as FishSchool).start_school()
-	if zone_id == &"lounges" and populations.has(&"zone:lounges:turtle"):
-		var turtle := populations[&"zone:lounges:turtle"] as PathAnimal
+	var turtle_key := StringName("zone:%s:turtle" % zone_id)
+	if populations.has(turtle_key):
+		var turtle := populations[turtle_key] as PathAnimal
 		if loaded:
 			turtle.resume_loop()
 		else:
