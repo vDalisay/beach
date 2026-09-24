@@ -1,0 +1,14 @@
+C05 S1 entrance after container move
+Build: beach-content-8, beach version 8, manifest-1
+Engine: Godot 4.6.1 stable Mono, Compatibility, OpenGL 3.3
+GPU: NVIDIA GeForce RTX 3070; CPU: AMD Ryzen 5 5600
+Main playable scene; seed: first-shore; isolated process-only APPDATA
+State: new run after 20 normal-input starter waste pickups, before first unload
+Camera: origin (-68.75, 1.65, 2.0), target (-68.75, 1.15, -8.0), FOV 85
+Output: service-entrance.png, 1920x1080; 180 physics frames before capture
+Rendered capture process: exit 0
+Separate two-bag headless play probe: exit 0; 40 pickups, two table UI passes, four service-deposited sealed bags, one collection, $80, zero invariant errors
+S2/shop after moving its right bin pair left and collection phone forward:
+Camera: origin (7.5, 1.65, 3.0), target (8.0, 1.1, -8.0), FOV 85
+Output: service-s2.png, 1920x1080; 180 physics frames before capture
+Rendered capture process: exit 0; new-run state, same first-shore seed

@@ -163,15 +163,15 @@ metadata/service_id = &"S1"
 [node name="PMDContainer" parent="ServicePoints/S1" instance=ExtResource("13_container")]
 position = Vector3(-3.3, 0, 5.2)
 [node name="OrganicContainer" parent="ServicePoints/S1" instance=ExtResource("13_container")]
-position = Vector3(-1.1, 0, 5.2)
+position = Vector3(-3.3, 0, 7.2)
 container_id = &"container:S1:organic"
 category = &"organic"
 [node name="GeneralContainer" parent="ServicePoints/S1" instance=ExtResource("13_container")]
-position = Vector3(1.1, 0, 5.2)
+position = Vector3(3.3, 0, 5.2)
 container_id = &"container:S1:general"
 category = &"general"
 [node name="GlassContainer" parent="ServicePoints/S1" instance=ExtResource("13_container")]
-position = Vector3(3.3, 0, 5.2)
+position = Vector3(3.3, 0, 7.2)
 container_id = &"container:S1:glass"
 category = &"glass"
 [node name="CollectionCallPoint" parent="ServicePoints/S1" instance=ExtResource("14_call")]
@@ -191,19 +191,19 @@ station_id = &"sorting:S2"
 position = Vector3(-3.3, 0, 5.2)
 container_id = &"container:S2:pmd"
 [node name="OrganicContainer" parent="ServicePoints/S2" instance=ExtResource("13_container")]
-position = Vector3(-1.1, 0, 5.2)
+position = Vector3(-3.3, 0, 7.2)
 container_id = &"container:S2:organic"
 category = &"organic"
 [node name="GeneralContainer" parent="ServicePoints/S2" instance=ExtResource("13_container")]
-position = Vector3(1.1, 0, 5.2)
+position = Vector3(-5.5, 0, 5.2)
 container_id = &"container:S2:general"
 category = &"general"
 [node name="GlassContainer" parent="ServicePoints/S2" instance=ExtResource("13_container")]
-position = Vector3(3.3, 0, 5.2)
+position = Vector3(-5.5, 0, 7.2)
 container_id = &"container:S2:glass"
 category = &"glass"
 [node name="CollectionCallPoint" parent="ServicePoints/S2" instance=ExtResource("14_call")]
-position = Vector3(5.5, 0, 5.2)
+position = Vector3(5.5, 0, 7.5)
 station_id = &"S2"
 [node name="Label" type="Label3D" parent="ServicePoints/S2"]
 position = Vector3(0, 4.2, 0)
@@ -220,15 +220,15 @@ station_id = &"sorting:S3"
 position = Vector3(-3.3, 0, 5.2)
 container_id = &"container:S3:pmd"
 [node name="OrganicContainer" parent="ServicePoints/S3" instance=ExtResource("13_container")]
-position = Vector3(-1.1, 0, 5.2)
+position = Vector3(-3.3, 0, 7.2)
 container_id = &"container:S3:organic"
 category = &"organic"
 [node name="GeneralContainer" parent="ServicePoints/S3" instance=ExtResource("13_container")]
-position = Vector3(1.1, 0, 5.2)
+position = Vector3(3.3, 0, 5.2)
 container_id = &"container:S3:general"
 category = &"general"
 [node name="GlassContainer" parent="ServicePoints/S3" instance=ExtResource("13_container")]
-position = Vector3(3.3, 0, 5.2)
+position = Vector3(3.3, 0, 7.2)
 container_id = &"container:S3:glass"
 category = &"glass"
 [node name="CollectionCallPoint" parent="ServicePoints/S3" instance=ExtResource("14_call")]

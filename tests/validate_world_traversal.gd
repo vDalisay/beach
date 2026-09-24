@@ -49,16 +49,44 @@ func run() -> void:
 	var hut_entries := 0
 	for service_value in definition.starting_state.get("service_points", {}).values():
 		var service := service_value as Vector3
-		player.global_position = service + Vector3(0, 0.05, 5)
+		player.global_position = service + Vector3(0, 0.05, 10)
 		player.velocity = Vector3.ZERO
 		player.look_at(Vector3(service.x, player.global_position.y, service.z), Vector3.UP)
 		_send_stick(-1.0)
-		await _physics_frames(80)
+		await _physics_frames(180)
 		_send_stick(0.0)
 		var local := player.global_position - service
 		if absf(local.x) < 1.2 and local.z < 2.7 and local.z > -2.6:
 			hut_entries += 1
 	check(hut_entries == 3, "controller enters all three service huts through the carry-width doors")
+	var shop := main.run_root.get_node("Beach/ServicePoints/EquipmentShop/ShopStations") as EquipmentShop
+	player.global_position = Vector3(10.5, 0.05, 3.0)
+	player.velocity = Vector3.ZERO
+	var shop_front := Vector3(10.5, 0, -2.0)
+	player.look_at(Vector3(shop_front.x, player.global_position.y, shop_front.z), Vector3.UP)
+	_send_stick(-1.0)
+	for frame in 150:
+		await physics_frame
+		if Vector2(player.global_position.x - shop_front.x, player.global_position.z - shop_front.z).length() < 0.4:
+			break
+	_send_stick(0.0)
+	player.camera.look_at(shop.counter.global_position)
+	await physics_frame
+	var shop_target := player.interactor.update_target()
+	var shop_reached := str(shop_target.get("id", "")) == "shop:counter" and shop.player_near_counter()
+	check(shop_reached, "normal movement from the beach reaches the S2 equipment shop counter")
+	if shop_reached:
+		var press_shop := InputEventKey.new()
+		press_shop.physical_keycode = KEY_E
+		press_shop.pressed = true
+		Input.parse_input_event(press_shop)
+		await _physics_frames(2)
+		var release_shop := press_shop.duplicate() as InputEventKey
+		release_shop.pressed = false
+		Input.parse_input_event(release_shop)
+		await physics_frame
+		check(main.progression_view.visible, "normal interact input opens the shop")
+		main.progression_view.close()
 	var beach := main.run_root.get_node("Beach") as Node3D
 	for rock_name in ["ReefRock01", "ReefRock13"]:
 		var rock := beach.get_node("Terrain/ReefDressing/%s" % rock_name) as StaticBody3D
@@ -167,7 +195,7 @@ func run() -> void:
 	var carried_off_pier := await _walk_lane(Vector3(62.5, 1.5, 31))
 	check(carried_onto_pier and carried_off_pier and (session.state.items[chair_id] as ItemRecord).location == ItemRecord.Location.HELD, "player carries a real chair onto and off the pier")
 
-	print("P05_TRAVERSAL waypoints=%d distance=%.1fm huts=%d reefs=%d reef_items=%d reef_overlaps=%d catalog=%d/6 pier_carry=%d failures=%d" % [route.size(), traversed, hut_entries, int(west_reached) + int(east_reached), reef_checked, reef_overlaps + physics_overlaps, collected_new.size(), int(carried_onto_pier and carried_off_pier), failures])
+	print("P05_TRAVERSAL waypoints=%d distance=%.1fm huts=%d shop=%d reefs=%d reef_items=%d reef_overlaps=%d catalog=%d/6 pier_carry=%d failures=%d" % [route.size(), traversed, hut_entries, int(shop_reached), int(west_reached) + int(east_reached), reef_checked, reef_overlaps + physics_overlaps, collected_new.size(), int(carried_onto_pier and carried_off_pier), failures])
 	quit(failures)
 
 
