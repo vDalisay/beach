@@ -29,6 +29,8 @@ func configure(run_session: RunSession, player_body: BeachPlayer) -> void:
 	opening.set_meta(&"target_id", container_id)
 	opening.set_meta(&"display_name", "%s container" % str(category).to_upper())
 	opening.set_meta(&"interaction_actions", PackedStringArray(["interact"]))
+	set_meta(&"highlight_root", get_node("SyntyContainer"))
+	opening.set_meta(&"highlight_root", get_node("SyntyContainer"))
 	if not session.state.container_records.has(container_id):
 		session.state.container_records[container_id] = {"kind": "waste_container", "category": category, "bags": []}
 	if not player.interactor.interact_requested.is_connected(_on_interact_requested):

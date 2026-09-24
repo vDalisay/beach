@@ -35,6 +35,7 @@ func _run() -> void:
 	var result := await _aim_and_scan(player, glass.global_position + Vector3.UP * 0.08)
 	check(result.get("id") == &"glass" and result.get("actions", PackedStringArray()).has("collect"), "small glass is selected from the camera centre")
 	check(glass.is_highlighted() and glass.outline_overlay_count() > 0, "target receives a per-view white outline")
+	var action_material := _hover_material(glass)
 	await process_frame
 	check(target_label.visible and target_label.text_label.text.contains("Glass bottle") and target_label.text_label.text.contains(settings.binding_text(&"primary")), "target label shows the player-facing name and current pickup binding")
 	var rebound := InputEventKey.new()
@@ -96,6 +97,7 @@ func _run() -> void:
 		full_bag.append(StringName("fixture:%02d" % index))
 	result = await _aim_and_scan(player, glass.global_position + Vector3.UP * 0.08)
 	check(result.get("id") == &"glass" and result.get("actions", PackedStringArray()).is_empty() and result.get("reason") == "Bag full", "full bag leaves target visible with a contextual reason")
+	check(glass.is_highlighted() and _hover_material(glass) != null and _hover_material(glass) != action_material, "a blocked target never shares the actionable hover style")
 	full_bag.clear()
 
 	result = await _aim_and_scan(player, cube.global_position + Vector3.UP * 0.08)
@@ -231,6 +233,13 @@ func _add_record(state: RunState, item_id: StringName, definition_id: StringName
 	record.last_world_transform = Transform3D(Basis.IDENTITY, position)
 	record.sleeping = true
 	state.add_item(record)
+
+
+func _hover_material(view: WorldItem) -> Material:
+	for overlay in view.visual_root.get_meta(HoverHighlight.OVERLAYS, []):
+		if is_instance_valid(overlay) and (overlay as MeshInstance3D).visible:
+			return (overlay as MeshInstance3D).material_override
+	return null
 
 
 func _physics_frames(count: int) -> void:

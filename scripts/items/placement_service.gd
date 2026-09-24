@@ -202,6 +202,14 @@ func slot_transform(slot_id: StringName) -> Transform3D:
 	return (slots[slot_id] as Dictionary).transform as Transform3D if slots.has(slot_id) else Transform3D.IDENTITY
 
 
+## Visual root of a slotted prop's view (hover, landing and shine target), or null.
+func slotted_visual_root(item_id: StringName) -> Node3D:
+	var view: Variant = slotted_views.get(item_id)
+	if view == null or not is_instance_valid(view):
+		return null
+	return (view as Node3D).get_node_or_null("VisualRoot") as Node3D
+
+
 func _register_authored_pools() -> void:
 	var authored: Array[PlacementSlot] = []
 	_collect_pools(world_root, authored)
@@ -593,6 +601,8 @@ func _show_group_sweep(group_id: StringName, serial: int) -> void:
 
 func _collect_sweep_meshes(node: Node, result: Array[MeshInstance3D]) -> void:
 	for child in node.get_children():
+		if child.has_meta(HoverHighlight.MARK):
+			continue
 		if child is MeshInstance3D and (child as MeshInstance3D).mesh != null:
 			result.append(child as MeshInstance3D)
 		_collect_sweep_meshes(child, result)

@@ -17,6 +17,7 @@ func configure(collection_service: CollectionService, player_body: BeachPlayer) 
 	set_meta(&"display_name", "Collection hotline")
 	set_meta(&"interaction_actions", PackedStringArray(["interact"]))
 	set_meta(&"interaction_verb", "Collect all deposited bags")
+	set_meta(&"highlight_root", get_node("SyntyPhone"))
 	if not player.interactor.interact_requested.is_connected(_on_interact_requested):
 		player.interactor.interact_requested.connect(_on_interact_requested)
 

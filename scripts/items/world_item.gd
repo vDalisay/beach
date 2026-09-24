@@ -8,15 +8,14 @@ const WATER_LEVEL := 0.08
 const WORLD_LAYER := 1
 const LOOSE_LAYER := 4
 const FIXED_LAYER := 8
-const HOVER_SHADER := preload("res://shaders/hover_outline.gdshader")
 const MISSING_ASSET_PATH := "res://art/placeholders/missing_asset.tscn"
 # Small resting items stop drawing beyond this (scaled by the View distance setting).
 const SMALL_ITEM_DRAW_DISTANCE := 35.0
+const FEEL := preload("res://data/feel/feel_tuning.tres")
 
 static var _mesh_cache: Dictionary = {}
 static var _material_cache: Dictionary = {}
 static var _shape_cache: Dictionary = {}
-static var _outline_material: ShaderMaterial
 
 @onready var visual_root: Node3D = %VisualRoot
 @onready var fallback_mesh: MeshInstance3D = %FallbackMesh
@@ -30,15 +29,16 @@ var _floating := false
 var _reported_outside := false
 var _idle_physics_frames := 0
 var _highlighted := false
-var _outline_overlays: Array[MeshInstance3D] = []
+var _highlight_style := -1
 var _presentation_tween: Tween
-var _pulse_tween: Tween
 var _dirt_visuals: Dictionary = {}
 ## Whether the visual currently casts sun shadows (ItemViewManager applies the distance budget).
 var casts_shadow := true
 # The instantiated visual's scene and profile; a pooled view keeps it when the next record matches.
 var _visual_key := ""
 var _shadow_meshes: Array[GeometryInstance3D] = []
+## Presentation owner for puffs and sparkles around this view; set by ItemViewManager.
+var effects: ItemViewManager
 
 
 func _ready() -> void:
@@ -110,25 +110,15 @@ func synchronize_record() -> void:
 	record.sleeping = sleeping
 
 
-func pulse() -> void:
-	visual_root.scale = Vector3.ONE
-	_pulse_tween = create_tween()
-	_pulse_tween.tween_property(visual_root, "scale", Vector3.ONE * 1.08, 0.125)
-	_pulse_tween.tween_property(visual_root, "scale", Vector3.ONE, 0.125)
-
-
 ## Parks this view for reuse by ItemViewManager: out of the physics space (processing disabled
 ## removes the body and its dirt areas), hidden, and detached from its record.
 func release_to_pool() -> void:
-	if _pulse_tween != null and _pulse_tween.is_valid():
-		_pulse_tween.kill()
-	visual_root.scale = Vector3.ONE
 	set_highlighted(false)
-	# Outlines are rebuilt on the next highlight; some belong to dirt patches the next record drops.
-	for overlay in _outline_overlays:
-		if is_instance_valid(overlay):
-			overlay.free()
-	_outline_overlays.clear()
+	# No hover pose carries over to the next record, and its outlines are rebuilt on its first
+	# highlight (the next record may show another model).
+	FeelMotion.replace(visual_root, &"hover", null)
+	visual_root.transform = Transform3D.IDENTITY
+	HoverHighlight.discard(visual_root)
 	set_physics_process(false)
 	freeze = true
 	record = null
@@ -160,15 +150,15 @@ func apply_detail_range() -> void:
 		(geometry as GeometryInstance3D).visibility_range_end = authored if large else (minf(authored, limit) if authored > 0.0 else limit)
 
 
-func set_highlighted(value: bool) -> void:
-	if _highlighted == value:
+func set_highlighted(value: bool, style: int = HoverHighlight.Style.ACTION, reduced_motion := false) -> void:
+	if _highlighted == value and (not value or _highlight_style == style):
 		return
 	_highlighted = value
-	if value and _outline_overlays.is_empty():
-		_build_outline_overlays()
-	for overlay in _outline_overlays:
-		if is_instance_valid(overlay):
-			overlay.visible = value
+	_highlight_style = style if value else -1
+	# Meshes with a transparent material get the rim instead of a hull (HoverHighlight checks per
+	# mesh); the current glass litter uses the opaque shared atlas, so it keeps the outline.
+	HoverHighlight.set_active(visual_root, value, style, reduced_motion)
+	_animate_hover(value and style == HoverHighlight.Style.ACTION and not reduced_motion)
 
 
 func is_highlighted() -> bool:
@@ -176,7 +166,26 @@ func is_highlighted() -> bool:
 
 
 func outline_overlay_count() -> int:
-	return _outline_overlays.size()
+	return HoverHighlight.overlay_count(visual_root)
+
+
+func _animate_hover(active: bool) -> void:
+	var t := FeelMotion.replace(visual_root, &"hover", FeelMotion.tween(self))
+	if not active:
+		t.tween_property(visual_root, "scale", Vector3.ONE, FEEL.hover_out_seconds)
+		t.parallel().tween_property(visual_root, "position", Vector3.ZERO, FEEL.hover_out_seconds)
+		t.parallel().tween_property(visual_root, "rotation", Vector3.ZERO, FEEL.hover_out_seconds)
+		return
+	var large := definition != null and definition.collision_profile == ItemDefinition.CollisionProfile.LARGE
+	var lift := FEEL.hover_lift_large if large else FEEL.hover_lift_small
+	t.tween_property(visual_root, "scale", Vector3.ONE * lift, FEEL.hover_in_seconds).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	if not large:
+		var wiggle := deg_to_rad(FEEL.hover_wiggle_degrees) * (1.0 if FeelMotion.cosmetic_random(item_id) > 0.5 else -1.0)
+		t.parallel().tween_property(visual_root, "position:y", FEEL.hover_hop_height, 0.08).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		t.parallel().tween_property(visual_root, "rotation:z", wiggle, 0.06)
+		t.chain().tween_property(visual_root, "position:y", 0.0, 0.1).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		t.parallel().tween_property(visual_root, "rotation:z", -wiggle * 0.5, 0.06)
+		t.chain().tween_property(visual_root, "rotation:z", 0.0, 0.08)
 
 
 func travel_to(socket: Node3D, duration: float, shrink: bool, finished: Callable, end_offset := Vector3.ZERO) -> void:
@@ -186,6 +195,8 @@ func travel_to(socket: Node3D, duration: float, shrink: bool, finished: Callable
 	collision_mask = 0
 	set_dirt_interactive(false)
 	set_highlighted(false)
+	FeelMotion.replace(visual_root, &"hover", null)
+	visual_root.transform = Transform3D.IDENTITY
 	reparent(socket, true)
 	_presentation_tween = create_tween().set_parallel(true)
 	_presentation_tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
@@ -296,7 +307,7 @@ func _configure_visual() -> void:
 	for child in visual_root.get_children():
 		if child != fallback_mesh:
 			child.free()
-	_outline_overlays.clear()
+	HoverHighlight.discard(visual_root)
 	_dirt_visuals.clear()
 	_visual_key = key
 	if modelled:
@@ -384,30 +395,3 @@ static func _shared_material(key: String) -> Material:
 		_material_cache[key] = material
 	return _material_cache[key]
 
-
-func _build_outline_overlays() -> void:
-	if _outline_material == null:
-		_outline_material = ShaderMaterial.new()
-		_outline_material.shader = HOVER_SHADER
-	var sources: Array[MeshInstance3D] = []
-	_collect_visible_meshes(visual_root, sources)
-	for source in sources:
-		var overlay := MeshInstance3D.new()
-		overlay.set_meta(&"hover_outline", true)
-		overlay.mesh = source.mesh
-		overlay.skin = source.skin
-		overlay.skeleton = source.skeleton
-		overlay.transform = source.transform
-		overlay.material_override = _outline_material
-		overlay.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		overlay.extra_cull_margin = 0.05
-		overlay.visible = false
-		source.get_parent().add_child(overlay)
-		_outline_overlays.append(overlay)
-
-
-func _collect_visible_meshes(node: Node, result: Array[MeshInstance3D]) -> void:
-	for child in node.get_children():
-		if child is MeshInstance3D and child.visible and child.mesh != null and not child.has_meta(&"hover_outline"):
-			result.append(child)
-		_collect_visible_meshes(child, result)

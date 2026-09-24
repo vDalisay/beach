@@ -18,6 +18,8 @@ var session: RunSession
 var current_target: Dictionary = {}
 var _highlighted_view: WorldItem
 var _highlighted_dirt: DirtVisual
+var _highlight_root: Node3D
+var _highlight_root_style := -1
 # Targeting runs every physics tick; its query objects are reused instead of allocated each time.
 var _ray_query := PhysicsRayQueryParameters3D.new()
 var _line_query := PhysicsRayQueryParameters3D.new()
@@ -192,35 +194,98 @@ func _result_for_collider(collider: Object, hit_point: Vector3, distance: float)
 			"reason": reason,
 		}
 	if collider is Node and collider.has_meta(&"target_id"):
+		var station_actions: PackedStringArray = collider.get_meta(&"interaction_actions", PackedStringArray(["interact"]))
+		var station_reason := str(collider.get_meta(&"interaction_reason", ""))
+		if station_actions.has("cut") and _active_tool() != &"knife":
+			# Display text only: the actions and their routing stay unchanged.
+			station_reason = "Needs Rescue knife"
 		return {
-			"actions": collider.get_meta(&"interaction_actions", PackedStringArray(["interact"])),
+			"actions": station_actions,
 			"collider": collider,
 			"display_name": str(collider.get_meta(&"display_name", "Interact")),
 			"distance": distance,
 			"hit_point": hit_point,
 			"id": StringName(str(collider.get_meta(&"target_id"))),
 			"kind": "station",
-			"reason": str(collider.get_meta(&"interaction_reason", "")),
+			"reason": station_reason,
 			"verb": str(collider.get_meta(&"interaction_verb", "")),
 		}
 	return {}
 
 
+## Hover style for a target result, shared by the outline, reticle and target label so the
+## three cues always agree. -1 means no highlight.
+func style_for(result: Dictionary) -> int:
+	if result.is_empty():
+		return -1
+	var kind := str(result.get("kind", ""))
+	var actions := result.get("actions", PackedStringArray()) as PackedStringArray
+	if kind == "slot":
+		return -1
+	if kind == "dirt_patch":
+		return HoverHighlight.Style.ACTION if actions.has("clean") else HoverHighlight.Style.BLOCKED
+	if kind == "station":
+		if actions.has("cut"):
+			return HoverHighlight.Style.BLOCKED if _active_tool() != &"knife" else HoverHighlight.Style.ACTION
+		return HoverHighlight.Style.SOFT
+	for action in ["collect", "hold", "hold_bag", "place", "clean", "carry_dirty", "interact"]:
+		if actions.has(action):
+			return HoverHighlight.Style.ACTION
+	return HoverHighlight.Style.BLOCKED
+
+
+## Visual root for targets that do not own a hover (slotted props, bags, stations).
+## WorldItem and DirtVisual targets return null; they keep their own lift and outline.
+func _highlight_root_for(result: Dictionary) -> Node3D:
+	var collider: Variant = result.get("collider")
+	if collider == null or not is_instance_valid(collider) or collider is WorldItem or collider is DirtVisual:
+		return null
+	var kind := str(result.get("kind", ""))
+	if kind == "item" and result.has("slot_id"):
+		return session.placement_service.slotted_visual_root(StringName(str(result.id))) if session.placement_service != null else null
+	if collider is DisposalBag:
+		return collider as Node3D
+	if kind == "station":
+		var node := collider as Node
+		if node.has_meta(&"highlight_root"):
+			var root: Variant = node.get_meta(&"highlight_root")
+			if root is Node3D and is_instance_valid(root):
+				return root as Node3D
+		if collider is Area3D and (collider as Node).find_children("*", "MeshInstance3D", true, false).is_empty():
+			return null
+		return collider as Node3D
+	return null
+
+
 func _set_target(result: Dictionary) -> void:
+	var style := style_for(result)
+	var player := get_parent() as BeachPlayer
+	var reduced := FeelMotion.reduced(player.settings_store) if player != null else false
 	var next_view := result.get("collider") as WorldItem if result.get("collider") is WorldItem else null
 	var next_dirt := result.get("collider") as DirtVisual if result.get("collider") is DirtVisual else null
 	if _highlighted_view != next_view:
 		if is_instance_valid(_highlighted_view):
 			_highlighted_view.set_highlighted(false)
 		_highlighted_view = next_view
-		if is_instance_valid(_highlighted_view):
-			_highlighted_view.set_highlighted(true)
+	if is_instance_valid(_highlighted_view):
+		# Re-applies when the same target changes style, e.g. the bag fills while aiming.
+		_highlighted_view.set_highlighted(true, maxi(style, 0), reduced)
 	if _highlighted_dirt != next_dirt:
 		if is_instance_valid(_highlighted_dirt):
 			_highlighted_dirt.set_highlighted(false)
 		_highlighted_dirt = next_dirt
-		if is_instance_valid(_highlighted_dirt):
-			_highlighted_dirt.set_highlighted(true)
+	if is_instance_valid(_highlighted_dirt):
+		_highlighted_dirt.set_highlighted(true, style == HoverHighlight.Style.ACTION, reduced)
+	if not is_instance_valid(_highlight_root):
+		_highlight_root = null
+	var next_root := _highlight_root_for(result) if style >= 0 else null
+	if next_root != _highlight_root or (next_root != null and style != _highlight_root_style):
+		if is_instance_valid(_highlight_root) and _highlight_root != next_root:
+			HoverHighlight.set_active(_highlight_root, false)
+		_highlight_root = next_root
+		_highlight_root_style = style if next_root != null else -1
+		if is_instance_valid(_highlight_root):
+			HoverHighlight.set_active(_highlight_root, true, style, reduced)
 	var changed := str(current_target.get("id", "")) != str(result.get("id", "")) or str(current_target.get("reason", "")) != str(result.get("reason", ""))
 	if not changed and current_target.has("hit_point") and result.has("hit_point"):
 		changed = (current_target.hit_point as Vector3).distance_to(result.hit_point) > 0.02

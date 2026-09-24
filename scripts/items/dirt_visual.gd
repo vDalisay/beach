@@ -2,12 +2,15 @@ class_name DirtVisual
 extends Area3D
 
 const DIRT_PATCH_SCENE := preload("res://scenes/items/dirt_patch.tscn")
+const FEEL := preload("res://data/feel/feel_tuning.tres")
 
 @onready var mesh: MeshInstance3D = %Mesh
 
 var item_id: StringName
 var patch_id: StringName
 var _base_scale := Vector3.ONE
+var _highlighted := false
+var _highlight_actionable := true
 
 
 func _ready() -> void:
@@ -37,8 +40,27 @@ func clean() -> void:
 	tween.chain().tween_callback(queue_free)
 
 
-func set_highlighted(value: bool) -> void:
-	scale = _base_scale * (1.12 if value else 1.0)
+## Hover grows the stain visual (not its target collider) and outlines it; a stain the current
+## tool cannot clean gets the blocked style.
+func set_highlighted(value: bool, actionable := true, reduced := false) -> void:
+	if value == _highlighted and (not value or actionable == _highlight_actionable):
+		return
+	_highlighted = value
+	_highlight_actionable = actionable
+	HoverHighlight.set_active(self, value, HoverHighlight.Style.ACTION if actionable else HoverHighlight.Style.BLOCKED, reduced)
+	var target := Vector3.ONE * (1.12 if value else 1.0)
+	var visuals: Array[Node3D] = [mesh]
+	for overlay in get_meta(HoverHighlight.OVERLAYS, []) as Array:
+		if is_instance_valid(overlay):
+			visuals.append(overlay as Node3D)
+	if reduced:
+		FeelMotion.replace(self, &"hover", null)
+		for visual in visuals:
+			visual.scale = target
+		return
+	var t := FeelMotion.replace(self, &"hover", FeelMotion.tween(self).set_parallel(true))
+	for visual in visuals:
+		t.tween_property(visual, "scale", target, FEEL.hover_in_seconds).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
 static func attach_remaining(parent: Node3D, record: ItemRecord, definition: ItemDefinition, interactive := true) -> Dictionary:

@@ -39,6 +39,7 @@ func configure(run_session: RunSession, player_body: BeachPlayer, sorting_view: 
 	tabletop.set_meta(&"target_id", station_id)
 	tabletop.set_meta(&"display_name", "Sorting table")
 	tabletop.set_meta(&"interaction_actions", PackedStringArray(["interact"]))
+	tabletop.set_meta(&"highlight_root", get_node("SyntyTable"))
 	_ensure_records()
 	if not player.interactor.interact_requested.is_connected(_on_interact_requested):
 		player.interactor.interact_requested.connect(_on_interact_requested)

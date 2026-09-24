@@ -23,6 +23,8 @@ func configure(progression: ProgressionService, player_body: BeachPlayer, progre
 	rack.set_meta(&"display_name", "Tool rack")
 	rack.set_meta(&"interaction_actions", PackedStringArray(["interact"]))
 	rack.set_meta(&"interaction_verb", "Equip owned tools")
+	counter.set_meta(&"highlight_root", counter.get_node("SyntyCounter"))
+	rack.set_meta(&"highlight_root", rack.get_node("SyntyRack"))
 	player.interactor.interact_requested.connect(_on_interact_requested)
 	refresh_rack()
 
