@@ -178,8 +178,19 @@ func run() -> void:
 			if sealed.ok:
 				var bag_id := StringName(str(sealed.receipt.bag_id))
 				var container := session.waste_containers[StringName("container:S1:%s" % category)] as WasteContainer
-				check(session.item_store.try_hold_bag(&"local", bag_id).ok and container.try_deposit_bag(&"local", bag_id).ok, "%s bag enters its real container" % category)
-		check(session.collection_service.try_collect_containers(&"local").ok and session.progress_service.completed_waste >= 7, "collection credits the new families and reef can")
+				if category == &"pmd":
+					check(await _carry_s1_bag(sorting, container, bag_id), "S1 rack bag is carried through the hut and deposited with normal input")
+				else:
+					check(session.item_store.try_hold_bag(&"local", bag_id).ok and container.try_deposit_bag(&"local", bag_id).ok, "%s bag enters its real container" % category)
+		var call_point := session.get_node("Beach/ServicePoints/S1/CollectionCallPoint") as CollectionCallPoint
+		check(await _walk_to(sorting.global_position + Vector3(3.7, 0, 6.7), 200), "player reaches S1 collection hotline")
+		player.camera.look_at(call_point.global_position + Vector3.UP)
+		await _physics_frames(3)
+		check(str(player.interactor.update_target().get("id", "")) == "collection:S1", "collection hotline has a normal interaction target")
+		await _press_interact()
+		var receipts := session.state.collection_receipts
+		var receipt := receipts[0] as Dictionary if receipts.size() == 1 else {}
+		check(receipts.size() == 1 and session.progress_service.completed_waste >= 7 and int((session.state.players[&"local"] as Dictionary).money) == int(receipt.get("total_pay", -1)) and int(receipt.get("total_pay", -1)) == int(receipt.get("item_count", 0)) + int(receipt.get("correct_count", 0)), "normal hotline input credits waste and pays the recorded base plus sorting bonus")
 	check(session.state.validate_invariants(session.definitions).is_empty(), "catalog collection and payment preserve ownership")
 	var chair_id := StringName()
 	for item_value in session.state.items.values():
@@ -212,6 +223,69 @@ func _walk_lane(target: Vector3) -> bool:
 	for index in player.get_slide_collision_count():
 		print("PIER_COLLIDER %s" % player.get_slide_collision(index).get_collider())
 	return false
+
+
+func _carry_s1_bag(station: SortingStation, container: WasteContainer, bag_id: StringName) -> bool:
+	player.global_position = station.global_position + Vector3(0, 0.05, 7.5)
+	player.velocity = Vector3.ZERO
+	await _physics_frames(4)
+	for point in [Vector3(0, 0, 2.3), Vector3(0.8, 0, 1.8), Vector3(2.95, 0, 1.8), Vector3(2.95, 0, -0.9)]:
+		if not await _walk_to(station.global_position + point, 180):
+			return false
+	var view := station.bag_view_for(bag_id)
+	if view == null:
+		return false
+	player.camera.look_at(view.global_position + Vector3.UP * 0.2)
+	await _physics_frames(3)
+	if str(player.interactor.update_target().get("id", "")) != str(bag_id):
+		return false
+	var press := InputEventMouseButton.new()
+	press.button_index = MOUSE_BUTTON_LEFT
+	press.pressed = true
+	Input.parse_input_event(press)
+	await _physics_frames(3)
+	var release := press.duplicate() as InputEventMouseButton
+	release.pressed = false
+	Input.parse_input_event(release)
+	await _physics_frames(2)
+	if str((station.session.state.bag_records[bag_id] as Dictionary).location) != "HELD":
+		return false
+	for point in [Vector3(0, 0, 2.3), Vector3(0, 0, 4.2), Vector3(-1.7, 0, 5.2)]:
+		if not await _walk_to(station.global_position + point, 180):
+			return false
+	player.camera.look_at(container.global_position + Vector3.UP * 1.2)
+	await _physics_frames(3)
+	if str(player.interactor.update_target().get("id", "")) != str(container.container_id):
+		return false
+	await _press_interact()
+	return str((station.session.state.bag_records[bag_id] as Dictionary).location) == "CONTAINER"
+
+
+func _walk_to(target: Vector3, max_frames: int) -> bool:
+	for frame in max_frames:
+		var flat := Vector3(target.x, player.global_position.y, target.z)
+		player.look_at(flat, Vector3.UP)
+		_send_stick(-1.0)
+		await physics_frame
+		if Vector2(player.global_position.x - target.x, player.global_position.z - target.z).length() < 0.55:
+			_send_stick(0.0)
+			await physics_frame
+			return true
+	_send_stick(0.0)
+	print("S1_WALK target=%s stopped=%s" % [target, player.global_position])
+	return false
+
+
+func _press_interact() -> void:
+	var press := InputEventKey.new()
+	press.physical_keycode = KEY_E
+	press.pressed = true
+	Input.parse_input_event(press)
+	await _physics_frames(3)
+	var release := press.duplicate() as InputEventKey
+	release.pressed = false
+	Input.parse_input_event(release)
+	await _physics_frames(2)
 
 
 func _collect_catalog_item(session: RunSession, definition_id: StringName) -> StringName:
