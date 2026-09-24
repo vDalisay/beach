@@ -10,6 +10,7 @@ uniform vec3 dry_color : source_color = vec3(0.902, 0.769, 0.545);
 uniform vec3 wet_color : source_color = vec3(0.678, 0.600, 0.435);
 uniform vec3 bed_color : source_color = vec3(0.48, 0.57, 0.51);
 uniform bool use_shore_data = true;
+uniform bool use_vertex_tint = false;
 uniform float surface_y = 0.08;
 uniform float caustic_strength = 0.22;
 uniform vec2 caustic_thresholds = vec2(0.16, 0.46);
@@ -30,6 +31,7 @@ void fragment() {
 	float variation = 1.0 + (detail - 0.5) * 0.12 + (macro - 0.5) * 0.06;
 	float wet = use_shore_data ? smoothstep(-1.2, 0.35, shore_distance) : 0.0;
 	vec3 sand = mix(dry_color, wet_color, wet) * variation;
+	if (use_vertex_tint) sand *= COLOR.rgb;
 	float depth = max(surface_y - world_position.y, 0.0);
 	sand = mix(sand, bed_color, use_shore_data ? smoothstep(0.0, 3.0, depth) * 0.15 : 0.0);
 	float phase = debug_time >= 0.0 ? debug_time : TIME;

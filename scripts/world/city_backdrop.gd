@@ -32,7 +32,6 @@ const BUILDINGS := [
 
 func _ready() -> void:
 	_add_inland_ground()
-	_add_headland_ridges()
 	var city_walls: Array[Transform3D] = []
 	var lowrise_walls: Array[Transform3D] = []
 	var deco_walls: Array[Transform3D] = []
@@ -100,20 +99,17 @@ func _ready() -> void:
 	tower_roof.position = Vector3(-46, 45, -115)
 	add_child(tower_roof)
 
-	for placement in [Vector3(180, -10, 365), Vector3(145, -14, -300)]:
+	for placement in [Vector3(180, -10, 365), Vector3(145, 0, -300), Vector3(-235, 0, -355)]:
 		var island := MOUNTAIN.instantiate() as Node3D
 		island.position = placement
 		island.scale = Vector3(8, 8, 8)
+		if placement.z < 0.0:
+			island.position.y = _mainland_height(placement.x, placement.z) - 1.0
+			island.scale = Vector3(9, 6, 7)
 		add_child(island)
 		for mesh in island.find_children("*", "MeshInstance3D", true, false):
 			var mountain_mesh := mesh as MeshInstance3D
 			mountain_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-			if placement.z < 0.0:
-				var source_material := mountain_mesh.get_surface_override_material(0) as ShaderMaterial
-				if source_material != null:
-					var backdrop_material := source_material.duplicate() as ShaderMaterial
-					backdrop_material.set_shader_parameter("color_tint", Color(1.65, 1.65, 1.5))
-					mountain_mesh.set_surface_override_material(0, backdrop_material)
 	for index in 10:
 		var palm := PALM.instantiate() as Node3D
 		palm.position = Vector3(-72.0 + index * 16.0, 0, -31.0 - float(index % 3) * 3.5)
@@ -122,40 +118,59 @@ func _ready() -> void:
 		palm.scale = Vector3.ONE * size
 		add_child(palm)
 	_add_boulevard_details()
+	_add_mainland_groves()
 	_add_clouds()
 
 
 func _add_inland_ground() -> void:
 	var land := MeshInstance3D.new()
 	land.name = "InlandGround"
+	# One continuous mainland replaces the disconnected back-facing ground strips.
+	# All of it is scenery, beyond the existing playable sand/promenade colliders.
 	var vertices := PackedVector3Array()
 	var normals := PackedVector3Array()
+	var colors := PackedColorArray()
 	var indices := PackedInt32Array()
-	var x_positions := [-100.0, -80.0, -60.0, -30.0, 0.0, 30.0, 60.0, 80.0, 100.0]
-	var back_positions := [-92.0, -108.0, -122.0, -137.0, -145.0, -140.0, -126.0, -110.0, -92.0]
-	for column in x_positions.size():
-		var x: float = x_positions[column]
-		var back: float = back_positions[column]
-		var front := maxf(-44.0, -34.0 + (absf(x) - 80.0) * 0.9)
-		for point in [Vector2(front, 0.15), Vector2(back + 10.0, 0.15), Vector2(back, -2.6), Vector2(back - 25.0, -3.2)]:
-			vertices.append(Vector3(x, point.y, point.x))
-			normals.append(Vector3.UP)
+	var depths := [0.0, 12.0, 32.0, 65.0, 110.0, 190.0, 320.0, 550.0, 950.0, 1600.0]
+	for column in 81:
+		var x := -800.0 + float(column) * 20.0
+		var front := Coastline.inland_z(x) + 0.6
+		for depth_value in depths:
+			var distance := float(depth_value)
+			var z := front - distance
+			var flank := smoothstep(85.0, 150.0, absf(x))
+			var inland := smoothstep(220.0, 530.0, -z)
+			vertices.append(Vector3(x, _mainland_height(x, z), z))
+			normals.append(Vector3.ZERO)
+			var vegetation := smoothstep(25.0, 140.0, distance) * (0.55 * flank + 0.45 * inland)
+			var shade := 0.96 + 0.04 * sin(x * 0.04 + z * 0.025)
+			colors.append(Color.WHITE.lerp(Color(0.45, 0.63, 0.38), vegetation) * shade)
 		if column > 0:
-			var a := (column - 1) * 4
-			for strip in 3:
-				indices.append_array(PackedInt32Array([a + strip, a + strip + 4, a + strip + 1, a + strip + 4, a + strip + 5, a + strip + 1]))
+			var a := (column - 1) * depths.size()
+			for strip in depths.size() - 1:
+				# Rows go inland (-Z), so reverse the sand mesh's winding.
+				indices.append_array(PackedInt32Array([a + strip, a + strip + 1, a + strip + depths.size(), a + strip + depths.size(), a + strip + 1, a + strip + depths.size() + 1]))
+	for triangle in range(0, indices.size(), 3):
+		var a := indices[triangle]
+		var b := indices[triangle + 1]
+		var c := indices[triangle + 2]
+		var normal := (vertices[c] - vertices[a]).cross(vertices[b] - vertices[a])
+		for vertex in [a, b, c]:
+			normals[vertex] += normal
+	for index in normals.size():
+		normals[index] = normals[index].normalized()
 	var arrays := []
 	arrays.resize(Mesh.ARRAY_MAX)
 	arrays[Mesh.ARRAY_VERTEX] = vertices
 	arrays[Mesh.ARRAY_NORMAL] = normals
+	arrays[Mesh.ARRAY_COLOR] = colors
 	arrays[Mesh.ARRAY_INDEX] = indices
 	var ground_mesh := ArrayMesh.new()
 	ground_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 	land.mesh = ground_mesh
-	var land_finish := StandardMaterial3D.new()
-	land_finish.albedo_color = Color(0.83, 0.73, 0.57)
-	land_finish.roughness = 0.95
-	land_finish.cull_mode = BaseMaterial3D.CULL_DISABLED
+	var land_finish := preload("res://shaders/beach_sand.tres").duplicate() as ShaderMaterial
+	land_finish.set_shader_parameter("use_shore_data", false)
+	land_finish.set_shader_parameter("use_vertex_tint", true)
 	land.material_override = land_finish
 	land.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(land)
@@ -192,46 +207,30 @@ func _add_inland_ground() -> void:
 	add_child(road)
 
 
-func _add_headland_ridges() -> void:
-	var finish := StandardMaterial3D.new()
-	finish.vertex_color_use_as_albedo = true
-	finish.roughness = 1.0
-	finish.cull_mode = BaseMaterial3D.CULL_DISABLED
-	var ridge_heights := [0.0, 3.0, 6.0, 9.0, 7.0, 8.0, 3.0, 0.0]
-	for side in [-1.0, 1.0]:
-		var vertices := PackedVector3Array()
-		var colors := PackedColorArray()
-		var normals := PackedVector3Array()
-		var indices := PackedInt32Array()
-		for index in ridge_heights.size():
-			var sample: int = index if side > 0.0 else ridge_heights.size() - 1 - index
-			var x: float = side * (90.0 + float(sample) * 24.0)
-			var height: float = ridge_heights[sample]
-			var front := Coastline.inland_z(x) + 2.0
-			var ridge_z := -76.0 + 10.0 * sin(x * 0.055)
-			for point in [Vector3(x, -0.1, front), Vector3(x, height * 0.25, lerpf(front, ridge_z, 0.45)), Vector3(x, height, ridge_z), Vector3(x, -3.5, ridge_z - 65.0)]:
-				vertices.append(point)
-				normals.append(Vector3.UP)
-			var shade := 0.94 + 0.04 * float(sample % 3)
-			colors.append_array(PackedColorArray([Color(0.88, 0.74, 0.54), Color(0.87, 0.72, 0.53) * shade, Color(0.79, 0.69, 0.52) * shade, Color(0.73, 0.67, 0.53) * shade]))
-			if index > 0:
-				var a := (index - 1) * 4
-				for strip in 3:
-					indices.append_array(PackedInt32Array([a + strip, a + strip + 4, a + strip + 1, a + strip + 4, a + strip + 5, a + strip + 1]))
-		var arrays := []
-		arrays.resize(Mesh.ARRAY_MAX)
-		arrays[Mesh.ARRAY_VERTEX] = vertices
-		arrays[Mesh.ARRAY_NORMAL] = normals
-		arrays[Mesh.ARRAY_COLOR] = colors
-		arrays[Mesh.ARRAY_INDEX] = indices
-		var mesh := ArrayMesh.new()
-		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-		mesh.surface_set_material(0, finish)
-		var ridge := MeshInstance3D.new()
-		ridge.name = "WestHeadland" if side < 0.0 else "EastHeadland"
-		ridge.mesh = mesh
-		ridge.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		add_child(ridge)
+func _mainland_height(x: float, z: float) -> float:
+	var distance := Coastline.inland_z(x) + 0.6 - z
+	var flank := smoothstep(85.0, 150.0, absf(x))
+	var dune := flank * (3.0 + 2.5 * sin(x * 0.029) + 2.0 * cos(x * 0.063)) * sin(clampf(distance / 145.0, 0.0, 1.0) * PI)
+	var inland := smoothstep(220.0, 530.0, -z)
+	var hills := inland * (17.0 + 8.0 * sin(x * 0.015 + z * 0.009) + 6.0 * cos(x * 0.028 - z * 0.006))
+	return -0.06 + maxf(dune, 0.0) + hills
+
+
+func _add_mainland_groves() -> void:
+	var palms: Array[Transform3D] = []
+	# Small irregular groups sit on the nonplayable inland slopes, outside objective routes.
+	for center in [-265.0, -195.0, -128.0, 128.0, 193.0, 265.0]:
+		for offset in [Vector2(-9, 14), Vector2(-3, 22), Vector2(7, 32), Vector2(12, 18), Vector2(-12, 35), Vector2(4, 45)]:
+			var x: float = center + offset.x
+			var z: float = Coastline.inland_z(x) - offset.y
+			var size := 0.60 + float(palms.size() % 4) * 0.07
+			palms.append(Transform3D(Basis(Vector3.UP, float(palms.size()) * 1.17).scaled(Vector3.ONE * size), Vector3(x, _mainland_height(x, z) - 0.45, z)))
+	for index in 15:
+		var x := -98.0 + float(index) * 14.0
+		var z := -127.0 - float(index % 4) * 7.0
+		var size := 0.38 + float(index % 3) * 0.07
+		palms.append(Transform3D(Basis(Vector3.UP, float(index) * 1.31).scaled(Vector3.ONE * size), Vector3(x, _mainland_height(x, z), z)))
+	_add_multimesh("MainlandPalmGroves", PALM, palms)
 
 
 func _add_boulevard_details() -> void:

@@ -1,0 +1,67 @@
+FIN-05 coast/backdrop and habitat composition
+Base commit: 6118db50590f243a868601ef0ae8e6868059715d plus working-tree changes fingerprinted in source-sha256.txt
+Godot 4.6.1-stable Mono Compatibility; beach-content-8 / beach version 8 / manifest-1 / save schema 1
+Date: 2026-09-24
+All listed final runs exited 0. Tests use their isolated save roots.
+
+=== Boot and ownership ===
+--path . --script res://tests/run_checks.gd
+Godot Engine v4.6.1.stable.mono.official.14d19694e - https://godotengine.org
+
+PASS: boot, asset_closure, ownership, input_bindings, manifest
+
+=== Pier and inland winding ===
+--path . --script res://tests/validate_pier_art.gd
+Godot Engine v4.6.1.stable.mono.official.14d19694e - https://godotengine.org
+
+P25_PIER lighthouse=1 tiles=135 rails=49 collision=1 failures=0
+
+=== Partial/full habitat restoration ===
+--path . --script res://tests/validate_wildlife.gd
+Godot Engine v4.6.1.stable.mono.official.14d19694e - https://godotengine.org
+
+P21_PLANT_CLEARANCE nearest=1.41m embedded=0
+P21_WILDLIFE ambient=2 local=4 regional=6 turtle=3 reef_clusters=24 starfish=4 failures=0
+
+=== Main-scene traversal and starter-air shore route ===
+--path . --script res://tests/validate_world_traversal.gd -- --shore-reef
+Godot Engine v4.6.1.stable.mono.official.14d19694e - https://godotengine.org
+
+SURFACE_CROSSING swimming=true submerged=true at=(0.000002, -1.091715, 45.46588) surfaced=true dry=true at=(-0.003151, -0.125284, 33.92992) air=10.00
+SHORE_REEF item=item:reef_west:outer:00095 reached=true aimed=true collected=true air_at_site=9.55 returned=true dry=true air_return=10.00
+P05_TRAVERSAL waypoints=13 distance=147.0m huts=3 shop=1 reefs=2 reef_items=1009 reef_overlaps=0 catalog=6/6 pier_carry=1 chair_swim=2.00m/s failures=0
+
+=== Paired native complete run ===
+--path . --script res://tests/validate_full_run.gd -- --review-pair --review-output=res://docs/handoffs/images/FIN05-composition-final
+Godot Engine v4.6.1.stable.mono.official.14d19694e - https://godotengine.org
+OpenGL API 3.3.0 NVIDIA 595.79 - Compatibility - Using Device: NVIDIA - NVIDIA GeForce RTX 3070
+
+FULL_RUN props_staged=299 final_slot=row:sports:chairs:03:001 elapsed_ms=30697
+FULL_RUN collected=200 elapsed_ms=31336
+FULL_RUN collected=400 elapsed_ms=31863
+FULL_RUN collected=600 elapsed_ms=32626
+FULL_RUN collected=800 elapsed_ms=33156
+FULL_RUN collected=1000 elapsed_ms=33877
+FULL_RUN collected=1200 elapsed_ms=34593
+FULL_RUN collected=1400 elapsed_ms=35219
+FULL_RUN collected=1600 elapsed_ms=35956
+FULL_RUN collected=1800 elapsed_ms=36609
+FULL_RUN collected=2000 elapsed_ms=37731
+FULL_RUN collected=2200 elapsed_ms=38822
+FULL_RUN collected=2400 elapsed_ms=40078
+FULL_RUN collected=2600 elapsed_ms=41024
+FULL_RUN collected=2800 elapsed_ms=41888
+FULL_RUN collected=3000 elapsed_ms=42654
+FULL_RUN collected=3200 elapsed_ms=43503
+FULL_RUN collected=3400 elapsed_ms=44297
+FULL_RUN collected=3600 elapsed_ms=44898
+FULL_RUN collected=3800 elapsed_ms=45628
+FULL_RUN collected=4000 elapsed_ms=46328
+FULL_RUN collected=4200 elapsed_ms=46925
+FULL_RUN collected=4400 elapsed_ms=47641
+FULL_RUN collected=4600 elapsed_ms=48400
+FULL_RUN collected=4800 elapsed_ms=49047
+FULL_RUN collected=5000 elapsed_ms=49722
+FULL_RUN collected=5200 elapsed_ms=50636
+FULL_RUN collected=5400 elapsed_ms=51289
+FULL_RUN_COMPLETE mode=final-prop waste=5400 props=300 results=1 receipt=1 reloaded=2 roam_replacement=1 elapsed_ms=104961

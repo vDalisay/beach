@@ -1,5 +1,11 @@
 # Performance measurements — P28
 
+## FIN-05 composition continuation — 24 September 2026
+
+After the continuous mainland, 51 batched inland palms, one additional existing mountain instance and rearranged existing reef habitat, the same crowded source-scene profile ran in Godot 4.6.1 Compatibility at 1920×1080 with 4× MSAA on Ryzen 5 5600 / RTX 3070 / driver 595.79. Across 600 frames: median 7.90 ms, mean 9.24 ms, p95 16.53 ms, average physics monitor 1.37 ms, maximum draws 4,690, Godot static/video memory 184.3/1,428.6 MB, 13,246 nodes and zero awake bodies. The item-view build substep took 3,223.7 ms. [Raw output](handoffs/images/FIN05-composition-final/profile.txt), [change and gameplay evidence](handoffs/C04.md#continuous-mainland-and-existing-habitat-composition--24-september-2026).
+
+The previous first all-effects FIN-06/07 sample had 4,686 draws / p95 17.23 ms and its later warmed sample had p95 10.88 ms. This variability prevents attributing a p95 gain to the scenery changes. The current run does not collect separate native GPU timing; memory values are engine monitors rather than process/board telemetry. Target-hardware, packaged, restored worst-view and extended-session gates remain open.
+
 ## FIN-06/07 rendering pass — 24 September 2026
 
 Current source review: Godot 4.6.1 Mono Compatibility, content-8, seed `first-shore`, Windows / Ryzen 5 5600 / RTX 3070 / driver 595.79, 1920×1080. The existing crowded shore profile uses 4× MSAA, 4096 directional shadows and the retained lighting/water/environment resources from [C06](handoffs/C06.md#fin-06fin-07-rendering-implementation--24-september-2026). It runs 600 measured frames per setting after 90 warmup frames, disabling one effect at a time and restoring the original resources afterward. CPU/GPU render columns are native viewport timing medians; full-frame median/p95 are wall-clock samples. [Raw output](handoffs/images/FIN08-final/profile.txt).

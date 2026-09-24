@@ -63,6 +63,7 @@ func _ready() -> void:
 	mound_meshes.transform_format = MultiMesh.TRANSFORM_3D
 	mound_meshes.mesh = mound_source.mesh
 	mound_meshes.instance_count = STRUCTURES.size() / 3
+	var habitat_anchors := {}
 	var ridge_index := 0
 	var mound_index := 0
 	for index in STRUCTURES.size():
@@ -70,14 +71,21 @@ func _ready() -> void:
 		var width := 0.52 + float(index % 3) * 0.04
 		var depth := 0.7 + float(index % 2) * 0.08
 		var shelf_scale := structure_scale(index)
+		var visual_pose: Transform3D
+		var habitat_mesh: Mesh
 		if index % 3 == 2:
 			var mound_basis := Basis(Vector3.UP, rock.z).scaled(Vector3(width * 4.2 * shelf_scale, rock.w * 2.2 * shelf_scale, depth * 2.1 * shelf_scale))
-			mound_meshes.set_instance_transform(mound_index, Transform3D(mound_basis, Vector3(rock.x, -2.65, rock.y)))
+			visual_pose = Transform3D(mound_basis, Vector3(rock.x, -2.65, rock.y))
+			habitat_mesh = mound_source.mesh
+			mound_meshes.set_instance_transform(mound_index, visual_pose)
 			mound_index += 1
 		else:
 			var basis := Basis(Vector3.UP, rock.z).scaled(Vector3(width * shelf_scale, rock.w * shelf_scale, depth * shelf_scale))
-			structure_meshes.set_instance_transform(ridge_index, Transform3D(basis, Vector3(rock.x, -2.65, rock.y)))
+			visual_pose = Transform3D(basis, Vector3(rock.x, -2.65, rock.y))
+			habitat_mesh = source.mesh
+			structure_meshes.set_instance_transform(ridge_index, visual_pose)
 			ridge_index += 1
+		habitat_anchors[index] = _surface_anchors(habitat_mesh, visual_pose)
 		var body := StaticBody3D.new()
 		body.name = "ReefRock%02d" % (index + 1)
 		body.position = Vector3(rock.x, -2.25, rock.y)
@@ -99,5 +107,23 @@ func _ready() -> void:
 	mounds.multimesh = mound_meshes
 	mounds.material_override = stone
 	add_child(mounds)
+	# Composition anchors follow rendered rock faces, not the simplified collision boxes.
+	set_meta(&"reef_habitat_anchors", habitat_anchors)
 	wrapper.free()
 	mound_wrapper.free()
+
+
+func _surface_anchors(mesh: Mesh, pose: Transform3D) -> Array[Vector3]:
+	var result: Array[Vector3] = []
+	var faces := mesh.get_faces()
+	var size := mesh.get_aabb().size
+	for offset in [Vector2(-0.23, 0.06), Vector2(0.04, -0.12), Vector2(0.26, 0.10)]:
+		var origin := Vector3(offset.x * size.x, 10.0, offset.y * size.z)
+		var highest := Vector3(origin.x, -INF, origin.z)
+		for triangle in range(0, faces.size(), 3):
+			var hit: Variant = Geometry3D.ray_intersects_triangle(origin, Vector3.DOWN, faces[triangle], faces[triangle + 1], faces[triangle + 2])
+			if hit is Vector3 and hit.y > highest.y:
+				highest = hit
+		if is_finite(highest.y):
+			result.append(pose * highest)
+	return result

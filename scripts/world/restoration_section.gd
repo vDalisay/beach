@@ -25,6 +25,7 @@ var sections: Dictionary = {}
 var zone_roots: Dictionary = {}
 var anchors: Dictionary = {}
 var populations: Dictionary = {}
+var reef_habitat_anchors: Dictionary = {}
 var settings: SettingsStore
 
 
@@ -53,6 +54,13 @@ func configure(run_session: RunSession, beach: Node3D, settings_store: SettingsS
 
 
 func _find_nodes(node: Node) -> void:
+	if node.has_meta(&"reef_habitat_anchors"):
+		var world := node as Node3D
+		for index in node.get_meta(&"reef_habitat_anchors") as Dictionary:
+			var points: Array[Vector3] = []
+			for point in (node.get_meta(&"reef_habitat_anchors") as Dictionary)[index]:
+				points.append(world.to_global(point))
+			reef_habitat_anchors[index] = points
 	if node is BeachSection:
 		var section := node as BeachSection
 		sections[section.section_id] = section
@@ -114,6 +122,20 @@ func _build_section(section: BeachSection) -> void:
 			var offset := CORAL_OFFSETS[index] as Vector2
 			coral.global_position = origin + Vector3(offset.x, 0.0, offset.y)
 			coral.scale = Vector3.ONE * [1.25, 0.85, 0.65][index % 3]
+			if str(section.zone_id).begins_with("reef_"):
+				coral.global_position.y = Coastline.surface_y(coral.global_position.x, coral.global_position.z) - 0.015
+				coral.scale = Vector3(0.85, [0.25, 0.50, 0.75][(index / 2) % 3], 0.85)
+				var rocks := REEF_PLANT_ROCKS[section.section_id] as Array
+				var rock_index: int = rocks[(index / 2) % rocks.size()]
+				var points := reef_habitat_anchors.get(rock_index, []) as Array
+				if index % 2 == 1 and not points.is_empty():
+					coral.global_position = (points[index % points.size()] as Vector3) - Vector3.UP * 0.015
+					# Reuse the provisional mesh as low/medium/tall groups on the existing rocks.
+					var height: float = [0.28, 0.65, 1.10][index % 3]
+					var width: float = [0.85, 0.62, 0.50][index % 3]
+					height = minf(height, maxf(0.12, (0.08 - 0.30 - coral.global_position.y) / 1.9))
+					coral.scale = Vector3(width, height, width)
+					coral.rotation.y = float(index) * 1.17
 		for index in range(2):
 			var starfish := STARFISH_SCENE.instantiate() as Node3D
 			section.restoration_visual_root.add_child(starfish)
@@ -255,6 +277,9 @@ func _build_reef_plants(section: BeachSection) -> void:
 		var plant := _seagrass_bed(rock_index)
 		section.add_child(plant)
 		plant.global_position = Vector3(rock.x, -2.95, rock.y) + offset
+		plant.global_position.y = Coastline.surface_y(plant.global_position.x, plant.global_position.z) - 0.015
+		plant.rotation.y = float(rock_index) * 0.73
+		plant.scale = Vector3(0.9, [0.60, 1.00, 1.42][rock_index % 3], 0.9)
 
 
 func _seagrass_bed(index: int) -> Node3D:

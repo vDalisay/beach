@@ -1,5 +1,7 @@
 # Asset register — C00, 23 September 2026
 
+**Supply decision, 24 September 2026:** the user will supply the 28 final-art roles below. Retain their existing visuals until the supplied models can be integrated and reviewed. The current FIN-05 continuation covers coast/backdrop geometry and habitat composition with existing assets; it does not create or accept replacement art.
+
 `data/asset_manifest.json` stages **87 Synty wrapper roles / 246 source and dependency files** from the locally licensed Palm City conversion. The wrapper scene and every source component are named there. `tools/stage_assets.gd` regenerates `art/synty/`; `tests/run_checks.gd` verifies the closure and loads every wrapper. Generated/vendor files stay out of Git.
 
 FIN-06/07 rendering update, 24 September 2026: the added dependency is the supplied `caustic_height.png`, explicitly listed in `extra_resources` and used on sand and reef rocks. Staging redirects the supplied polygon/foliage materials to attributed project shader variants and enables mipmaps for the sampled sand/water/foliage textures. This adds no asset role and does not resolve any final-art substitution below. See [C06](handoffs/C06.md#fin-06fin-07-rendering-implementation--24-september-2026).

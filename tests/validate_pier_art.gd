@@ -57,6 +57,8 @@ func _run() -> void:
 	check(beach.has_node("ActivityAreas/SportsShelter/SyntyShelter/Visual/Shelter") and beach.has_node("ActivityAreas/LoungesShelter/PostSW") and beach.has_node("ActivityAreas/SandplayShelter/PostNE"), "Synty beach shelters frame the cafes with post collision")
 	check(beach.has_node("Skyline/BeachShopArrivalA") and beach.has_node("Skyline/BeachShopSportsB") and beach.has_node("Skyline/BeachShopLoungesC"), "Synty storefronts layer the main beach frontage")
 	var backdrop := beach.get_node("CityBackdrop") as Node3D
+	var inland_faces := (backdrop.get_node("InlandGround") as MeshInstance3D).mesh.get_faces()
+	check((inland_faces[1] - inland_faces[0]).cross(inland_faces[2] - inland_faces[0]).y < 0.0, "inland terrain has upward front faces rather than a dark back-facing sheet")
 	check((backdrop.get_node("SyntyCityFacades") as MultiMeshInstance3D).multimesh.instance_count > 20 and (backdrop.get_node("SyntyLowriseWindows") as MultiMeshInstance3D).multimesh.instance_count > 20 and (backdrop.get_node("SyntyDecoFacades") as MultiMeshInstance3D).multimesh.instance_count > 20 and (backdrop.get_node("SyntyVillaFacades") as MultiMeshInstance3D).multimesh.instance_count > 20 and backdrop.find_children("*", "CollisionObject3D", true, false).is_empty(), "varied Synty city glass/facades render as collision-free scenery")
 	check(backdrop.has_node("SyntyCloudRing") and not backdrop.has_node("SyntyCloudRingUpper"), "one Synty cloud layer leaves clear sky above the beach")
 	check((backdrop.get_node("SyntyCityAwningsRed") as MultiMeshInstance3D).multimesh.instance_count > 8 and (backdrop.get_node("SyntyCityAwningsCream") as MultiMeshInstance3D).multimesh.instance_count > 8, "staged Synty art-deco awnings dress the city storefronts")

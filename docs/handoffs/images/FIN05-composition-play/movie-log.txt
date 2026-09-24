@@ -1,0 +1,11 @@
+Godot Engine v4.6.1.stable.mono.official.14d19694e - https://godotengine.org
+OpenGL API 3.3.0 NVIDIA 595.79 - Compatibility - Using Device: NVIDIA - NVIDIA GeForce RTX 3070
+
+Movie Maker mode enabled, recording movie in 1920×1080 @ 60 FPS...
+--------------------------------------------------------------------------------
+Done recording movie at path: C:/Users/Home/Documents/beach/builds/fin05-composition-play.avi
+1785 frames at 60 FPS (movie length: 00:00:29:45), recorded in 00:02:28 (19% of real-time speed).
+CPU render time: 7.78 seconds (average: 4.36 ms/frame)
+GPU render time: 10.79 seconds (average: 6.05 ms/frame)
+Encoding time: 42.60 seconds (average: 23.86 ms/frame)
+--------------------------------------------------------------------------------
