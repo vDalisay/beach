@@ -135,18 +135,19 @@ func _build_zone(zone_id: StringName, root: Node3D) -> void:
 		var palm := PALM_SCENE.instantiate() as Node3D
 		root.add_child(palm)
 		palm.global_position = origin + Vector3(-2.8, -0.15, -4.0)
-	if zone_id == &"sandplay":
+	if zone_id == &"lounges":
 		var turtle_anchor := Node3D.new()
 		turtle_anchor.name = "TurtleRouteAnchor"
 		root.add_child(turtle_anchor)
-		turtle_anchor.global_position = origin + Vector3(0, 0, 3.0)
+		# Gap between the eastern lounge seating groups, heading straight into the bay.
+		turtle_anchor.global_position = Vector3(-2.5, 0, 20)
 		var route := PathAnimal.new()
 		route.name = "TurtleBeachToWater"
 		turtle_anchor.add_child(route)
 		var turtle_visual := TURTLE_SCENE.instantiate() as Node3D
 		turtle_visual.rotation.y = PI
 		route.add_child(turtle_visual)
-		route.configure(&"zone:sandplay:turtle", [Vector3.ZERO, Vector3(0, 0, 12), Vector3(0, 0, 22), Vector3(0, -0.8, 33)], [Vector3(0, -0.8, 33), Vector3(2, -0.9, 35), Vector3(-2, -0.95, 37)], 2.0, _reduced_motion())
+		route.configure(&"zone:lounges:turtle", [Vector3.ZERO, Vector3(0, 0, 8), Vector3(0, 0, 16), Vector3(0, -0.8, 28)], [Vector3(0, -0.8, 28), Vector3(2, -0.9, 30), Vector3(-2, -0.95, 32)], 2.0, _reduced_motion())
 		populations[route.route_id] = route
 
 
@@ -215,8 +216,8 @@ func _start_zone_population(zone_id: StringName, loaded: bool) -> void:
 	for key in populations:
 		if str(key).begins_with("zone:%s:" % zone_id) and populations[key] is FishSchool:
 			(populations[key] as FishSchool).start_school()
-	if zone_id == &"sandplay" and populations.has(&"zone:sandplay:turtle"):
-		var turtle := populations[&"zone:sandplay:turtle"] as PathAnimal
+	if zone_id == &"lounges" and populations.has(&"zone:lounges:turtle"):
+		var turtle := populations[&"zone:lounges:turtle"] as PathAnimal
 		if loaded:
 			turtle.resume_loop()
 		else:

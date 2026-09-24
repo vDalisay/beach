@@ -80,11 +80,11 @@ func _run() -> void:
 	check((loaded_nature.sections[&"reef_west:outer"] as BeachSection).restoration_visual_root.visible and (loaded_nature.zone_roots[&"reef_west"] as Node3D).visible and (loaded_nature.populations[&"section:reef_west:outer:fish"] as FishSchool).mover.looping and (loaded_nature.populations[&"zone:reef_west:01"] as FishSchool).mover.looping, "reload resumes local and regional fish without replaying reward")
 	check(loaded_nature.populations.size() == population_count and restored.validate_invariants(session.definitions).is_empty(), "snapshot preserves stable school keys and restoration latches")
 	loaded_session.free()
-	var turtle := nature.populations[&"zone:sandplay:turtle"] as PathAnimal
+	var turtle := nature.populations[&"zone:lounges:turtle"] as PathAnimal
 	check((turtle.get_child(0) as Node3D).basis.z.dot(Vector3.FORWARD) > 0.99, "turtle head is aligned with the route component's forward direction")
-	check(not turtle.looping and not (nature.zone_roots[&"sandplay"] as Node3D).visible, "shoreline return turtle waits for its designated zone")
-	(session.state.zone_states[&"sandplay"] as Dictionary).restored_once = true
-	session.zone_restored.emit(&"sandplay")
+	check(not turtle.looping and not (nature.zone_roots[&"lounges"] as Node3D).visible, "shoreline return turtle waits for lounges restoration")
+	(session.state.zone_states[&"lounges"] as Dictionary).restored_once = true
+	session.zone_restored.emit(&"lounges")
 	Engine.time_scale = 12.0
 	for frame in range(120):
 		await physics_frame
