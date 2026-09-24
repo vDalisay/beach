@@ -572,7 +572,7 @@ script = ExtResource("3_slot")
 pool_id = &"row:lounges:tents"
 accepted_families = PackedStringArray("portable_tent")
 capacity = 2
-spacing = 3.0
+spacing = 3.4
 [node name="RecoveryLounges" type="Marker3D" parent="." groups=["recovery_anchors"]]
 position = Vector3(0, 0.05, -2)
 script = ExtResource("4_recovery")

@@ -84,7 +84,7 @@ accepted_families = PackedStringArray("portable_inflatable")
 capacity = 10
 spacing = 1.5
 [node name="Lifebuoys" type="Marker3D" parent="Storage" groups=["placement_pools"]]
-position = Vector3(20, 0, -18)
+position = Vector3(20, 0, -17.5)
 script = ExtResource("3_slot")
 pool_id = &"row:shallows:lifebuoys"
 accepted_families = PackedStringArray("lifebuoy")

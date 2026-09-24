@@ -161,7 +161,6 @@ pool_id = &"row:sports:paddles"
 accepted_families = PackedStringArray("paddle")
 capacity = 2
 spacing = 1.0
-layout = 2
 [node name="RecoverySports" type="Marker3D" parent="." groups=["recovery_anchors"]]
 position = Vector3(0, 0.05, -2)
 script = ExtResource("4_recovery")

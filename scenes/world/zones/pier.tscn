@@ -166,7 +166,7 @@ capacity = 2
 spacing = 1.8
 
 [node name="Surfboards" type="Marker3D" parent="Storage" groups=["placement_pools"]]
-position = Vector3(-8, 0, 15)
+position = Vector3(-8, 0, 14.4)
 script = ExtResource("3_slot")
 pool_id = &"upright:pier:surfboards"
 accepted_families = PackedStringArray("surfboard")
@@ -180,12 +180,12 @@ pool_id = &"row:pier:lifebuoys"
 accepted_families = PackedStringArray("lifebuoy")
 capacity = 4
 [node name="Paddles" type="Marker3D" parent="Storage" groups=["placement_pools"]]
-position = Vector3(-8, 1.1, 42)
+position = Vector3(-3, 1.45, 42)
+rotation = Vector3(0, 3.14159, 0)
 script = ExtResource("3_slot")
 pool_id = &"upright:pier:paddles"
 accepted_families = PackedStringArray("paddle")
 capacity = 4
-layout = 2
 [node name="RecoveryPier" type="Marker3D" parent="." groups=["recovery_anchors"]]
 position = Vector3(-10, 0.05, 2)
 script = ExtResource("4_recovery")

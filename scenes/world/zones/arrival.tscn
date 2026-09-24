@@ -73,6 +73,7 @@ script = ExtResource("3_slot")
 pool_id = &"shelf:arrival:02"
 accepted_families = PackedStringArray("bucket", "spade", "beach_ball", "volleyball", "speaker")
 capacity = 6
+spacing = 1.0
 layout = 1
 [node name="Shelf03" type="Marker3D" parent="Storage" groups=["placement_pools"]]
 position = Vector3(-2, 0.8, -15)
@@ -175,7 +176,7 @@ script = ExtResource("3_slot")
 pool_id = &"row:arrival:tents"
 accepted_families = PackedStringArray("portable_tent")
 capacity = 2
-spacing = 3.0
+spacing = 3.4
 
 [node name="RecoveryArrival" type="Marker3D" parent="." groups=["recovery_anchors"]]
 position = Vector3(-2.5, 0.05, -2)

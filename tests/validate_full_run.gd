@@ -208,11 +208,17 @@ func _run() -> void:
 	if audit_slots and not await _audit_occupied_slots(session):
 		_fail("occupied destinations have blocked targets or intersecting colliders")
 		return
-	if (review_pair or audit_slots) and not await _exercise_review_chair(session, &"row:lounges:chairs:11:000"):
+	if "--audit-mesh" in OS.get_cmdline_user_args() and not _audit_occupied_meshes(session):
+		_fail("occupied visual bounds intersect outside the shaded lounge groups")
+		return
+	if (review_pair or audit_slots) and not await _exercise_review_prop(session, &"row:lounges:chairs:11:000"):
 		_fail("completed lounge pocket could not remove, preview, throw-capture and restore a real chair")
 		return
-	if (review_pair or audit_slots) and not await _exercise_review_chair(session, &"row:sports:chairs:01:000"):
+	if (review_pair or audit_slots) and not await _exercise_review_prop(session, &"row:sports:chairs:01:000"):
 		_fail("completed shore-side sports pocket could not approach, remove and restore a real chair")
+		return
+	if (review_pair or audit_slots) and not await _exercise_review_prop(session, &"upright:pier:paddles:000", Vector3(4.2, 0, 5), Vector3(1.8, 0, 0), false):
+		_fail("completed pier paddle rack could not be approached, picked up and replaced")
 		return
 	if review_pair and not await _capture_review(main, session, "restored"):
 		_fail("restored review captures failed")
@@ -323,7 +329,48 @@ func _audit_occupied_slots(session: RunSession) -> bool:
 	return reachable == total and overlaps.is_empty()
 
 
-func _exercise_review_chair(session: RunSession, slot_id: StringName) -> bool:
+func _audit_occupied_meshes(session: RunSession) -> bool:
+	var bounds := {}
+	for item_value in session.state.items.values():
+		var item := item_value as ItemRecord
+		if item.location != ItemRecord.Location.SLOTTED:
+			continue
+		var body := session.placement_service.slotted_views.get(item.item_id) as StaticBody3D
+		if body == null:
+			continue
+		var box := _visual_bounds(body.get_node("VisualRoot"))
+		if box.has_surface():
+			bounds[str(item.slot_id)] = box
+	var keys := bounds.keys()
+	var shade_candidates := 0
+	var overlaps := PackedStringArray()
+	for i in keys.size():
+		for j in range(i + 1, keys.size()):
+			if (bounds[keys[i]] as AABB).intersects(bounds[keys[j]] as AABB):
+				if str(keys[i]).contains("parasol") or str(keys[j]).contains("parasol"):
+					shade_candidates += 1
+				else:
+					overlaps.append("%s / %s" % [keys[i], keys[j]])
+	print("C04_MESH_AABB occupied=%d nonshade=%d shade_candidates=%d first=%s" % [keys.size(), overlaps.size(), shade_candidates, ", ".join(overlaps.slice(0, 10))])
+	return overlaps.is_empty()
+
+
+func _visual_bounds(node: Node) -> AABB:
+	var box := AABB()
+	var found := false
+	if node is MeshInstance3D and (node as MeshInstance3D).mesh != null:
+		box = (node as MeshInstance3D).global_transform * (node as MeshInstance3D).get_aabb()
+		found = true
+	for child in node.get_children():
+		var child_box := _visual_bounds(child)
+		if not child_box.has_surface():
+			continue
+		box = box.merge(child_box) if found else child_box
+		found = true
+	return box
+
+
+func _exercise_review_prop(session: RunSession, slot_id: StringName, walk_start_offset := Vector3(-3, 0, -5), walk_target_offset := Vector3(0, 0, -1.8), verify_throw := true) -> bool:
 	var placement := session.placement_service
 	var item_id := placement.occupant_for(slot_id)
 	if item_id.is_empty():
@@ -334,29 +381,39 @@ func _exercise_review_chair(session: RunSession, slot_id: StringName) -> bool:
 		return false
 	var target := (body.get_child(1) as CollisionShape3D).global_position
 	var slot_origin := placement.slot_transform(slot_id).origin
-	var walk_target := slot_origin + Vector3(0, 0, -1.8)
-	player.global_position = slot_origin + Vector3(-3, 0, -5)
+	var walk_target := slot_origin + walk_target_offset
+	player.global_position = slot_origin + walk_start_offset
 	player.velocity = Vector3.ZERO
 	player.look_at(Vector3(walk_target.x, player.global_position.y, walk_target.z), Vector3.UP)
+	var walk_radius := 0.5 if not verify_throw else 1.25
 	_stick(-1.0)
 	for frame in 120:
 		await physics_frame
-		if Vector2(player.global_position.x - walk_target.x, player.global_position.z - walk_target.z).length() < 1.25:
+		if Vector2(player.global_position.x - walk_target.x, player.global_position.z - walk_target.z).length() < walk_radius:
 			break
 	_stick(0.0)
 	player.velocity = Vector3.ZERO
-	if Vector2(player.global_position.x - walk_target.x, player.global_position.z - walk_target.z).length() >= 1.25:
+	if Vector2(player.global_position.x - walk_target.x, player.global_position.z - walk_target.z).length() >= walk_radius:
 		print("C04_LOUNGE_APPROACH stopped=%s target=%s" % [player.global_position, walk_target])
 		return false
 	player.set_physics_process(false)
 	var aimed := false
-	for offset in [Vector3(0, 0, 1.8), Vector3(1.8, 0, 0), Vector3(0, 0, -1.8), Vector3(-1.8, 0, 0)]:
-		player.global_position = placement.slot_transform(slot_id).origin + offset
+	if not verify_throw:
 		player.camera.look_at(target)
 		await physics_frame
-		if str(player.interactor.update_target().get("id", "")) == str(item_id):
-			aimed = true
-			break
+		var reached_target := player.interactor.update_target()
+		aimed = str(reached_target.get("id", "")) == str(item_id)
+		if not aimed:
+			print("C04_PIER_PADDLE_WALK_AIM position=%s target=%s seen=%s" % [player.global_position, target, reached_target])
+			return false
+	if not aimed:
+		for offset in [Vector3(0, 0, 1.8), Vector3(1.8, 0, 0), Vector3(0, 0, -1.8), Vector3(-1.8, 0, 0)]:
+			player.global_position = placement.slot_transform(slot_id).origin + offset
+			player.camera.look_at(target)
+			await physics_frame
+			if str(player.interactor.update_target().get("id", "")) == str(item_id):
+				aimed = true
+				break
 	player.set_physics_process(true)
 	if not aimed:
 		return false
@@ -377,6 +434,8 @@ func _exercise_review_chair(session: RunSession, slot_id: StringName) -> bool:
 	await _click()
 	if placement.occupant_for(slot_id) != item_id:
 		return false
+	if not verify_throw:
+		return session.progress_service.completed_props == 300 and session.state.validate_invariants(session.definitions).is_empty()
 	for frame in 20:
 		await physics_frame
 	body = placement.slotted_views.get(item_id) as StaticBody3D
@@ -433,7 +492,15 @@ func _capture_review(main: BeachMain, session: RunSession, state_name: String) -
 	session.swim_service.set_physics_process(false)
 	var errors := session.state.validate_invariants(session.definitions)
 	var succeeded := errors.is_empty()
-	for view in REVIEW_VIEWS:
+	var views := REVIEW_VIEWS.duplicate()
+	if "--mesh-views" in OS.get_cmdline_user_args():
+		views.append_array([
+			{"name": "sports-paddles", "origin": Vector3(-31, 2.1, 20), "target": Vector3(-25.75, 1.1, 15)},
+			{"name": "pier-paddles", "origin": Vector3(63, 3.1, 47), "target": Vector3(59.5, 2.1, 42)},
+			{"name": "arrival-tents", "origin": Vector3(-46, 2.1, 22), "target": Vector3(-41, 1.1, 15)},
+			{"name": "pier-seating", "origin": Vector3(47, 2.1, 20), "target": Vector3(52, 1.1, 15)},
+		])
+	for view in views:
 		var origin := view.origin as Vector3
 		camera.global_position = origin
 		camera.look_at(view.target as Vector3)
