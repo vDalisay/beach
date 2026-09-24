@@ -1,8 +1,12 @@
-# Completion and visual alignment plan — 23 September 2026
+# Completion packet specifications — 24 September 2026
+
+**Execution has been consolidated into [the finishing phase](11-finishing-phase.md).** FIN-01–FIN-10 are the only active remaining-work checklist. This document retains C-packet scope, ownership, contracts and the reference rubric; its C work order is a supporting dependency map, not another queue to finish afterward. Completed work stays completed. The revised look-and-feel specification is included in the finishing phase and supplies the current rendering implementation values.
 
 ## Purpose and starting point
 
-Finish the existing game, rather than restart P00–P29. The [initial implementation review](06-implementation-review.md) defines findings F01–F12; the [C04 checkpoint review](08-checkpoint-review.md) reconciles progress and adds F13–F15. Current checkout `3c6b431` uses Godot 4.6.1, `beach-content-6`, beach version 6, `manifest-1` and save schema 1. C00 is accepted; C01's checked repairs work; C02/C03 need the bounded C03a follow-up below; C04 is unfinished; C05–C09 remain open. Writing or revising this plan does not complete those gates.
+Finish the existing game, rather than restart P00–P29. The [systems review](10-systems-review.md) is the current reconciliation at `68a123a`: Godot 4.6.1, `beach-content-8`, beach version 8, `manifest-1`, save schema 1. C00–C03a have implemented handoffs; C04/C05 have working access/catalog repairs, C07 has local restoration and turtle systems, and C08 has further control fixes. Their remaining acceptance work is specified below. The new review reproduces F16/F17; the [initial review](06-implementation-review.md) and [checkpoint review](08-checkpoint-review.md) remain historical F01–F15 evidence. Writing this revision does not complete gameplay gates.
+
+**Current user direction: complete all nonvisual systems first; visuals are handled separately.** Final models, composition, lighting and water appearance do not block functional work with provisional art. Physical access/collision, clear action instructions, usable controls and observable restoration state remain system requirements. Keep separate functional and visual acceptance lines in every mixed packet. The work order here supersedes older instructions to finish visual C04–C07 before functional C08/C09.
 
 The original [requirements](01-requirements.md) remain the product authority. The new screenshots guide composition, materials and habitat density. They do not authorize human visitors, a third-person camera, drivable boats, multiplayer, sound, a larger city or a second beach. Keep the approximately 160 m beach, 5,700 required IDs, 40 optional valuables, eight zones, 18 sections, three service points and existing upgrade progression. Jetski remains deferred P30.
 
@@ -12,27 +16,43 @@ Preserve the working foundation: RunSession/ItemStore authority, stable ownershi
 
 The C numbers identify follow-up packets, not replacements for the original requirement IDs. Each packet below includes its bounded scope, likely file ownership and acceptance evidence. Keep implementation handoffs in `docs/handoffs/Cxx.md`; there is no need for another set of empty packet files or new test scenes.
 
-| Packet | Outcome | Depends on | Findings / original packets |
+| Packet | Outcome / current status | Functional dependencies | Findings / original packets |
 |---|---|---|---|
 | C00 | Current baseline, asset status and compatibility decisions | — | F09/F11/F12; P00/P01/P24/P29 |
 | C01 | Normal controls can collect and carry every eligible target | C00 | F01/F03; P08/P09/P16/P17/P19 |
 | C02 | Complete table/controller/pause flow | C01 | F02/F04 and prompt part of F12; P03/P12/P13/P22/P24/P27 |
 | C03 | Ordered mixed bag, complete local save/result contracts | C02 | F05/F12; P09/P17/P20/P24 |
-| C03a | Remapped table confirmation and correct checkpoint continuation | C03 | F14/F15; P03/P12/P24/P27 |
-| C04 | Reference-led composition, accessible structural reef and finished destinations | C00 | F08/F13; P05/P06/P07/P10/P25 |
-| C05 | Complete catalog and natural, reachable clutter distribution | C03a, C04 | F06/F08/F13; P06/P07/P26 |
-| C06 | Cohesive sunny shore, surface water and underwater treatment | C04 | F09; P18/P25 |
-| C07 | Authored reef and visible local restoration | C04, C05, C06; required assets for final fidelity | F07/F09; P19/P20/P21/P25 |
-| C08 | Final asset integration, interaction feel and pacing | C03a, C05, C06, C07 | F09/F10/F12; P01/P04/P22/P26/P27 |
-| C09 | Full player completion and exported release evidence | C08 | F10/F11; P28/P29 |
+| C03a | Remapped confirmation/checkpoint continuation implemented | C03 | F14/F15; P03/P12/P24/P27 |
+| C03b | Repair lost distinct presses and service binding prompts | C03a | F16/F17; P03/P08/P14/P15/P27 |
+| C04 | Close physical access/destination gate; composition separate | C00; C03b before final input acceptance | F08/F13; P05/P06/P07/P10/P25 |
+| C05 | Catalog implemented; close reachable-content and pacing gate | C03b, C04 functional gate | F06/F08/F13; P06/P07/P26 |
+| C06 | Separate lighting/water visual track | C04 geometry stable; no systems dependency | F09; P18/P25 |
+| C07 | Restoration implemented; close normal-play/state/access gate; habitat art separate | C04/C05 functional gates; C06/assets only for visual acceptance | F07/F09; P19/P20/P21/P25 |
+| C08 | Complete control/device/accessibility and pacing acceptance; final assets separate | C03b, C05/C07 functional gates | F09/F10/F12/F16/F17; P01/P04/P22/P26/P27 |
+| C09 | Current systems candidate, normal completion and release evidence | C08 functional gate; visual track only for final visual release claim | F10/F11; P28/P29 |
 
-Remaining execution is **C03a → finish C04 → C05 → C06 → C07 → C08 → C09**. C00–C03 are implemented history with the specific exceptions above; do not restart them. C04's F13 collision repair can precede C03a without a dependency conflict, and must precede further reef dressing. Asset identification/supply can progress while repairs happen, but final reef acceptance depends on actual assets. This ordering does not require delegation. If work is later split, explicitly allocate shared files first: C03a touches input/save UI; C04–C07 share world scenes and anchors. Never edit those shared scenes concurrently without allocating ownership.
+Remaining systems execution is **C03b → C04/C05 functional closure → C07 functional closure → C08 functional acceptance → C09 systems candidate/evidence**. C00–C03a should not be restarted. The reproduced F13 rock trap and F14/F15 are repaired; retain their regressions. C04 composition, C06 appearance, C07 habitat/species and C08 final asset/grip polish form the separate visual track, detailed here and in [the reference look plan](09-reference-look-plan.md). A functional gate may pass with provisional art while its visual line stays open. This does not require delegation; shared scene/script ownership must still be allocated if work is later split.
 
 Profile representative views during C04–C08. C09 is the final hardware gate, not the first performance measurement after adding art.
 
-C04 establishes the coast **and structural reef geometry before C05 fits the final catalog/clutter to it**. C04 must also leave the current objectives physically accessible: F13 reproduces required litter trapped inside its new rocks. C05 deepens distribution/access validation rather than inheriting a known blocked run. C07 adds habitat dressing and restoration to that geometry. Any later change to terrain, collision, destinations or dense vegetation reopens the affected access checks; packet numbering does not make earlier evidence valid after its inputs change.
+C04 establishes the current gameplay terrain/collision/destinations for C05's access evidence; final composition is not a prerequisite. F13 no longer reproduces in the recorded regression. Broader occupied approaches, special-content routes and normal play remain open. Any later change to terrain, collision, destinations or dense vegetation reopens affected access checks; a visuals-only task label does not exempt gameplay changes. Preserve wrapper/slot IDs and the C00 compatibility policy; see [the review's compatibility boundary](10-systems-review.md#compatibility-boundary-for-the-separate-visual-track).
+
+### Current evidence and closure ownership
+
+| Scope | Credit already earned | What must happen next |
+|---|---|---|
+| C00–C03a | Baseline, target routing, table/pause, bag order, checkpoints/results and remapped confirm fixes | Preserve; only C03b addresses the newly reproduced controls gaps. |
+| C04 functional | F13 repair, hut/rack/shop routes, 300 occupied rays/overlap audit, 15/15 representative family approaches | Demonstrate connected occupied manipulation and difficult approaches; record seed/layout and remaining bounds. |
+| C05 functional | All six missing definitions, quotas, economy, scripted two-bag collection and one starter-air dive | Human-paced opening/dense/tideline play, full buried/rescue/recovery and shore-to-reef air routes. |
+| C07 functional | Section fish, lounge + two reef turtle routes, permanent state/population/reload | Normal local final-task reward and dirty-neighbor access, freed-animal persistence and post-restoration prop rearrangement. |
+| C08 functional | Focus/scroll/Pause/carry-speed fixes and injected input evidence | Physical controller, full remapping/modal loop, last-item scanner and observed early/mid/late progression. |
+| C09 | Historical/interim exports, packed 100 seeds and accelerated finish/save evidence | Export current code, human full finish, final saves, clean machine, target hardware and extended session. |
+
+Use [the systems review](10-systems-review.md#systems-reconciliation-and-remaining-acceptance) for the P00–P30 reconciliation. Do not treat an existing implementation as missing merely because its final acceptance is open.
 
 ## C00 — Establish an honest current baseline
+
+**Status:** implemented in [C00](../handoffs/C00.md). C00–C03a below retain the original scope/acceptance contracts for maintenance; they are not a fresh execution queue. Use the current table above and C03b for new work.
 
 **Deliverable:** one current status and asset register, with a declared engine/content/save baseline. Historical handoffs remain available but are clearly historical.
 
@@ -122,17 +142,33 @@ Work:
 
 **Exit condition:** F14/F15 no longer reproduce; each press has one intended effect; loaded-slot continuation cannot overwrite another slot by resetting the picker. The broad save check passed during this review using a fresh temporary `%APPDATA%`; continue using isolated profiles rather than accumulating more runs in the historical 1.7 GB `p24` directory. No cleanup of genuine player data is authorized by this guidance.
 
-## C04 — Compose the finished beach first
+## C03b — Finish input edges and binding-aware service instructions
 
-**Deliverable:** an inviting, navigable completed beach with the reference's spatial relationships, using the present scale and supplied assets, plus the structural reef surfaces to which C05 will fit objectives. Establish this before tuning thousands of clutter positions.
+**Deliverable:** close [F16/F17](10-systems-review.md#reproduced-gaps) before declaring controls complete. This is a new bounded repair, not a restart of C01–C03a.
 
-**Resume from [the committed checkpoint](../handoffs/C04.md), not from an empty scene.** Grouped chair/lounger/parasol destinations, the wider coast treatment, eighteen structural reef colliders and the paired-capture command already exist. Keep the passing lounge pocket, quotas and traversal. Finish these three bounded passes:
+Work:
 
-1. **Objective clearance first (F13).** For `full-run-integration`, resolve the 23 WORLD origins inside reef rocks, including the frozen can `item:reef_east:coral:00070`. Reuse conservative authored exclusion bounds in existing anchor data/shared geometry and deterministic generation, or move the conflicting geometry/anchors together. Include full item/carry/reveal clearance rather than only unique points. Do not rely on frozen-body depenetration or weaken pickup occlusion. Record the resulting bounds for C05 and C07. If generation changes, preserve content-6 saves with `3c6b431` and advance the explicit content version under C00's policy.
-2. **Finish composition.** Recompose pier/café proportions and the broad empty flanks, add near/middle activity to the along-shore view, and integrate the inland backdrop edge. Move actual compatible destinations where needed; retain all families, capacities and the 160 m playable length. Ground the review camera at real player height after terrain changes, keeping matching initial/restored transforms.
-3. **Accept the occupied layout.** Populate the actual 300 prop records, inspect every destination family/approach, perform normal pickup/placement/throw/removal/reload in representative groups, and rerun hut/pier/swim traversal. Demonstrate normal pickup of previously trapped reef litter with nearby attachments and recovery paths intact. Record a rendered worst-view profile and refresh the existing paired captures and rubric.
+1. Repair `InputReader` so a genuine release/new press rearms the one-shot action even when both events arrive between physics samples. Keep the recent guarantee that one held press cannot repeat across physics ticks. Trace all one-shot callers; preserve click-only poke, continuous vacuum, controller triggers, remapping and held-input suppression when returning from menus.
+2. Replace keyboard `E:` metadata in equipment counter/rack, collection hotline and waste containers with binding-aware service instructions. Preserve the service verb and useful rejection reason. Device/binding changes while aiming must update the displayed key/button through the existing SettingsStore/TargetLabel path.
+3. Reuse the existing input/interaction checks for the minimal failing edge and prompt cases. The review diagnostic gives the reproduction; do not create a new test framework or one test per service/tool. Recheck the existing sorting/save flows only where input/context changes affect them.
 
-Add the smallest collider/pickup regression to the existing world validation for F13. The two passing swim-channel routes and accelerated completion do not establish per-object access. Final 100-seed content validation remains C09; no new physics-test framework is needed here.
+**Ownership:** `scripts/player/input_reader.gd`, input dispatch if required, `scripts/ui/target_label.gd`, `scripts/player/interactor.gd`, `scripts/stations/equipment_shop.gd`, `waste_container.gd`, `collection_call_point.gd`; existing `validate_c01_input.gd` / `validate_interaction.gd` only for bounded regressions. Handoff: `docs/handoffs/C03b.md`.
+
+**Playable evidence:** in the main scene aim at two real items and issue distinct primary presses, including a release/repress between physics samples; collect once per press, while a held stick never repeats. Repeat a one-shot throw/interact/tool switch, then hold the vacuum and verify continuous use remains. Close table/booklet/pause with an action held and verify no leaked world action. On keyboard and controller, remap Interact and visit counter, rack, each container category and hotline: the shown binding performs the named action once. Record staged setup separately from input-driven actions; physical-device coverage can be shared with C08.
+
+**Exit:** F16/F17 no longer reproduce, no duplicate transfers, no lost distinct action edges, service prompts match the current binding/device, and ownership/payment/save behavior remains intact.
+
+## C04 — Close physical access; finish composition separately
+
+**Deliverable:** physically usable terrain, destinations and structural reef surfaces for C05's objectives, with final reference composition accepted separately. Freeze the gameplay geometry used for access evidence; visual refinements may follow and must revalidate affected routes.
+
+**Resume from [the latest checkpoint](../handoffs/C04.md).** Grouped destinations, eighteen reef colliders, F13 clearance, hut/shop access, all 300 occupied target/overlap checks and 15/15 representative family approaches already have evidence. The deliverable's final composition belongs to the separate visual track; these are the remaining functional and visual passes:
+
+1. **Preserve objective clearance (functional).** Retain the existing F13 collider/pickup regression, full item/reveal bounds and both reef lanes. Deepen actual pickup/swim/recovery evidence for C05's dense and special sites, including current rear shelves. Record current layout/seed; do not weaken occlusion or rely on frozen-body depenetration. Apply the C00 version policy if objectives/anchors/slots change.
+2. **Accept occupied access (functional).** Using all 300 actual placed records, walk/carry into the difficult/shared-shelf and large-object destinations and perform normal pickup, ghost placement, physical throw capture, removal and reload. Cover every family and record any unvisited occupied approaches. Keep all legal storage allocations feasible. Connect the route through huts, rack, containers, shop, pier and shore exits with the actual player/carry bounds; a ray cast from an arbitrary point is not proof of a player approach.
+3. **Finish composition (separate visuals).** Recompose pier/café proportions, flanks, near/middle activity and backdrop under the visual rubric. Preserve capacities and 160 m length. Refresh matched captures and worst-view profile when that work happens; it does not block functional closure with current geometry.
+
+**Functional exit:** normal occupied manipulation and affected objective routes are demonstrated, storage remains feasible, and no known item is unreachable. Record evidence limits honestly; the existing two swim channels and accelerated completion alone are insufficient. **Visual exit:** the composition/rubric criteria below pass separately. Final 100-seed content validation remains C09; reuse the existing checks.
 
 ### Authored direction
 
@@ -202,9 +238,11 @@ Populate all 300 required props through the existing accelerated setup, then ins
 
 **Evidence:** reuse the main scene and existing traversal validation. Follow the capture procedure for the three review cameras, an along-shore player view and the representative lounge/reef pockets, plus hut/pier navigation. For new before/after comparisons use the same seed, FOV, light, resolution and camera transforms. Record the accelerated setup for restored visual review separately from human completion. Walk/carry across the whole route, enter all huts, carry a large prop onto/off the pier and place representative items in every destination type.
 
-**Exit condition:** F13 no longer reproduces and the composition rows of the reference rubric pass in the representative areas and the complete layout; no exposed world edges dominate normal playable views; coast, pier and lighthouse read as one composition; completed seating resembles usable groups; travel and sufficient compatible storage still work. Both reef areas have their structural surfaces, collision and shared exclusions ready for C05, with the current required pickups accessible. Record the final layout/pool allocation and a quick worst-view profile before proceeding. Keep an elevated shot for authoring only, not a new game camera.
+**Separate visual exit:** composition rows of the reference rubric pass in representative areas and the complete layout; no exposed world edges dominate normal playable views; coast, pier and lighthouse read as one composition; completed seating resembles usable groups. Preserve the functional gate above, including shared reef exclusions and compatible storage. Record final layout/pool allocation and a worst-view profile for this visual pass. Keep elevated shots for authoring only, not a new game camera. C05 functional work can proceed before this visual exit.
 
 ## C05 — Finish the catalog and author the mess
+
+**Status and remaining functional work:** the six definitions and content-8 quotas in steps 1–2 are implemented; retain them. Steps 3–5 now close reachable-content and pacing evidence on C04's current gameplay geometry without waiting for its final composition. Complete two human-paced 20-item bag cycles; a dense patch and tideline; a shore-to-reef pickup/return with starter air; and connected buried/valuable, full-bag rescue and faint/reload/recovery routes. Include actual purchase/rack use as progression advances. Record travel, rejection, sorting/rack delays and upgrade usefulness; change tuning only in response to observed problems. The later C05 scripted two-bag handoff already proves the bounded paid route; do not call it human pacing or repeat definition creation.
 
 **Deliverable:** every named required litter family exists logically, and the same quotas produce believable, reachable cleanup areas.
 
@@ -218,9 +256,11 @@ Work:
 
 **Ownership:** `data/items/*.tres`, `data/world/section_quotas.tres`, `spawn_anchors.tres`, `beach_01.tres`, existing generator/validator, zone anchor nodes and asset manifest. Keep near-body/distant rendering contracts intact for new definitions.
 
-**Acceptance:** catalog totals and same-seed generation pass the existing validator; economy remains solvable after every reachable purchase set. Play the opening two starter-bag cycles, one dense cleanup patch, a buried route and a rescue route. Capture the new-run composition at the C04 cameras and inspect individual pile/shore sites on foot. Final 100-seed validation belongs to C09 after content settles, rather than being rerun for every visual tweak.
+**Functional acceptance:** catalog totals and same-seed generation pass the existing validator; economy remains solvable after every reachable purchase set. Demonstrate the remaining routes/pacing above and inspect dense pile/shore sites on foot. **Separate visual acceptance:** capture natural clutter composition at the C04 cameras. Final 100-seed validation belongs to C09 after content settles, rather than being rerun for every visual tweak.
 
 ## C06 — Unify lighting, shore water and the underwater view
+
+**Track:** separate visual work. Preserve gameplay water/air/collision; only readability or access failures block system acceptance. C05, C07 and C08 functional work can proceed with the current appearance.
 
 **Deliverable:** a warm, readable low-poly beach above water and convincing blue depth below, within Compatibility rendering.
 
@@ -239,6 +279,10 @@ Work:
 
 ## C07 — Build a reef worth restoring
 
+**Functional status:** section fish, local colour/plant changes, lounge turtle and both reef turtles are implemented with permanent flags and reload/population evidence. Steps 3–4 below describe behavior to preserve, not missing systems. Close the remaining normal-play gate using provisional models: carry final local litter through collection, observe a section reward while its neighbor is unfinished, collect in that dirty neighbor, then complete the zone. Rescue before restoration, save/load, and re-pick/re-slot a prop afterward; no re-entanglement, duplicated wildlife, reversed nature or second payment. Include a mixed trash/valuable/held-prop/sealed-bag faint and normal recovery after reload, sharing C05/C08 evidence. A prepared near-finish state is valid bounded evidence if preparation is disclosed; C09 still requires a full unstaged run.
+
+**Separate visual status:** layered reef floor, final species/plants and reference fidelity stay open. C06 and A01–A04 gate that visual acceptance only. Later dressing must preserve or revalidate the accepted access/recovery routes.
+
 **Deliverable:** layered habitat geometry with clear cleanup lanes and local, permanent rewards that match the plan.
 
 Work:
@@ -253,9 +297,13 @@ Work:
 
 **Ownership:** `scripts/world/reef_dressing.gd`, `restoration_section.gd`, `data/world/restoration_recipes.tres`, existing reef/zone scenes and `scripts/wildlife/*`; wrapper/replacement art through the existing manifest.
 
-**Acceptance:** at a coral bed, collect and remove the final local waste via the station and observe a local reward before the rest of the zone finishes. Complete the zone and observe its additional route. Rescue an animal before restoration, reload, then finish restoration: no re-entanglement or duplicated animal. Remove a sorted prop afterward: progress may decrease but restored nature remains. Capture same-seed before/after underwater views and a short swimmer-level route showing rocks, tall plants, schools and turtles at multiple depths. Pass the reef rubric and refreshed access checks, including the restored/unrestored boundary. The final model check remains open if A01–A04 are still provisional; do not block C01–C06 while waiting for them.
+**Functional acceptance:** demonstrate the connected restoration, recovery and persistence behaviors above; record the local/zone transitions, unchanged one-time rewards and refreshed access at the restored/unrestored boundary. **Separate visual acceptance:** matched underwater views and a swimmer route show rocks, tall plants, schools and turtles at multiple depths and pass the reef rubric. Final model fidelity remains open if A01–A04 are provisional; this cannot block the functional C07/C08/C09 gates.
 
 ## C08 — Integrate final assets and tune the actual experience
+
+**Functional priority:** after C03b and the C04/C05/C07 functional gates, finish the existing game's keyboard/mouse and physical-controller route from launch/new run through movement, all six tools, shop/rack, booklet purchases, table correction/partial seal/full-rack retry, selected-bag deposit/retrieval, collection, scanner filters, checkpoint load/continuation and results/continued roaming. Exercise remapped confirm/back/interact, rapid distinct presses, device switch, disconnect/reconnect and pause/booklet/table transitions without leaked actions. Check sensitivity/invert-Y, toggle movement, reduced motion and UI scale; labels/focus must be usable at the listed resolutions. Use early/middle/nearly complete states to observe travel, tool usefulness and last-item search. Injected input does not replace the physical-device pass; record inaccessible hardware as unverified.
+
+**Separate visual work:** final models, grip fit and aesthetic polish in steps 1–3 may follow. Functional target visibility and readable feedback remain required now. C06 appearance/final assets are not prerequisites to this functional gate.
 
 **Deliverable:** complete art-role accounting, coherent hands/tools/feedback and observed early/mid/late gameplay pacing.
 
@@ -272,6 +320,8 @@ Work:
 **Acceptance:** a clean controller run of the complete feature loop and a mouse run of drag/click sorting; clear readable feedback and comfortable target visibility. Record actual pacing observations and changes, then rerun economy if prices/prerequisites/earnings or equipment-dependent content accessibility changed. Recheck affected pickup, placement, collision and dive routes after mesh/anchor changes. Separate “logic works with provisional art” from “final reference fidelity accepted.”
 
 ## C09 — Prove completion, performance and release integrity
+
+**Status:** the interim content-8 candidate in [C09](../handoffs/C09.md) predates current world/input edits. Produce a current systems candidate after C08 functional acceptance; do not wait for final art to run normal completion, save, package, hardware and long-session checks below. Report `functional`, `visual` and `performance/export` statuses separately. After the separate visual track changes the shipped resources, refresh affected routes and the final package/profile checks before calling the full release ready.
 
 **Deliverable:** a versioned Windows candidate with evidence that a player can finish it and that its performance/export claims are accurate.
 
@@ -315,7 +365,7 @@ Record each row as pass, fail or blocked with capture filenames and the observed
 
 ### Repeatable capture procedure
 
-**Implemented at C04:** `tests/validate_pier_art.gd -- --review-pair --review-output=...` dispatches to the existing full-run setup and captures matching initial/restored states with seed `full-run-integration`, a 1920×1080 SubViewport and FOV 85. [C04's handoff](../handoffs/C04.md) records exit 0, ten images, final placement/save/reload and zero invariant errors. See its [capture log](../handoffs/images/C04/capture-log.txt). This is working tooling and accelerated visual evidence, not C04 acceptance: the recorded rubric still fails and F13 demonstrates an access gap bypassed by setup. The legacy `--capture` / `--goal` views use different setup; do not mix those outputs into a matched pair.
+**Implemented at C04:** `tests/validate_pier_art.gd -- --review-pair --review-output=...` dispatches to the existing full-run setup and captures matching initial/restored states with seed `full-run-integration`, a 1920×1080 SubViewport and FOV 85. The original [C04 capture log](../handoffs/images/C04/capture-log.txt) records ten images; [later C04 handoffs](../handoffs/C04.md) contain expanded views and access repairs. This remains accelerated visual evidence, not normal full completion. The historical F13 trap demonstrated why setup could bypass access failures; that specific regression has since been repaired. The legacy `--capture` / `--goal` views use different setup; do not mix those outputs into a matched pair.
 
 Reuse this implementation; do not build another capture entry point or completion engine. Preserve the existing invariant/payment checks and the shared camera table below. In the live restored state, ensure all 300 props are placed, all 5,400 waste collected, restoration applied and invariants clean before capture. Continue roaming through the existing results flow so the tree is unpaused before waiting for streaming/physics frames. Use only isolated test saves. Label this accelerated visual setup throughout and record exact final camera transforms in each output log.
 
@@ -345,8 +395,9 @@ Run captures with rendering enabled. Record each command's exit code and update 
 
 | Claim | Required evidence |
 |---|---|
-| Core implementation repaired | C01–C03 plus C03a input/save flows work, F13's physical-access blocker is closed, and authoritative state/payment/save checks remain sound. |
+| Core repairs complete | C01–C03a remain sound and C03b closes F16/F17; no known input, ownership, payment or save failure. This is narrower than full systems acceptance. |
+| All nonvisual systems accepted | C04/C05/C07 functional gates and C08 control/device/pacing gates pass; C09 normal completion, current package, save, target-hardware and extended-session evidence pass. Provisional models may remain with explicit visual status. |
 | Beach and reef visually aligned | C04–C08 pass matched rendered/first-person review in new and restored states; required final assets are actually integrated or remaining limitations are explicitly accepted. |
 | Full release ready | C09 gates pass on the agreed build; no completion/save blockers or unverified target-hardware claim is concealed. |
 
-The immediate next implementation work is **C03a and C04's F13 clearance repair**, then the rest of C04. C00–C03 should not be restarted. C05–C09 still finish catalog/distribution, water, habitat, final integration and release evidence; the reef's critical art dependency remains **A01–A04**. Preserve the systems that already protect ownership, payment and progress.
+Use **FIN-01** in [the finishing phase](11-finishing-phase.md) next; it owns C03b's repairs. All other remaining C work is mapped there. C00–C03a and the completed catalog/restoration implementations should not be restarted. Missing A01–A04 remains a visual dependency and cannot hold up independent system work. Preserve ownership, payment, progress and save compatibility throughout the finishing phase.

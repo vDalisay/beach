@@ -1,0 +1,39 @@
+Godot Engine v4.6.1.stable.mono.official.14d19694e - https://godotengine.org
+
+INPUT_EDGES first=true engine_second=true reader_second=false sampled_release_control=true
+STATION_PROMPT binding=X text=PMD container | E: deposit or retrieve sealed bag
+STATE_ERRORS 0
+REVIEW_GAPS 2
+
+Reviewed gameplay: 68a123a; 2026-09-24; Godot 4.6.1 stable Mono.
+Above: systems-review.gd -- --input-only; exit 2 (the two expected review findings).
+Profile: %TEMP%/beach-systems-review-20260924-final-input
+
+Other observed output recorded from this review's separate existing-check processes:
+
+tests/run_checks.gd --headless; exit 0
+PASS: boot, asset_closure, ownership, input_bindings, manifest
+
+tests/validate_sorting.gd --headless; exit 0
+P12_TABLE cells=20->200->240 unload=atomic sort=wrong/correct controller=sort/correct mouse=drag catch=physical bin=50->sealed tray=valuable failures=0
+
+tests/validate_save.gd --headless; exit 0
+P24_SAVE initial=1 recovery=1 rack=1 pose=1 table=1 quit=1 failures=0
+The preceding blocked_root directory error in that process was the deliberately induced failed-write case.
+
+tests/validate_full_run.gd --headless; exit 0
+FULL_RUN_COMPLETE mode=final-prop waste=5400 props=300 results=1 receipt=1 reloaded=2 roam_replacement=1 elapsed_ms=50146
+
+tests/validate_content_economy.gd --headless; exit 0
+P26_CONTENT_ECONOMY seeds=3 dry_min=3321 optional_before_tank=2160 access=490 total=5400 prices=5300 reachable_sets=3960 optional_fixture=dead_end failures=0
+
+tests/validate_world_traversal.gd; rendered; exit 0
+OpenGL API 3.3.0 NVIDIA 595.79 - Compatibility - Using Device: NVIDIA - NVIDIA GeForce RTX 3070
+SURFACE_CROSSING swimming=true submerged=true at=(0.000002, -1.091715, 45.46588) surfaced=true dry=true at=(-0.003151, -0.125284, 33.92992) air=10.00
+P05_TRAVERSAL waypoints=13 distance=147.0m huts=3 shop=1 reefs=2 reef_items=1010 reef_overlaps=0 catalog=6/6 pier_carry=1 chair_swim=2.00m/s failures=0
+
+Generation-only portion of the earlier systems-review.gd process:
+SEEDS_COMPARED 20; no MANIFEST_CHANGED result.
+The final input reproduction above corrects that earlier probe's event-delivery setup.
+All processes used separate %TEMP%/beach-systems-review-20260924-* APPDATA roots.
+These are scripted/staged checks, not human-paced completion or physical-controller/hardware certification.

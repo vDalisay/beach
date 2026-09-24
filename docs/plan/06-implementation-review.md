@@ -1,6 +1,6 @@
 # Implementation and reference review — 23 September 2026
 
-Historical review before C00–C04 implementation. See the [C04 checkpoint review](08-checkpoint-review.md) for current status, seven fresh passing checks and findings F13–F15. The findings below preserve their original evidence; repaired F01–F05 must not be read as unchanged current blockers.
+Historical review before C00–C04 implementation. The [systems review](10-systems-review.md) is current; the [C04 checkpoint review](08-checkpoint-review.md) preserves the intermediate F13–F15 evidence. Findings below retain their original evidence and must not be read as unchanged current blockers.
 
 ## Conclusion
 

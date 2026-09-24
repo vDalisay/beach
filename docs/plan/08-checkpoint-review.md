@@ -1,5 +1,7 @@
 # Implementation review at the C04 checkpoint — 23 September 2026
 
+Historical checkpoint. F13–F15 have subsequent repair evidence; use the [24 September systems review](10-systems-review.md) and [updated completion plan](07-completion-plan.md) for current gaps, dependencies and the separate visual track.
+
 ## Outcome
 
 Keep the existing implementation. C00 established the reproducible 4.6.1 baseline; C01's contextual pickup repairs and C03's mixed-bag order work in the checked flows. C02/C03 need a small follow-up for remapped table confirmation and the checkpoint selected after loading. C04 is still an implementation checkpoint, with a newly reproduced objective-access blocker as well as its recorded visual gaps. The game is not ready for release.

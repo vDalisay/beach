@@ -1,5 +1,7 @@
 # Reference look — Godot implementation specification
 
+**Included in [the finishing phase](11-finishing-phase.md):** V00–V03 are FIN-06, V04–V06 are FIN-07, and V07 visual/presentation acceptance is FIN-08, with final target-device certification in FIN-10. Use that master checklist for progress; this document remains the technical source for the rendering work. Its revised shader/resource instructions and starting values supersede older C06 colour suggestions. Completed V evidence is linked once, not repeated as a second completion phase.
+
 Revised 24 September 2026. This replaces the earlier descriptive plan with a concrete build specification for Godot 4.6.1 Compatibility. The values below are **first implementation values**, chosen for this scene; they have not yet been rendered or accepted. Code blocks describe the code to write and are not complete compiled shaders.
 
 The target is the first reference's golden sand, shaped warm sunlight, pastel shade and broken turquoise surf, with the second reference's distant haze and layered bay. Implement the lighting and shader work below as C06, with the existing C04 composition and C05 clutter work feeding final acceptance. Use the approximately 160 m beach and current gameplay state. Inspect the latest [C04 along-shore](../handoffs/images/C04-v64/along-shore-restored.png) and [C04 aerial](../handoffs/images/C04-v64/aerial-restored.png), rather than treating the older reference captures as the current build.
