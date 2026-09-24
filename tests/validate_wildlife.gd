@@ -1,5 +1,7 @@
 extends SceneTree
 
+const REEF_DRESSING := preload("res://scripts/world/reef_dressing.gd")
+
 var failures := 0
 
 
@@ -25,6 +27,23 @@ func _run() -> void:
 	var zone_root := nature.zone_roots[&"reef_west"] as Node3D
 	var outer_plant := outer.get_node_or_null("SeagrassBed01") as Node3D
 	check(outer_plant != null and (outer_plant.get_meta(&"material") as StandardMaterial3D).albedo_color.g < 0.4 and _nonblocking(outer_plant), "subdued nonblocking seagrass is present before reef restoration")
+	var plant_clearance := INF
+	var embedded_plants := 0
+	for section_id in [&"reef_west:outer", &"reef_west:coral", &"reef_east:outer", &"reef_east:coral"]:
+		for plant in (nature.sections[section_id] as BeachSection).get_children():
+			if not str(plant.name).begins_with("SeagrassBed"):
+				continue
+			var plant_position := (plant as Node3D).global_position
+			if REEF_DRESSING.blocks_point([plant_position.x * 1000.0, plant_position.y * 1000.0, plant_position.z * 1000.0], 250.0):
+				embedded_plants += 1
+			for value in session.state.items.values():
+				var item := value as ItemRecord
+				if not item.required or not str(item.home_section_id).begins_with("reef_"):
+					continue
+				var delta := item.last_world_transform.origin - plant_position
+				plant_clearance = minf(plant_clearance, Vector2(delta.x, delta.z).length())
+	check(plant_clearance > 0.75 and embedded_plants == 0, "reef plant beds clear required item origins and structural rock collision")
+	print("P21_PLANT_CLEARANCE nearest=%.2fm embedded=%d" % [plant_clearance, embedded_plants])
 	var outer_coral := outer.get_node_or_null("CoralCluster00") as Node3D
 	check(outer_coral != null and (outer_coral.get_meta(&"material") as StandardMaterial3D).albedo_color.r < 0.4 and _nonblocking(outer_coral), "subdued coral structure is present before reef restoration")
 	check(nature.populations.size() == 15 and (nature.populations[&"ambient:reef_west"] as FishSchool).mover.looping and (nature.populations[&"ambient:reef_east"] as FishSchool).mover.looping, "two ambient schools coexist with four local and six regional restoration schools and three turtle routes")

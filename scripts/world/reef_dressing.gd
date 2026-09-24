@@ -18,6 +18,11 @@ const STRUCTURES := [
 	Vector4(35, 129, 0.4, 5.3), Vector4(44, 132, -0.6, 4.4), Vector4(53, 128, 1.0, 5.0),
 	Vector4(30, 148, 0.9, 5.1), Vector4(39, 152, -0.3, 4.2), Vector4(50, 149, 0.5, 5.4),
 ]
+const REAR_SHELF_ROCKS := [6, 7, 8, 17]
+
+
+static func structure_scale(index: int) -> float:
+	return 1.4 if index in REAR_SHELF_ROCKS else 1.0
 
 
 static func blocks_point(position_mm: Array, margin_mm := 1200.0) -> bool:
@@ -25,7 +30,8 @@ static func blocks_point(position_mm: Array, margin_mm := 1200.0) -> bool:
 	for index in STRUCTURES.size():
 		var rock := STRUCTURES[index] as Vector4
 		var local := (point - Vector2(rock.x, rock.y)).rotated(-rock.z)
-		if absf(local.x) <= (3.5 + float(index % 3) * 0.3) * 0.5 + margin_mm / 1000.0 and absf(local.y) <= (2.5 + float(index % 2) * 0.3) * 0.5 + margin_mm / 1000.0:
+		var shelf_scale := structure_scale(index)
+		if absf(local.x) <= (3.5 + float(index % 3) * 0.3) * shelf_scale * 0.5 + margin_mm / 1000.0 and absf(local.y) <= (2.5 + float(index % 2) * 0.3) * shelf_scale * 0.5 + margin_mm / 1000.0:
 			return true
 	return false
 
@@ -65,12 +71,13 @@ func _ready() -> void:
 		var rock := STRUCTURES[index] as Vector4
 		var width := 0.52 + float(index % 3) * 0.04
 		var depth := 0.7 + float(index % 2) * 0.08
+		var shelf_scale := structure_scale(index)
 		if index % 3 == 2:
-			var mound_basis := Basis(Vector3.UP, rock.z).scaled(Vector3(width * 4.2, rock.w * 2.2, depth * 2.1))
+			var mound_basis := Basis(Vector3.UP, rock.z).scaled(Vector3(width * 4.2 * shelf_scale, rock.w * 2.2 * shelf_scale, depth * 2.1 * shelf_scale))
 			mound_meshes.set_instance_transform(mound_index, Transform3D(mound_basis, Vector3(rock.x, -2.65, rock.y)))
 			mound_index += 1
 		else:
-			var basis := Basis(Vector3.UP, rock.z).scaled(Vector3(width, rock.w, depth))
+			var basis := Basis(Vector3.UP, rock.z).scaled(Vector3(width * shelf_scale, rock.w * shelf_scale, depth * shelf_scale))
 			structure_meshes.set_instance_transform(ridge_index, Transform3D(basis, Vector3(rock.x, -2.65, rock.y)))
 			ridge_index += 1
 		var body := StaticBody3D.new()
@@ -81,7 +88,7 @@ func _ready() -> void:
 		var collision := CollisionShape3D.new()
 		collision.name = "Collision"
 		var shape := BoxShape3D.new()
-		shape.size = Vector3(3.5 + float(index % 3) * 0.3, 1.8, 2.5 + float(index % 2) * 0.3)
+		shape.size = Vector3((3.5 + float(index % 3) * 0.3) * shelf_scale, 1.8 * shelf_scale, (2.5 + float(index % 2) * 0.3) * shelf_scale)
 		collision.shape = shape
 		body.add_child(collision)
 	var structures := MultiMeshInstance3D.new()

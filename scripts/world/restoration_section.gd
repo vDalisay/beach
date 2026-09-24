@@ -242,7 +242,7 @@ func _build_reef_plants(section: BeachSection) -> void:
 	for rock_index in REEF_PLANT_ROCKS.get(section.section_id, []):
 		var rock := REEF_DRESSING.STRUCTURES[rock_index] as Vector4
 		# The Synty ridge visual extends farther than its pickup-safe collider.
-		var clearance := 4.5 * (0.52 + float(rock_index % 3) * 0.04) + 0.5
+		var clearance := 4.5 * (0.52 + float(rock_index % 3) * 0.04) * REEF_DRESSING.structure_scale(rock_index) + 0.5
 		var channel_x := 2.5 if str(section.zone_id) == "reef_west" else 40.0
 		var side := -1.0 if rock.x > channel_x else 1.0
 		var local_direction := Vector3(side, 0, 0)
