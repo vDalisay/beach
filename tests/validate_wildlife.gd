@@ -54,7 +54,11 @@ func _run() -> void:
 	for frame in range(20):
 		await process_frame
 	var fish_motion := ambient.mover.position - fish_start
-	check(fish_motion.length() > 0.01 and ambient.mover.basis.z.dot(fish_motion.normalized()) > 0.75 and (ambient.mover.get_node("Fish_01") as Node3D).basis.x.normalized().dot(Vector3.BACK) > 0.99, "fish swim head-first along their live route")
+	var lead_fish := ambient.get_node("Fish_01") as Node3D
+	var flock_spread := 0.0
+	for member in ambient.fish:
+		flock_spread = maxf(flock_spread, member.position.distance_to(ambient.mover.position))
+	check(fish_motion.length() > 0.01 and lead_fish.basis.x.normalized().dot(ambient.velocities[0].normalized()) > 0.8 and flock_spread < 4.0, "boid fish swim head-first and stay schooled around their live route")
 	check(not outer.restoration_visual_root.visible and not coral.restoration_visual_root.visible and not zone_root.visible, "unrestored local and regional reef rewards remain hidden")
 	var origin := (nature.anchors[&"reef_west:outer"] as Array)[0] as Vector3
 	player.global_position = origin + Vector3(0, 0.2, -4.0)

@@ -59,3 +59,15 @@ func resume_loop() -> void:
 		_route_tween.tween_property(self, "position", loop_points[index], loop_points[index - 1].distance_to(loop_points[index]) / speed)
 	if loop_points.size() > 1:
 		_route_tween.tween_property(self, "position", loop_points[0], loop_points.back().distance_to(loop_points[0]) / speed)
+
+
+## Freezes the route mid-step so another component can steer this animal for a while.
+func pause_route() -> void:
+	if _route_tween != null and _route_tween.is_running():
+		_route_tween.pause()
+
+
+## Continues the paused step. Callers must first return the animal to where it paused.
+func resume_route() -> void:
+	if _route_tween != null and _route_tween.is_valid() and not _route_tween.is_running():
+		_route_tween.play()

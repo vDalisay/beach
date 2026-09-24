@@ -21,6 +21,8 @@ var capsule: CapsuleShape3D
 var is_crouched := false
 var is_swimming := false
 var carry_speed_multiplier := 1.0
+var swim_boost_multiplier := 1.0
+var swim_boost_seconds := 0.0
 
 var _gravity := float(ProjectSettings.get_setting("physics/3d/default_gravity", 9.8))
 
@@ -52,6 +54,7 @@ func physics_step(
 		return
 
 	_update_crouch(crouch, delta)
+	swim_boost_seconds = maxf(0.0, swim_boost_seconds - delta)
 	if is_swimming:
 		_move_in_water(move_input, swim_up, swim_down, delta)
 		return
@@ -95,6 +98,16 @@ func set_swim_speed(value: float) -> void:
 	swim_speed = maxf(value, 0.0)
 
 
+## Short-lived swim speed bonus, refreshed each frame while the player rides a boost source.
+func apply_swim_boost(multiplier: float, seconds: float) -> void:
+	swim_boost_multiplier = maxf(multiplier, 1.0)
+	swim_boost_seconds = maxf(swim_boost_seconds, seconds)
+
+
+func is_swim_boosted() -> bool:
+	return is_swimming and swim_boost_seconds > 0.0
+
+
 func set_carry_speed_multiplier(value: float) -> void:
 	carry_speed_multiplier = clampf(value, 0.1, 1.0)
 
@@ -133,6 +146,7 @@ func _move_in_water(move_input: Vector2, swim_up: bool, swim_down: bool, delta: 
 		local_direction = local_direction.normalized()
 	var direction := body.global_basis * Vector3(local_direction.x, 0.0, local_direction.z)
 	direction.y = local_direction.y
-	var target := direction.normalized() * swim_speed * carry_speed_multiplier if not direction.is_zero_approx() else Vector3.ZERO
-	body.velocity = body.velocity.move_toward(target, swim_acceleration * delta)
+	var boost := swim_boost_multiplier if swim_boost_seconds > 0.0 else 1.0
+	var target := direction.normalized() * swim_speed * carry_speed_multiplier * boost if not direction.is_zero_approx() else Vector3.ZERO
+	body.velocity = body.velocity.move_toward(target, swim_acceleration * boost * delta)
 	body.move_and_slide()

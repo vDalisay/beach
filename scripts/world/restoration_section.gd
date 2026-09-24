@@ -179,6 +179,7 @@ func _build_zone(zone_id: StringName, root: Node3D) -> void:
 			turtle_visual.rotation.y = PI
 			route.add_child(turtle_visual)
 			route.configure(StringName("zone:%s:turtle" % zone_id), [Vector3(0, -0.85, 0), Vector3(2, -0.75, 3)], [Vector3(2, -0.75, 3), Vector3(4, -0.7, 6), Vector3(1, -0.8, 10), Vector3(-2, -0.75, 7)], 1.5, _reduced_motion())
+			_add_turtle_companion(route)
 			populations[route.route_id] = route
 	elif kind == "buoy":
 		var buoy := BUOY_SCENE.instantiate() as Node3D
@@ -201,7 +202,15 @@ func _build_zone(zone_id: StringName, root: Node3D) -> void:
 		turtle_visual.rotation.y = PI
 		route.add_child(turtle_visual)
 		route.configure(&"zone:lounges:turtle", [Vector3.ZERO, Vector3(0, 0, 8), Vector3(0, 0, 16), Vector3(0, -0.8, 28)], [Vector3(0, -0.8, 28), Vector3(2, -0.9, 30), Vector3(-2, -0.95, 32)], 2.0, _reduced_motion())
+		_add_turtle_companion(route)
 		populations[route.route_id] = route
+
+
+func _add_turtle_companion(route: PathAnimal) -> void:
+	var companion := TurtleCompanion.new()
+	companion.name = "Companion"
+	companion.configure(session)
+	route.add_child(companion)
 
 
 func _coral_cluster(index: int) -> Node3D:
@@ -342,6 +351,7 @@ func _spawn_school(root: Node3D, key: StringName, origin: Vector3) -> FishSchool
 	school.name = str(key).replace(":", "_")
 	root.add_child(school)
 	school.global_position = origin
+	school.session = session
 	school.configure(key, [Vector3.ZERO, Vector3(2.4, 0.12, 1.2), Vector3(-1.0, -0.08, 1.8)], _reduced_motion())
 	populations[key] = school
 	return school
