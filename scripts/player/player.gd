@@ -30,6 +30,10 @@ func _ready() -> void:
 func configure(settings: SettingsStore, run_session: RunSession = null) -> void:
 	settings_store = settings
 	input_reader.settings_store = settings
+	if not settings.bindings_changed.is_connected(input_reader.reset_action_edges):
+		settings.bindings_changed.connect(input_reader.reset_action_edges)
+	if not settings.controller_disconnected.is_connected(input_reader.on_controller_disconnected):
+		settings.controller_disconnected.connect(input_reader.on_controller_disconnected)
 	_apply_fov()
 	if run_session != null:
 		interactor.configure(run_session)
@@ -107,6 +111,7 @@ func set_paused(paused: bool) -> void:
 
 func set_input_enabled(enabled: bool) -> void:
 	input_enabled = enabled
+	input_reader.set_suspended(not enabled)
 	if not enabled:
 		velocity = Vector3.ZERO
 		interactor.clear_target()

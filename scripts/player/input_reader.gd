@@ -9,9 +9,15 @@ enum Context {
 	MODAL,
 }
 
+const ONE_SHOT_ACTIONS := [
+	&"primary", &"throw", &"interact", &"jump", &"sprint", &"crouch",
+	&"select_held_prop", &"switch_tool", &"booklet", &"scanner_pulse",
+]
+
 @export var settings_store: SettingsStore
 
 var context := Context.WORLD
+var suspended := false
 var movement := Vector2.ZERO
 var look_delta := Vector2.ZERO
 var primary_pressed := false
@@ -25,8 +31,29 @@ var _mouse_delta := Vector2.ZERO
 var _sprint_toggled := false
 var _crouch_toggled := false
 var _blocked_actions: Dictionary = {}
-# One rendered frame can contain multiple physics ticks with the same just-pressed flag.
+# Physical edges can arrive entirely between two physics samples.
+var _pending_presses: Dictionary = {}
+var _event_held: Dictionary = {}
+var _event_managed: Dictionary = {}
+# Input.action_press() has no InputEvent; keep its one-shot fallback for scripted input.
 var _one_shot_held: Dictionary = {}
+
+
+func _input(event: InputEvent) -> void:
+	if not (event is InputEventKey or event is InputEventMouseButton or event is InputEventJoypadButton or event is InputEventJoypadMotion):
+		return
+	for action in ONE_SHOT_ACTIONS:
+		if event.is_action_released(action):
+			_event_managed[action] = true
+			_event_held.erase(action)
+			_one_shot_held.erase(action)
+			_blocked_actions.erase(action)
+		elif event.is_action_pressed(action) and not event.is_echo():
+			_event_managed[action] = true
+			if not _event_held.has(action):
+				_event_held[action] = true
+				if context == Context.WORLD and not suspended and not _blocked_actions.has(action):
+					_pending_presses[action] = int(_pending_presses.get(action, 0)) + 1
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -71,6 +98,7 @@ func set_context(next_context: Context) -> void:
 		return
 	context = next_context
 	_mouse_delta = Vector2.ZERO
+	_pending_presses.clear()
 	_blocked_actions.clear()
 	if context == Context.WORLD:
 		for action in SettingsStore.REQUIRED_ACTIONS:
@@ -78,12 +106,43 @@ func set_context(next_context: Context) -> void:
 				_blocked_actions[action] = true
 
 
+func set_suspended(value: bool) -> void:
+	if suspended == value:
+		return
+	suspended = value
+	reset_action_edges()
+
+
+func reset_action_edges() -> void:
+	_pending_presses.clear()
+	_event_held.clear()
+	_event_managed.clear()
+	_one_shot_held.clear()
+	_blocked_actions.clear()
+	for action in SettingsStore.REQUIRED_ACTIONS:
+		if Input.is_action_pressed(action):
+			_blocked_actions[action] = true
+
+
+func on_controller_disconnected(_device_id: int) -> void:
+	reset_action_edges()
+
+
 func pressed(action: StringName) -> bool:
-	return _context_allows(action) and not _blocked_actions.has(action) and Input.is_action_pressed(action)
+	return not suspended and _context_allows(action) and not _blocked_actions.has(action) and Input.is_action_pressed(action)
 
 
 func just_pressed(action: StringName) -> bool:
-	if not _context_allows(action) or _blocked_actions.has(action) or _one_shot_held.has(action) or not Input.is_action_just_pressed(action):
+	if suspended or not _context_allows(action) or _blocked_actions.has(action):
+		return false
+	var pending := int(_pending_presses.get(action, 0))
+	if pending > 0:
+		if pending == 1:
+			_pending_presses.erase(action)
+		else:
+			_pending_presses[action] = pending - 1
+		return true
+	if _event_managed.has(action) or _one_shot_held.has(action) or not Input.is_action_just_pressed(action):
 		return false
 	_one_shot_held[action] = true
 	return true

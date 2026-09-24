@@ -19,6 +19,24 @@ func run() -> void:
 	var straight := await _travel(Vector2(0, -1), 60)
 	var diagonal := await _travel(Vector2(1, -1), 60)
 	check(absf(straight - diagonal) < 0.08, "diagonal speed is normalized")
+	Input.action_press(&"sprint")
+	var sprint_distance := await _travel(Vector2(0, -1), 60)
+	Input.action_release(&"sprint")
+	check(sprint_distance > straight * 1.3, "held sprint increases real player travel speed")
+	await physics_frame
+	var store := lab.get_node("SettingsStore") as SettingsStore
+	store.set_value(&"sprint_toggle", true)
+	_send_sprint_key(true)
+	await _physics_frames(2)
+	_send_sprint_key(false)
+	await _physics_frames(2)
+	var toggled_distance := await _travel(Vector2(0, -1), 60)
+	check(toggled_distance > straight * 1.3, "sprint toggle stays active after release")
+	_send_sprint_key(true)
+	await _physics_frames(2)
+	_send_sprint_key(false)
+	await _physics_frames(2)
+	store.set_value(&"sprint_toggle", false)
 
 	_place(Vector3(0, 0.05, -4.8))
 	Input.action_press(&"move_forward")
@@ -74,7 +92,6 @@ func run() -> void:
 	check(not paused, "controller resumes")
 	_send_joy_button(JOY_BUTTON_START, false)
 
-	var store := lab.get_node("SettingsStore") as SettingsStore
 	store.set_value(&"fov", 70.0)
 	check(is_equal_approx(player.camera.fov, 70.0), "minimum FOV applies")
 	store.set_value(&"fov", 110.0)
@@ -85,7 +102,7 @@ func run() -> void:
 	player.exit_swimming()
 	check(not player.movement.is_swimming and player.floor_snap_length > 0.0, "swim exit restores floor handling")
 
-	print("P04_VALIDATION straight=%.3f diagonal=%.3f jump_peak=%.3f ramp_peak=%.3f stair_peak=%.3f failures=%d" % [straight, diagonal, peak, ramp_peak, stair_peak, failures])
+	print("P04_VALIDATION straight=%.3f diagonal=%.3f sprint=%.3f toggle=%.3f jump_peak=%.3f ramp_peak=%.3f stair_peak=%.3f failures=%d" % [straight, diagonal, sprint_distance, toggled_distance, peak, ramp_peak, stair_peak, failures])
 	quit(failures)
 
 
@@ -128,6 +145,13 @@ func _send_joy_button(button: JoyButton, pressed_value: bool) -> void:
 	event.button_index = button
 	event.pressed = pressed_value
 	Input.parse_input_event(event)
+
+
+func _send_sprint_key(is_pressed: bool) -> void:
+	var event := InputMap.action_get_events(&"sprint")[0].duplicate(true) as InputEventKey
+	event.pressed = is_pressed
+	Input.parse_input_event(event)
+	Input.flush_buffered_events()
 
 
 func check(condition: bool, message: String) -> void:

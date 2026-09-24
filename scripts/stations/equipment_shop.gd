@@ -18,11 +18,11 @@ func configure(progression: ProgressionService, player_body: BeachPlayer, progre
 	counter.set_meta(&"target_id", &"shop:counter")
 	counter.set_meta(&"display_name", "Equipment shop")
 	counter.set_meta(&"interaction_actions", PackedStringArray(["interact"]))
-	counter.set_meta(&"interaction_reason", "E: browse equipment")
+	counter.set_meta(&"interaction_verb", "Browse equipment")
 	rack.set_meta(&"target_id", &"shop:rack")
 	rack.set_meta(&"display_name", "Tool rack")
 	rack.set_meta(&"interaction_actions", PackedStringArray(["interact"]))
-	rack.set_meta(&"interaction_reason", "E: equip owned tools")
+	rack.set_meta(&"interaction_verb", "Equip owned tools")
 	player.interactor.interact_requested.connect(_on_interact_requested)
 	refresh_rack()
 

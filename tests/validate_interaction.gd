@@ -116,7 +116,65 @@ func _run() -> void:
 	await _physics_frames(2)
 	check(int(primary_observation.count) == 2, "a released and re-pressed primary emits the next edge")
 	primary.pressed = false
-	Input.parse_input_event(primary)
+	Input.parse_input_event(primary.duplicate())
+	Input.flush_buffered_events()
+	primary.pressed = true
+	Input.parse_input_event(primary.duplicate())
+	Input.flush_buffered_events()
+	await _physics_frames(2)
+	check(int(primary_observation.count) == 3, "release and next press between physics samples still emit one action")
+	primary.pressed = false
+	Input.parse_input_event(primary.duplicate())
+	Input.flush_buffered_events()
+	primary.pressed = true
+	Input.parse_input_event(primary.duplicate())
+	Input.flush_buffered_events()
+	primary.pressed = false
+	Input.parse_input_event(primary.duplicate())
+	Input.flush_buffered_events()
+	primary.pressed = true
+	Input.parse_input_event(primary.duplicate())
+	Input.flush_buffered_events()
+	await _physics_frames(3)
+	check(int(primary_observation.count) == 5, "two distinct presses between samples are each consumed once")
+	primary.pressed = false
+	Input.parse_input_event(primary.duplicate())
+	Input.flush_buffered_events()
+	player.input_reader.set_context(InputReader.Context.MODAL)
+	primary.pressed = true
+	Input.parse_input_event(primary.duplicate())
+	Input.flush_buffered_events()
+	player.input_reader.set_context(InputReader.Context.WORLD)
+	await _physics_frames(2)
+	check(int(primary_observation.count) == 5, "a held press on modal return cannot act in the world")
+	primary.pressed = false
+	Input.parse_input_event(primary.duplicate())
+	Input.flush_buffered_events()
+	primary.pressed = true
+	Input.parse_input_event(primary.duplicate())
+	Input.flush_buffered_events()
+	await _physics_frames(2)
+	check(int(primary_observation.count) == 6, "a release and new press after modal return acts once")
+	primary.pressed = false
+	Input.parse_input_event(primary.duplicate())
+	Input.flush_buffered_events()
+	player.set_input_enabled(false)
+	primary.pressed = true
+	Input.parse_input_event(primary.duplicate())
+	Input.flush_buffered_events()
+	player.set_input_enabled(true)
+	await _physics_frames(2)
+	check(int(primary_observation.count) == 6, "disabled player input cannot queue a later world action")
+	primary.pressed = false
+	Input.parse_input_event(primary.duplicate())
+	Input.flush_buffered_events()
+	primary.pressed = true
+	Input.parse_input_event(primary.duplicate())
+	Input.flush_buffered_events()
+	await _physics_frames(2)
+	check(int(primary_observation.count) == 7, "a fresh press after disabled input acts once")
+	primary.pressed = false
+	Input.parse_input_event(primary.duplicate())
 
 	await _aim_and_scan(player, cube.global_position + Vector3.UP * 0.08)
 	var before_basis := player.camera.global_basis

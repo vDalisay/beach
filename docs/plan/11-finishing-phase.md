@@ -8,18 +8,18 @@ Work through FIN-01–FIN-10 in order by default: systems first, visuals as thei
 
 ## Master checklist
 
-- [ ] **FIN-01 — Repair distinct input presses and service prompts.** Known code defects F16/F17.
-- [ ] **FIN-02 — Close physical access, storage and content compatibility.** Remaining world/access evidence and any resulting repairs.
-- [ ] **FIN-03 — Prove the connected cleanup, progression, recovery and restoration loop.** Existing systems working together through gameplay.
-- [ ] **FIN-04 — Finish controls, accessibility and pacing.** Keyboard/mouse and physical-controller acceptance.
-- [ ] **FIN-05 — Finish composition, habitats and outstanding asset roles.** Visual/content work with gameplay access preserved.
+- [x] **FIN-01 — Repair distinct input presses and service prompts.** F16/F17 closure and bounded main-scene evidence: [C03b](../handoffs/C03b.md). Physical controller acceptance remains FIN-04.
+- [ ] **FIN-02 — Close physical access, storage and content compatibility.** Current bounded recheck: [C04](../handoffs/C04.md) and [C05](../handoffs/C05.md). A normal-input shore-to-reef pickup and return now passes on starter air. Connected walking approaches to every occupied slot and player-paced access remain open; gameplay geometry/content identity did not change in this pass.
+- [ ] **FIN-03 — Prove the connected cleanup, progression, recovery and restoration loop.** Current bounded recheck: [C05](../handoffs/C05.md) and [C07](../handoffs/C07.md). A normal connected, player-paced route through every listed flow remains open.
+- [ ] **FIN-04 — Finish controls, accessibility and pacing.** Current injected-input/UI recheck: [C08](../handoffs/C08.md), including measured walk and held/toggle sprint in a playable movement scene. Physical-controller, display/TV and human pacing evidence remain open.
+- [ ] **FIN-05 — Finish composition, habitats and outstanding asset roles.** Noncolliding outer-coast dressing and existing reef plants received a bounded composition pass; [paired captures](../handoffs/images/FIN05-previsual/capture-log.txt) and C04/C07 record the limits. World geometry, habitat and asset integration are in scope before the rendering pass. Final named assets or explicit accepted substitutes remain required per [asset register](../asset_requests.md).
 - [ ] **FIN-06 — Implement look-and-feel V00–V03.** Matched baseline, material normals, light rig, sand and water.
 - [ ] **FIN-07 — Implement look-and-feel V04–V06.** Clouds/haze/contact, caustics, underwater transition, glow and grade.
 - [ ] **FIN-08 — Accept the final look and interaction presentation.** V07 visual evidence, final grips/readability and affected gameplay checks.
 - [ ] **FIN-09 — Freeze a current Windows candidate and finish a normal full run.** Package, deterministic content, saves and 5,700-object completion.
 - [ ] **FIN-10 — Pass target-hardware, extended-session and clean-machine gates.** Final evidence and release signoff.
 
-All boxes start open: consolidating the plan does not finish the work. A step closes only when its completion condition below is met and the evidence link is added beside its checkbox. Record a blocked dependency beside that same checkbox. Supporting C/V handoffs retain implementation detail; there is only one set of active completion boxes.
+All boxes started open at consolidation; later checked boxes require completion evidence beside them. Record a blocked dependency beside each open checkbox. Supporting C/V handoffs retain implementation detail; there is only one set of active completion boxes.
 
 ## FIN-01 — Controls repair
 

@@ -104,6 +104,8 @@ func run() -> void:
 		var hit := beach.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(origin.x, 0, origin.z), Vector3(origin.x, -5, origin.z)))
 		check(hit.get("collider") == rock, "%s has a solid elevated reef surface" % rock_name)
 	check(await _cross_surface(main.run_root as RunSession), "normal movement enters and leaves the water with air recovery")
+	if "--shore-reef" in OS.get_cmdline_user_args():
+		check(await _shore_reef_route(main.run_root as RunSession), "starter air reaches a reef pickup from shore and returns")
 	var west_reached := await _swim_lane(Vector3(2.5, -2.1, 101), Vector3(2.5, -2.1, 119))
 	var east_reached := await _swim_lane(Vector3(40, -2.1, 118), Vector3(40, -2.1, 137))
 	check(west_reached and east_reached, "player swims through both structural reef channels")
@@ -415,6 +417,77 @@ func _cross_surface(session: RunSession) -> bool:
 		await physics_frame
 	print("SURFACE_CROSSING swimming=%s submerged=%s at=%s surfaced=%s dry=%s at=%s air=%.2f" % [swimming, submerged, deep_position, surfaced, dry, player.global_position, float(record.air_remaining)])
 	return swimming and submerged and surfaced and dry and is_equal_approx(float(record.air_remaining), 10.0)
+
+
+func _shore_reef_route(session: RunSession) -> bool:
+	var record := session.state.players[&"local"] as Dictionary
+	var target: ItemRecord
+	var best := INF
+	for value in session.state.items.values():
+		var item := value as ItemRecord
+		if item.home_section_id != &"reef_west:outer" or item.definition_id != &"waste_can" or item.location != ItemRecord.Location.WORLD:
+			continue
+		var distance := item.last_world_transform.origin.distance_to(Vector3(2.7, -2.8, 107.3))
+		if distance < best:
+			best = distance
+			target = item
+	if target == null:
+		return false
+	player.global_position = Vector3(2.5, 0.05, 26)
+	player.velocity = Vector3.ZERO
+	record.air_remaining = 10.0
+	Engine.time_scale = 8.0
+	var reached := await _walk_to(Vector3(2.5, 0, 105.8), 650)
+	Engine.time_scale = 1.0
+	if not reached:
+		print("SHORE_REEF approach_stopped=%s target=%s" % [player.global_position, target.last_world_transform.origin])
+		return false
+	var dive := InputEventJoypadButton.new()
+	dive.button_index = JOY_BUTTON_B
+	dive.pressed = true
+	Input.parse_input_event(dive)
+	for frame in 100:
+		await physics_frame
+		if player.global_position.y < -2.0:
+			break
+	dive.pressed = false
+	Input.parse_input_event(dive.duplicate())
+	var aimed := false
+	for frame in 90:
+		player.camera.look_at(target.last_world_transform.origin + Vector3.UP * 0.06)
+		await physics_frame
+		if str(player.interactor.update_target().get("id", "")) == str(target.item_id):
+			aimed = true
+			break
+		_send_stick(-1.0)
+	_send_stick(0.0)
+	if aimed:
+		var press := InputEventMouseButton.new()
+		press.button_index = MOUSE_BUTTON_LEFT
+		press.pressed = true
+		Input.parse_input_event(press)
+		await _physics_frames(2)
+		press.pressed = false
+		Input.parse_input_event(press.duplicate())
+		await physics_frame
+	var air_at_site := float(record.air_remaining)
+	var rise := InputEventJoypadButton.new()
+	rise.button_index = JOY_BUTTON_A
+	rise.pressed = true
+	Input.parse_input_event(rise)
+	for frame in 180:
+		await physics_frame
+		if not bool(record.immersed):
+			break
+	rise.pressed = false
+	Input.parse_input_event(rise.duplicate())
+	Engine.time_scale = 8.0
+	var returned := await _walk_to(Vector3(2.5, 0, 26), 650)
+	Engine.time_scale = 1.0
+	await _physics_frames(75)
+	var dry := not session.swim_service.water.contains_horizontal(player.global_position) and not player.movement.is_swimming
+	print("SHORE_REEF item=%s reached=%s aimed=%s collected=%s air_at_site=%.2f returned=%s dry=%s air_return=%.2f" % [target.item_id, reached, aimed, target.location == ItemRecord.Location.BAG, air_at_site, returned, dry, float(record.air_remaining)])
+	return aimed and target.location == ItemRecord.Location.BAG and air_at_site > 0.0 and returned and dry and is_equal_approx(float(record.air_remaining), 10.0)
 
 
 func _send_stick(value: float) -> void:

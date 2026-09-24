@@ -75,8 +75,66 @@ func _run() -> void:
 		if str(bag.location) == "HELD":
 			check(session.item_store.try_throw(&"local", STAGE, Vector3.ZERO).ok, "sealed bag returns to world for next tool")
 			player.carry.refresh_hand_visuals()
+	var shop := session.progression.shop as EquipmentShop
+	var service_targets: Array[CollisionObject3D] = [shop.counter, shop.rack]
+	for container in session.waste_containers.values():
+		service_targets.append(container as WasteContainer)
+	for call_point in main.get_tree().get_nodes_in_group("collection_call_points"):
+		service_targets.append(call_point as CollectionCallPoint)
+	var settings := main.settings_store
+	var keyboard := InputEventKey.new()
+	keyboard.physical_keycode = KEY_P
+	keyboard.pressed = true
+	settings.rebind(&"interact", keyboard)
+	settings.note_input(keyboard)
+	for service_target in service_targets:
+		var target := player.interactor._result_for_collider(service_target, service_target.global_position, 1.0)
+		main.target_label._on_target_changed(target)
+		check(not target.is_empty() and not str(target.get("verb", "")).is_empty() and main.target_label.text_label.text.contains("[%s]" % settings.binding_text(&"interact")) and not main.target_label.text_label.text.contains("E:"), "service uses remapped keyboard Interact: %s" % service_target.name)
+	var controller := InputEventJoypadButton.new()
+	controller.button_index = JOY_BUTTON_Y
+	controller.pressed = true
+	settings.rebind(&"interact", controller)
+	settings.note_input(controller)
+	for service_target in service_targets:
+		var target := player.interactor._result_for_collider(service_target, service_target.global_position, 1.0)
+		main.target_label._on_target_changed(target)
+		check(not target.is_empty() and not str(target.get("verb", "")).is_empty() and main.target_label.text_label.text.contains("[%s]" % settings.binding_text(&"interact")) and not main.target_label.text_label.text.contains("E:"), "service uses remapped controller Interact: %s" % service_target.name)
+	settings.reset_all()
+	for action in [&"throw", &"interact", &"switch_tool"]:
+		_send_action_edge(action, true)
+		player.input_reader.sample(1.0 / 60.0)
+		var first := _reader_edge(player.input_reader, action)
+		player.input_reader.sample(1.0 / 60.0)
+		var held_repeat := _reader_edge(player.input_reader, action)
+		_send_action_edge(action, false)
+		_send_action_edge(action, true)
+		player.input_reader.sample(1.0 / 60.0)
+		var second := _reader_edge(player.input_reader, action)
+		_send_action_edge(action, false)
+		check(first and not held_repeat and second, "%s acts once per distinct press in the main scene" % action)
+	var trigger := InputEventJoypadMotion.new()
+	trigger.axis = JOY_AXIS_TRIGGER_RIGHT
+	trigger.axis_value = 1.0
+	Input.parse_input_event(trigger.duplicate())
+	Input.flush_buffered_events()
+	player.input_reader.sample(1.0 / 60.0)
+	var trigger_first := player.input_reader.primary_pressed
+	player.input_reader.sample(1.0 / 60.0)
+	var trigger_held := player.input_reader.primary_pressed
+	trigger.axis_value = 0.0
+	Input.parse_input_event(trigger.duplicate())
+	Input.flush_buffered_events()
+	trigger.axis_value = 1.0
+	Input.parse_input_event(trigger.duplicate())
+	Input.flush_buffered_events()
+	player.input_reader.sample(1.0 / 60.0)
+	check(trigger_first and not trigger_held and player.input_reader.primary_pressed, "controller trigger rearms on release/new press without held repeat")
+	trigger.axis_value = 0.0
+	Input.parse_input_event(trigger.duplicate())
+	Input.flush_buffered_events()
 	check(session.state.validate_invariants(session.definitions).is_empty(), "tool-context pickup preserves original item and bag ownership")
-	print("C01_CONTEXT_INPUT tools=%d bucket=%s bag=%s failures=%d" % [TOOLS.size(), bucket.item_id, bag_id, failures])
+	print("C01_CONTEXT_INPUT tools=%d services=%d bucket=%s bag=%s failures=%d" % [TOOLS.size(), service_targets.size(), bucket.item_id, bag_id, failures])
 	quit(failures)
 
 
@@ -105,6 +163,24 @@ func _click_target(player: BeachPlayer, session: RunSession, target_id: StringNa
 	await physics_frame
 	player.set_physics_process(false)
 	return session.state.revision == revision + 1
+
+
+func _send_action_edge(action: StringName, is_pressed: bool) -> void:
+	var event := InputMap.action_get_events(action)[0].duplicate(true) as InputEvent
+	if event is InputEventKey:
+		(event as InputEventKey).pressed = is_pressed
+	elif event is InputEventMouseButton:
+		(event as InputEventMouseButton).pressed = is_pressed
+	Input.parse_input_event(event)
+	Input.flush_buffered_events()
+
+
+func _reader_edge(reader: InputReader, action: StringName) -> bool:
+	if action == &"throw":
+		return reader.throw_pressed
+	if action == &"interact":
+		return reader.interact_pressed
+	return reader.just_pressed(action)
 
 
 func check(condition: bool, message: String) -> void:

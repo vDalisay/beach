@@ -270,11 +270,11 @@ func _seagrass_bed(index: int) -> Node3D:
 	var vertices := PackedVector3Array()
 	var colors := PackedColorArray()
 	var indices := PackedInt32Array()
-	for blade in 7:
-		var angle := float(blade) * TAU / 7.0 + float(index) * 0.37
+	for blade in 9:
+		var angle := float(blade) * TAU / 9.0 + float(index) * 0.37
 		var outward := Vector3(cos(angle), 0, sin(angle))
 		var across := Vector3(-outward.z, 0, outward.x)
-		var height := 0.55 + float((blade * 3 + index) % 5) * 0.13
+		var height := 0.68 + float((blade * 3 + index) % 7) * 0.14
 		var width := 0.065 + float(blade % 3) * 0.018
 		var base := outward * (0.08 + float(blade % 2) * 0.12)
 		var tip := base + outward * (0.17 + float(index % 2) * 0.1) + Vector3.UP * height

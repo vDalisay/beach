@@ -191,6 +191,7 @@ func _result_for_collider(collider: Object, hit_point: Vector3, distance: float)
 			"id": StringName(str(collider.get_meta(&"target_id"))),
 			"kind": "station",
 			"reason": str(collider.get_meta(&"interaction_reason", "")),
+			"verb": str(collider.get_meta(&"interaction_verb", "")),
 		}
 	return {}
 

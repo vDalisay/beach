@@ -134,8 +134,8 @@ func _update_visuals() -> void:
 	fill.visible = count > 0
 	fill.scale.y = minf(float(count) / 10.0, 1.0)
 	label.text = "%s\n%d bags" % [str(category).to_upper(), count]
-	set_meta(&"interaction_reason", "E: deposit or retrieve sealed bag")
-	opening.set_meta(&"interaction_reason", "E: deposit or retrieve sealed bag")
+	set_meta(&"interaction_verb", "Deposit or retrieve sealed bag")
+	opening.set_meta(&"interaction_verb", "Deposit or retrieve sealed bag")
 
 
 func _build_shell() -> void:

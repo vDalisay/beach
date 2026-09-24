@@ -23,6 +23,10 @@ func _build_outer_dunes() -> void:
 		Vector3(-104, 0, 4), Vector3(-135, 0, 20), Vector3(-145, 0, 33),
 		Vector3(105, 0, 9), Vector3(137, 0, 28), Vector3(145, 0, 33),
 	]
+	for side in [-1.0, 1.0]:
+		for distance in [180.0, 218.0, 256.0]:
+			var x: float = side * distance
+			dunes.append(Vector3(x, 0, lerpf(Coastline.inland_z(x), Coastline.shore_z(x), 0.37)))
 	instances.instance_count = dunes.size()
 	for index in dunes.size():
 		var basis := Basis(Vector3.UP, float(index) * 0.8).scaled(Vector3(6.0, 16.0, 6.0))
@@ -42,6 +46,11 @@ func _build_outer_palms() -> void:
 		Vector3(98, 0, 11), Vector3(108, 0, 27), Vector3(119, 0, 10),
 		Vector3(124, 0, 35), Vector3(137, 0, 27), Vector3(146, 0, 39),
 	]
+	for side in [-1.0, 1.0]:
+		for distance in [168.0, 177.0, 195.0, 211.0, 222.0, 240.0, 250.0, 267.0]:
+			var x: float = side * distance
+			var across := 0.38 + 0.12 * float(positions.size() % 4)
+			positions.append(Vector3(x, 0, lerpf(Coastline.inland_z(x), Coastline.shore_z(x), across)))
 	for index in positions.size():
 		var palm := PALM.instantiate() as Node3D
 		palm.position = positions[index]

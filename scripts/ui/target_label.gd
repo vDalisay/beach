@@ -71,8 +71,11 @@ func _refresh_text() -> void:
 	if target.is_empty():
 		return
 	var reason := str(target.get("reason", ""))
+	var verb := str(target.get("verb", ""))
 	var actions := target.get("actions", PackedStringArray()) as PackedStringArray
-	var detail := reason if not reason.is_empty() else _action_text(actions)
+	var detail := reason
+	if detail.is_empty():
+		detail = "%s [%s]" % [verb, interactor.binding_text(&"interact")] if not verb.is_empty() and actions.has("interact") else _action_text(actions)
 	text_label.text = str(target.get("display_name", "")) + ("\n" + detail if not detail.is_empty() else "")
 
 
