@@ -1,0 +1,246 @@
+extends SceneTree
+# Local review sheet: every project model in one numbered grid, lit like the beach and shown
+# with the material it gets in game (restored coral/seagrass tints, the cloud shader).
+
+const COLUMNS := 8
+const CELL := 380
+const LABEL_HEIGHT := 70
+const HEADER := 96
+const CORAL_TINTS := {
+	"coral_branching": Color("ef8b91"), "coral_tube": Color("f2a65a"),
+	"coral_fan": Color("c99be0"), "coral_brain": Color("95c7a1"),
+}
+const SEAGRASS_TINT := Color(0.42, 0.73, 0.57)
+# Separate models staged on top of a cell's model, as the game's wrapper does.
+const EXTRAS := {"rowboat": ["rowboat_oars"]}
+# [label, model, category, azimuth from the front (-Z) towards +X, elevation, float]
+const MODELS := [
+	["Straw", "litter_straw", "Litter", 35.0, 35.0, false],
+	["Plastic bag / wrap", "litter_plastic_bag", "Litter", 35.0, 35.0, false],
+	["Drink carton", "litter_drink_carton", "Litter", 35.0, 25.0, false],
+	["Fries", "litter_fries", "Litter", 35.0, 25.0, false],
+	["Hamburger", "litter_hamburger", "Litter", 35.0, 25.0, false],
+	["Oil container", "litter_oil_container", "Litter", 35.0, 25.0, false],
+	["Ground residue", "residue_splat", "Dirt", 35.0, 60.0, false],
+	["Furniture stain", "furniture_stain", "Dirt", 10.0, 15.0, false],
+	["Plastic rings", "rescue_six_pack_rings", "Rescue", 35.0, 55.0, false],
+	["Fishing net", "rescue_net", "Rescue", 35.0, 45.0, false],
+	["Poking stick", "tool_poking_stick", "Tool", 60.0, 25.0, false],
+	["Vacuum", "tool_vacuum", "Tool", 60.0, 25.0, false],
+	["Sand cleaner", "tool_sand_cleaner", "Tool", 60.0, 25.0, false],
+	["Metal detector", "tool_metal_detector", "Tool", 60.0, 25.0, false],
+	["Cloth", "tool_cloth", "Tool", 35.0, 40.0, false],
+	["Flippers", "gear_flippers", "Equipment", 35.0, 40.0, false],
+	["Oxygen tank", "gear_oxygen_tank", "Equipment", 35.0, 20.0, false],
+	["Turtle", "turtle", "Wildlife", 50.0, 30.0, false],
+	["Fish: blue tang", "fish_blue_tang", "Wildlife", 70.0, 12.0, true],
+	["Fish: yellow tang", "fish_yellow_tang", "Wildlife", 70.0, 12.0, true],
+	["Fish: clownfish", "fish_clown", "Wildlife", 70.0, 12.0, true],
+	["Starfish (orange)", "starfish_orange", "Wildlife", 35.0, 55.0, false],
+	["Starfish (purple)", "starfish_purple", "Wildlife", 35.0, 55.0, false],
+	["Gull (standing)", "gull_standing", "Wildlife", 55.0, 15.0, false],
+	["Gull (flying)", "gull_flying", "Wildlife", 40.0, 35.0, true],
+	["Branching coral", "coral_branching", "Reef plant", 35.0, 25.0, false],
+	["Brain coral", "coral_brain", "Reef plant", 35.0, 25.0, false],
+	["Fan coral", "coral_fan", "Reef plant", 20.0, 20.0, false],
+	["Tube coral", "coral_tube", "Reef plant", 35.0, 25.0, false],
+	["Kelp", "seaweed_kelp", "Reef plant", 35.0, 15.0, false],
+	["Seagrass", "seagrass_tuft", "Reef plant", 35.0, 20.0, false],
+	["Lifeguard lookout", "lifeguard_tower", "Structure", 150.0, 15.0, false],
+	["Rowboat + oars", "rowboat", "Structure", 50.0, 30.0, false],
+	["Tent", "beach_tent", "Structure", 30.0, 22.0, false],
+	["Storage shelf", "storage_shelf", "Structure", 25.0, 20.0, false],
+	["Cloud A", "cloud_cumulus_a", "Sky", 0.0, 4.0, false],
+	["Cloud B", "cloud_cumulus_b", "Sky", 0.0, 4.0, false],
+	["Cloud C", "cloud_cumulus_c", "Sky", 0.0, 4.0, false],
+]
+
+var out := "res://builds/model_sheet.png"
+
+
+func _init() -> void:
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--out="):
+			out = arg.trim_prefix("--out=")
+	call_deferred("_run")
+
+
+func _label(text: String, size: int, color: Color, outline := 0) -> Label:
+	var label := Label.new()
+	label.text = text
+	var settings := LabelSettings.new()
+	settings.font_size = size
+	settings.font_color = color
+	if outline > 0:
+		settings.outline_size = outline
+		settings.outline_color = Color(0.1, 0.12, 0.16)
+	label.label_settings = settings
+	return label
+
+
+func _mesh_points(node: Node, xf: Transform3D, points: PackedVector3Array) -> int:
+	var here := xf
+	if node is Node3D:
+		here = xf * (node as Node3D).transform
+	var tris := 0
+	if node is MeshInstance3D and (node as MeshInstance3D).mesh != null:
+		var mesh := (node as MeshInstance3D).mesh
+		for surface in mesh.get_surface_count():
+			var arrays := mesh.surface_get_arrays(surface)
+			for v in arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array:
+				points.append(here * v)
+			var indices = arrays[Mesh.ARRAY_INDEX]
+			tris += (indices.size() if indices != null else (arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array).size()) / 3
+	for child in node.get_children():
+		tris += _mesh_points(child, here, points)
+	return tris
+
+
+func _run() -> void:
+	var rows := ceili(MODELS.size() / float(COLUMNS))
+	var size := Vector2i(COLUMNS * CELL, HEADER + rows * (CELL + LABEL_HEIGHT))
+	var canvas := SubViewport.new()
+	canvas.size = size
+	canvas.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	root.add_child(canvas)
+	var background := ColorRect.new()
+	background.color = Color(0.95, 0.94, 0.91)
+	background.size = size
+	canvas.add_child(background)
+	var title := _label("Beach project models — 38 low-poly models (+ rowboat oars), numbered for review (in-game materials, each framed to fit; sizes are real)", 34, Color(0.16, 0.18, 0.22))
+	title.position = Vector2(24, 26)
+	canvas.add_child(title)
+	for index in MODELS.size():
+		var entry := MODELS[index] as Array
+		var origin := Vector2((index % COLUMNS) * CELL, HEADER + (index / COLUMNS) * (CELL + LABEL_HEIGHT))
+		var container := SubViewportContainer.new()
+		container.position = origin + Vector2(6, 0)
+		container.size = Vector2(CELL - 12, CELL - 12)
+		container.stretch = true
+		canvas.add_child(container)
+		var view := SubViewport.new()
+		view.own_world_3d = true
+		view.msaa_3d = Viewport.MSAA_4X
+		view.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+		container.add_child(view)
+		var info := _stage(view, entry)
+		var badge := _label(str(index + 1), 44, Color.WHITE, 10)
+		badge.position = origin + Vector2(18, 6)
+		canvas.add_child(badge)
+		var name_label := _label("%d. %s" % [index + 1, entry[0]], 26, Color(0.12, 0.13, 0.16))
+		name_label.position = origin + Vector2(10, CELL - 10)
+		canvas.add_child(name_label)
+		var detail := _label("%s · %s" % [entry[2], info], 18, Color(0.36, 0.38, 0.42))
+		detail.position = origin + Vector2(12, CELL + 24)
+		canvas.add_child(detail)
+	for i in 45:
+		await process_frame
+	await RenderingServer.frame_post_draw
+	canvas.get_texture().get_image().save_png(ProjectSettings.globalize_path(out))
+	print("SAVED ", out, " ", size)
+	quit()
+
+
+func _stage(view: SubViewport, entry: Array) -> String:
+	var model_name := entry[1] as String
+	var is_cloud := model_name.begins_with("cloud")
+	var world := Node3D.new()
+	view.add_child(world)
+	var env_node := WorldEnvironment.new()
+	var env := Environment.new()
+	env.background_mode = Environment.BG_COLOR
+	env.background_color = Color(0.49, 0.71, 0.88) if is_cloud else Color(0.8, 0.84, 0.88)
+	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	env.ambient_light_color = Color(0.72, 0.75, 0.83)
+	env.ambient_light_energy = 0.55
+	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	env_node.environment = env
+	world.add_child(env_node)
+	var sun := DirectionalLight3D.new()
+	sun.rotation_degrees = Vector3(-48, -35, 0)
+	sun.light_color = Color(1.0, 0.94, 0.83)
+	sun.light_energy = 1.0
+	sun.shadow_enabled = true
+	world.add_child(sun)
+	var model := (load("res://art/models/%s.glb" % model_name) as PackedScene).instantiate() as Node3D
+	world.add_child(model)
+	var own_tris := _mesh_points(model, Transform3D.IDENTITY, PackedVector3Array())
+	var extra_tris: PackedStringArray = []
+	for extra_name in EXTRAS.get(model_name, []):
+		var extra := (load("res://art/models/%s.glb" % extra_name) as PackedScene).instantiate() as Node3D
+		extra_tris.append("%d" % _mesh_points(extra, Transform3D.IDENTITY, PackedVector3Array()))
+		model.add_child(extra)
+	for mesh in model.find_children("*", "MeshInstance3D", true, false):
+		var instance := mesh as MeshInstance3D
+		if CORAL_TINTS.has(model_name) or model_name in ["seaweed_kelp", "seagrass_tuft"]:
+			var material := StandardMaterial3D.new()
+			material.vertex_color_use_as_albedo = true
+			material.cull_mode = BaseMaterial3D.CULL_DISABLED
+			material.roughness = 0.85
+			material.albedo_color = CORAL_TINTS.get(model_name, SEAGRASS_TINT)
+			instance.material_override = material
+		elif is_cloud:
+			var cloud := (load("res://shaders/beach_clouds.tres") as ShaderMaterial).duplicate() as ShaderMaterial
+			instance.material_override = cloud
+			cloud.set_shader_parameter("sun_direction", sun.global_basis.z.normalized())
+	var points := PackedVector3Array()
+	var tris := _mesh_points(model, Transform3D.IDENTITY, points)
+	var bounds := AABB(points[0], Vector3.ZERO)
+	for p in points:
+		bounds = bounds.expand(p)
+	var extent := maxf(bounds.size.x, maxf(bounds.size.y, bounds.size.z))
+	# Rest the model on the ground; swimmers and flyers hover above their shadow.
+	var lift := -bounds.position.y + (extent * 0.35 if bool(entry[5]) else 0.0)
+	model.position.y = lift
+	bounds.position.y += lift
+	if not is_cloud:
+		var ground := MeshInstance3D.new()
+		var disc := CylinderMesh.new()
+		disc.top_radius = extent * 1.4
+		disc.bottom_radius = extent * 1.4
+		disc.height = extent * 0.01
+		ground.mesh = disc
+		ground.position.y = -extent * 0.005
+		var ground_material := StandardMaterial3D.new()
+		ground_material.albedo_color = Color(0.74, 0.64, 0.47)
+		ground_material.roughness = 1.0
+		ground.material_override = ground_material
+		world.add_child(ground)
+	if model_name == "furniture_stain":
+		# The stain is a card on furniture: show it on a white lounge-chair panel.
+		var panel := MeshInstance3D.new()
+		var board := BoxMesh.new()
+		board.size = Vector3(0.34, 0.3, 0.02)
+		panel.mesh = board
+		panel.position = bounds.get_center() + Vector3(0, 0.0, 0.016)
+		var panel_material := StandardMaterial3D.new()
+		panel_material.albedo_color = Color(0.93, 0.93, 0.9)
+		panel.material_override = panel_material
+		world.add_child(panel)
+		for corner in [Vector3(-0.17, -0.15, 0.006), Vector3(0.17, 0.15, 0.026)]:
+			points.append(bounds.get_center() - Vector3(0, lift, 0) + corner)
+	var azimuth := deg_to_rad(float(entry[3]))
+	var elevation := deg_to_rad(float(entry[4]))
+	var direction := Vector3(sin(azimuth) * cos(elevation), sin(elevation), -cos(azimuth) * cos(elevation))
+	var center := bounds.get_center()
+	var camera := Camera3D.new()
+	camera.fov = 30.0
+	world.add_child(camera)
+	var basis := Basis.looking_at(-direction, Vector3.UP)
+	var right := basis.x
+	var up := basis.y
+	var reach := tan(deg_to_rad(15.0)) * 0.86
+	var distance := 0.0
+	for p in points:
+		var q := Vector3(p.x, p.y + lift, p.z) - center
+		distance = maxf(distance, maxf(absf(q.dot(right)), absf(q.dot(up))) / reach + q.dot(direction))
+	camera.position = center + direction * distance
+	camera.basis = basis
+	camera.near = maxf(0.005, distance * 0.02)
+	camera.far = distance * 6.0
+	sun.directional_shadow_max_distance = distance * 3.0
+	print("MODEL %s size=%s tris=%d" % [model_name, bounds.size, tris])
+	var sized := "%.2f m" % extent if extent < 10.0 else "%.0f m" % extent
+	if not extra_tris.is_empty():
+		return "%s · %d + %s tris" % [sized, own_tris, " + ".join(extra_tris)]
+	return "%s · %d tris" % [sized, tris]

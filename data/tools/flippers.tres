@@ -5,6 +5,7 @@ script = ExtResource("1_tool")
 tool_id = &"flippers"
 display_name = "Flippers"
 handheld = false
+scene_path = "res://art/replacements/equipment/flippers.tscn"
 shop_price = 80
 effect_text = "Swim speed 2.5 → 4.0 m/s"
 implemented = true

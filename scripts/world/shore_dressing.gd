@@ -2,7 +2,6 @@ extends Node3D
 const Coastline = preload("res://scripts/world/coastline.gd")
 
 const DUNE := preload("res://art/synty/wrappers/world_reef_ridge.tscn")
-const PALM := preload("res://art/synty/wrappers/foliage_palm.tscn")
 
 @export var sand_material: Material
 
@@ -54,10 +53,9 @@ func _build_outer_palms() -> void:
 			var across := 0.38 + 0.12 * float(positions.size() % 4)
 			positions.append(Vector3(x, 0, lerpf(Coastline.inland_z(x), Coastline.shore_z(x), across)))
 	for index in positions.size():
-		var palm := PALM.instantiate() as Node3D
+		var palm := FoliageVariants.instance_palm(index + 1, 0.78 + float(index % 4) * 0.11)
 		palm.position = positions[index]
 		palm.rotation.y = float(index) * 1.13
-		palm.scale = Vector3.ONE * (0.78 + float(index % 4) * 0.11)
 		add_child(palm)
 
 

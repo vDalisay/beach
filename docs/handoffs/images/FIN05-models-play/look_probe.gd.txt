@@ -1,0 +1,80 @@
+extends SceneTree
+# Local iteration probe (builds/ is ignored). Captures fixed review cameras in a new run.
+
+const VIEWS := {
+	"aerial": [Vector3(-15, 65, 135), Vector3(0, 0, 0)],
+	"sports-eye": [Vector3(-45, 2.1, 32), Vector3(-43.75, 1.7, 12)],
+	"reef": [Vector3(2.5, -1.25, 101), Vector3(2.5, -2.25, 107.5)],
+	"along-shore": [Vector3(-65, 2.1, 32), Vector3(60, 2.1, 37)],
+	"lounge-pocket": [Vector3(-34, 2.1, 0), Vector3(-22, 1.2, 18)],
+	"pier-head": [Vector3(62.5, 3.1, 60), Vector3(62.5, 3.0, 84)],
+	"pier-overhead": [Vector3(44, 24, 57), Vector3(62.5, 1.5, 82)],
+	"shore-out": [Vector3(0, 1.85, 30), Vector3(0, 0.6, 90)],
+	"reef-wide": [Vector3(0, -1.0, 96), Vector3(4, -2.4, 112)],
+	"shelves": [Vector3(-75.5, 1.7, -9.5), Vector3(-79, 0.6, -15)],
+	"rack": [Vector3(13.8, 1.6, -1.6), Vector3(13.8, 0.7, -4)],
+	"lookout": [Vector3(-33.5, 2.2, 9.5), Vector3(-37.5, 2.3, 0)],
+}
+
+func _init() -> void:
+	call_deferred("_run")
+
+func _run() -> void:
+	var out := "res://builds/look"
+	var wanted: PackedStringArray = []
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--out="):
+			out = arg.trim_prefix("--out=")
+		elif arg.begins_with("--views="):
+			wanted = arg.trim_prefix("--views=").split(",")
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(out))
+	var main := (load("res://scenes/main.tscn") as PackedScene).instantiate() as BeachMain
+	root.add_child(main)
+	main.save_service.save_root = "user://test_runs/look_probe"
+	main.seed_input.text = "full-run-integration"
+	var session := main.start_run() as RunSession
+	var viewport := SubViewport.new()
+	viewport.size = Vector2i(1920, 1080)
+	viewport.msaa_3d = main.get_viewport().msaa_3d
+	viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	viewport.world_3d = (session.get_node("Beach") as Node3D).get_world_3d()
+	root.add_child(viewport)
+	var camera := Camera3D.new()
+	camera.fov = 85.0
+	viewport.add_child(camera)
+	camera.make_current()
+	var player := session.get_node("Player") as BeachPlayer
+	camera.near = player.camera.near
+	camera.far = player.camera.far
+	(main.get_node("UI") as CanvasLayer).visible = false
+	player.visible = false
+	player.set_physics_process(false)
+	session.swim_service.set_physics_process(false)
+	var owner := session.state.players[&"local"] as Dictionary
+	for tool_id in [&"cloth", &"knife", &"detector", &"vacuum", &"sand_cleaner", &"flippers", &"oxygen_tank"]:
+		(owner.owned_tools as Array[StringName]).append(tool_id)
+	var rack_views := {}
+	for shop in root.find_children("*", "Node3D", true, false):
+		if shop.has_method("refresh_rack"):
+			shop.call("refresh_rack")
+			var rack := shop.get_node("ToolRack") as Node3D
+			var toward := rack.global_basis.z.normalized()
+			rack_views["rack"] = [rack.global_position + toward * 1.9 + Vector3.UP * 1.45, rack.global_position + Vector3.UP * 0.75]
+	for path in ["res://shaders/beach_water.tres", "res://shaders/beach_sand.tres", "res://shaders/seabed_caustics.tres"]:
+		(load(path) as ShaderMaterial).set_shader_parameter("debug_time", 4.0)
+	for name in VIEWS:
+		if not wanted.is_empty() and not wanted.has(name):
+			continue
+		var view := (rack_views.get(name, VIEWS[name])) as Array
+		var origin := view[0] as Vector3
+		camera.global_position = origin
+		camera.look_at(view[1] as Vector3)
+		camera.environment = SwimService.UNDERWATER_ENVIRONMENT if origin.y < 0.0 else null
+		player.global_position = origin
+		for frame in 90:
+			await physics_frame
+		await RenderingServer.frame_post_draw
+		viewport.get_texture().get_image().save_png(ProjectSettings.globalize_path(out).path_join(name + ".png"))
+		print("CAPTURED ", name)
+	main.free()
+	quit()

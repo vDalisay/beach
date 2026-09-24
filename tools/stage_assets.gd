@@ -32,6 +32,11 @@ func _init() -> void:
 		var asset := asset_value as Dictionary
 		for component_value in asset.get("components", []):
 			var component := component_value as Dictionary
+			if component.has("project_scene"):
+				# Project-owned art is committed; the wrapper keeps its path so content identity is unchanged.
+				if not str(component.project_scene).begins_with("res://art/models/"):
+					_errors.append("Project component must live in res://art/models/: %s" % component.project_scene)
+				continue
 			var scene_name := str(component.get("source_scene", ""))
 			if not _is_safe_relative_path(scene_name):
 				_errors.append("Unsafe source scene path: %s" % scene_name)
@@ -159,7 +164,8 @@ func _write_wrapper(asset: Dictionary, scene_root: String) -> void:
 	for index in components.size():
 		var component := components[index] as Dictionary
 		var dependency := scene_root + str(component.get("source_scene", ""))
-		lines.append('[ext_resource type="PackedScene" path="%s" id="%d_asset"]' % [_staged_path(dependency), index + 1])
+		var resource_path := str(component.project_scene) if component.has("project_scene") else _staged_path(dependency)
+		lines.append('[ext_resource type="PackedScene" path="%s" id="%d_asset"]' % [resource_path, index + 1])
 	for index in components.size():
 		var component := components[index] as Dictionary
 		if not component.has("material_override"):

@@ -74,7 +74,12 @@ func _create_attachment(record: ItemRecord) -> void:
 	area.add_child(collision)
 	var scene := load((session.definitions[record.definition_id] as ItemDefinition).visual_scene_path) as PackedScene
 	if scene != null:
-		area.add_child(scene.instantiate())
+		var visual := scene.instantiate() as Node3D
+		area.add_child(visual)
+		# Drape the loose-waste model over its side of the shell so the entanglement reads.
+		var side := signf(to_local(area.global_position).x)
+		visual.position = Vector3(side * 0.05, 0.14, 0.0)
+		visual.rotation = Vector3(0.0, 0.0, -side * 0.55)
 	attachment_areas[record.item_id] = area
 
 

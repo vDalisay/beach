@@ -5,6 +5,7 @@ script = ExtResource("1_tool")
 tool_id = &"oxygen_tank"
 display_name = "Oxygen tank"
 handheld = false
+scene_path = "res://art/replacements/equipment/oxygen_tank.tscn"
 shop_price = 220
 upgrade_prerequisite = &"detector"
 effect_text = "Underwater air 10 → 60 seconds"

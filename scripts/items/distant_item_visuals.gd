@@ -33,6 +33,9 @@ func build() -> void:
 		var source := _sources[(records[0] as ItemRecord).definition_id] as Dictionary
 		var instances := MultiMesh.new()
 		instances.transform_format = MultiMesh.TRANSFORM_3D
+		# The Compatibility renderer multiplies vertex colour by the instance colour, so
+		# vertex-coloured litter models need white instance colours to keep their colours.
+		instances.use_colors = true
 		instances.mesh = source.mesh
 		instances.instance_count = records.size()
 		var visual := MultiMeshInstance3D.new()
@@ -46,6 +49,7 @@ func build() -> void:
 			var record := records[index] as ItemRecord
 			var pose := record.last_world_transform * (source.offset as Transform3D)
 			instances.set_instance_transform(index, pose)
+			instances.set_instance_color(index, Color.WHITE)
 			_entries[record.item_id] = {"mesh": instances, "index": index, "offset": source.offset}
 
 

@@ -1,0 +1,194 @@
+extends SceneTree
+# Local before/after review image (builds/ is ignored) for the six reworked models and the new oars.
+# Before: builds/models_before/*.glb (the pre-review builds). After: art/models/*.glb.
+# Both are loaded the same way (runtime glTF) and lit and framed like builds/model_sheet.gd.
+#   godot --path . --script res://builds/model_fixes.gd
+
+const CELL := 400
+const LABEL := 64
+const HEADER := 150
+const SIDE := 120
+const FAN_TINT := Color("c99be0")
+# [title, review note, model, extra models staged on top, azimuth, elevation]
+const COLUMNS := [
+	["9. Plastic rings", "six closed loops, one web", "rescue_six_pack_rings", [], 35.0, 55.0],
+	["15. Cloth", "folded terry washcloth", "tool_cloth", [], 35.0, 40.0],
+	["18. Turtle", "one connected animal", "turtle", [], 50.0, 30.0],
+	["28. Fan coral", "one connected sea fan", "coral_fan", [], 20.0, 20.0],
+	["32. Lifeguard lookout", "railed ramp up to the door", "lifeguard_tower", [], 150.0, 15.0],
+	["33. Rowboat", "fitted thwarts, oars on top", "rowboat", ["rowboat_oars"], 50.0, 30.0],
+	["33. Oars (new model)", "rowboat_oars.glb", "rowboat_oars", [], 50.0, 30.0],
+]
+var out := "res://builds/model-fixes.png"
+
+
+func _init() -> void:
+	call_deferred("_run")
+
+
+func _label(text: String, size: int, color: Color) -> Label:
+	var label := Label.new()
+	label.text = text
+	var settings := LabelSettings.new()
+	settings.font_size = size
+	settings.font_color = color
+	label.label_settings = settings
+	return label
+
+
+func _load(path: String) -> Node3D:
+	if not FileAccess.file_exists(path):
+		return null
+	var document := GLTFDocument.new()
+	var state := GLTFState.new()
+	if document.append_from_file(ProjectSettings.globalize_path(path), state) != OK:
+		return null
+	return document.generate_scene(state) as Node3D
+
+
+func _mesh_points(node: Node, xf: Transform3D, points: PackedVector3Array) -> int:
+	var here := xf
+	if node is Node3D:
+		here = xf * (node as Node3D).transform
+	var tris := 0
+	if node is MeshInstance3D and (node as MeshInstance3D).mesh != null:
+		var mesh := (node as MeshInstance3D).mesh
+		for surface in mesh.get_surface_count():
+			var arrays := mesh.surface_get_arrays(surface)
+			for v in arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array:
+				points.append(here * v)
+			var indices = arrays[Mesh.ARRAY_INDEX]
+			tris += (indices.size() if indices != null else (arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array).size()) / 3
+	for child in node.get_children():
+		tris += _mesh_points(child, here, points)
+	return tris
+
+
+func _run() -> void:
+	var size := Vector2i(SIDE + COLUMNS.size() * CELL, HEADER + 2 * (CELL + LABEL))
+	var canvas := SubViewport.new()
+	canvas.size = size
+	canvas.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	root.add_child(canvas)
+	var background := ColorRect.new()
+	background.color = Color(0.95, 0.94, 0.91)
+	background.size = size
+	canvas.add_child(background)
+	var title := _label("Model review fixes — before (top) and after (bottom), in-game materials, same framing per column", 34, Color(0.16, 0.18, 0.22))
+	title.position = Vector2(24, 20)
+	canvas.add_child(title)
+	for row in 2:
+		var row_label := _label(["Before", "After"][row], 34, Color(0.16, 0.18, 0.22))
+		row_label.position = Vector2(14, HEADER + row * (CELL + LABEL) + CELL * 0.45)
+		canvas.add_child(row_label)
+	for column in COLUMNS.size():
+		var entry := COLUMNS[column] as Array
+		var x := SIDE + column * CELL
+		var heading := _label(str(entry[0]), 26, Color(0.12, 0.13, 0.16))
+		heading.position = Vector2(x + 8, 76)
+		canvas.add_child(heading)
+		var note := _label(str(entry[1]), 19, Color(0.36, 0.38, 0.42))
+		note.position = Vector2(x + 8, 110)
+		canvas.add_child(note)
+		for row in 2:
+			var folder := "res://builds/models_before/" if row == 0 else "res://art/models/"
+			var y := HEADER + row * (CELL + LABEL)
+			var model := _load(folder + str(entry[2]) + ".glb")
+			var info := "not a separate model before" if model == null else ""
+			if model != null:
+				var tris := [_mesh_points(model, Transform3D.IDENTITY, PackedVector3Array())]
+				for extra_name in entry[3]:
+					var extra := _load(folder + str(extra_name) + ".glb")
+					if extra != null:    # before, the oars were part of the hull model
+						tris.append(_mesh_points(extra, Transform3D.IDENTITY, PackedVector3Array()))
+						model.add_child(extra)
+				var container := SubViewportContainer.new()
+				container.position = Vector2(x + 4, y)
+				container.size = Vector2(CELL - 8, CELL - 8)
+				container.stretch = true
+				canvas.add_child(container)
+				var view := SubViewport.new()
+				view.own_world_3d = true
+				view.msaa_3d = Viewport.MSAA_4X
+				view.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+				container.add_child(view)
+				var extent := _stage(view, model, str(entry[2]), float(entry[4]), float(entry[5]))
+				info = "%.2f m · %s tris" % [extent, " + ".join(tris.map(func(t: int) -> String: return str(t)))]
+			var detail := _label(info, 20, Color(0.3, 0.32, 0.36))
+			detail.position = Vector2(x + 10, y + CELL - 2)
+			canvas.add_child(detail)
+	for i in 45:
+		await process_frame
+	await RenderingServer.frame_post_draw
+	canvas.get_texture().get_image().save_png(ProjectSettings.globalize_path(out))
+	print("SAVED ", out, " ", size)
+	quit()
+
+
+func _stage(view: SubViewport, model: Node3D, model_name: String, azimuth_deg: float, elevation_deg: float) -> float:
+	var world := Node3D.new()
+	view.add_child(world)
+	var env_node := WorldEnvironment.new()
+	var env := Environment.new()
+	env.background_mode = Environment.BG_COLOR
+	env.background_color = Color(0.8, 0.84, 0.88)
+	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	env.ambient_light_color = Color(0.72, 0.75, 0.83)
+	env.ambient_light_energy = 0.55
+	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	env_node.environment = env
+	world.add_child(env_node)
+	var sun := DirectionalLight3D.new()
+	sun.rotation_degrees = Vector3(-48, -35, 0)
+	sun.light_color = Color(1.0, 0.94, 0.83)
+	sun.shadow_enabled = true
+	world.add_child(sun)
+	world.add_child(model)
+	if model_name == "coral_fan":
+		for mesh in model.find_children("*", "MeshInstance3D", true, false):
+			var material := StandardMaterial3D.new()
+			material.vertex_color_use_as_albedo = true
+			material.cull_mode = BaseMaterial3D.CULL_DISABLED
+			material.roughness = 0.85
+			material.albedo_color = FAN_TINT
+			(mesh as MeshInstance3D).material_override = material
+	var points := PackedVector3Array()
+	_mesh_points(model, Transform3D.IDENTITY, points)
+	var bounds := AABB(points[0], Vector3.ZERO)
+	for p in points:
+		bounds = bounds.expand(p)
+	var extent := maxf(bounds.size.x, maxf(bounds.size.y, bounds.size.z))
+	var lift := -bounds.position.y
+	model.position.y = lift
+	bounds.position.y += lift
+	var ground := MeshInstance3D.new()
+	var disc := CylinderMesh.new()
+	disc.top_radius = extent * 1.4
+	disc.bottom_radius = extent * 1.4
+	disc.height = extent * 0.01
+	ground.mesh = disc
+	ground.position.y = -extent * 0.005
+	var ground_material := StandardMaterial3D.new()
+	ground_material.albedo_color = Color(0.74, 0.64, 0.47)
+	ground_material.roughness = 1.0
+	ground.material_override = ground_material
+	world.add_child(ground)
+	var azimuth := deg_to_rad(azimuth_deg)
+	var elevation := deg_to_rad(elevation_deg)
+	var direction := Vector3(sin(azimuth) * cos(elevation), sin(elevation), -cos(azimuth) * cos(elevation))
+	var center := bounds.get_center()
+	var camera := Camera3D.new()
+	camera.fov = 30.0
+	world.add_child(camera)
+	var basis := Basis.looking_at(-direction, Vector3.UP)
+	var reach := tan(deg_to_rad(15.0)) * 0.86
+	var distance := 0.0
+	for p in points:
+		var q := Vector3(p.x, p.y + lift, p.z) - center
+		distance = maxf(distance, maxf(absf(q.dot(basis.x)), absf(q.dot(basis.y))) / reach + q.dot(direction))
+	camera.position = center + direction * distance
+	camera.basis = basis
+	camera.near = maxf(0.005, distance * 0.02)
+	camera.far = distance * 6.0
+	sun.directional_shadow_max_distance = distance * 3.0
+	return extent

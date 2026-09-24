@@ -45,9 +45,18 @@ func _load_staged_assets(assets: Array) -> void:
 func _load_missing_assets(entries: Array) -> void:
 	for index in entries.size():
 		var entry := entries[index] as Dictionary
+		var position := Vector3(-7.5 + float(index % 6) * 3.0, 0.0, -12.0 - float(index / 6) * 2.5)
+		# Roles with an integrated model show it; the rest keep their labelled request cube.
+		var model_path := str(entry.get("model_scene", ""))
+		if not model_path.is_empty() and ResourceLoader.exists(model_path):
+			var model := (load(model_path) as PackedScene).instantiate() as Node3D
+			model.position = position
+			missing_assets.add_child(model)
+			_add_label(model, "%s · %s" % [entry.get("id", ""), entry.get("label", "")], 1.2)
+			continue
 		var instance := MISSING_ASSET_SCENE.instantiate() as MissingAsset
 		instance.configure(entry)
-		instance.position = Vector3(-7.5 + float(index % 6) * 3.0, 0.0, -12.0 - float(index / 6) * 2.5)
+		instance.position = position
 		missing_assets.add_child(instance)
 
 

@@ -8,7 +8,10 @@ uniform sampler2D macro_noise : repeat_enable, filter_linear_mipmap;
 uniform sampler2D caustic_texture : repeat_enable, filter_linear_mipmap;
 uniform vec3 dry_color : source_color = vec3(0.902, 0.769, 0.545);
 uniform vec3 wet_color : source_color = vec3(0.678, 0.600, 0.435);
-uniform vec3 bed_color : source_color = vec3(0.48, 0.57, 0.51);
+uniform vec3 bed_color : source_color = vec3(0.66, 0.6, 0.76);
+// Alpha-blended water cannot absorb red light from the sand behind it, so sand seen
+// from above the surface carries the transmission tint instead of turning mint.
+uniform vec3 transmission_tint : source_color = vec3(0.6, 0.88, 0.92);
 uniform bool use_shore_data = true;
 uniform bool use_vertex_tint = false;
 uniform float surface_y = 0.08;
@@ -33,7 +36,13 @@ void fragment() {
 	vec3 sand = mix(dry_color, wet_color, wet) * variation;
 	if (use_vertex_tint) sand *= COLOR.rgb;
 	float depth = max(surface_y - world_position.y, 0.0);
-	sand = mix(sand, bed_color, use_shore_data ? smoothstep(0.0, 3.0, depth) * 0.15 : 0.0);
+	if (use_shore_data) {
+		if (CAMERA_POSITION_WORLD.y > surface_y) {
+			sand *= mix(vec3(1.0), transmission_tint, smoothstep(0.0, 1.4, depth));
+		} else {
+			sand = mix(sand, bed_color, smoothstep(0.0, 3.0, depth) * 0.45) * (1.0 - 0.2 * smoothstep(0.5, 3.0, depth));
+		}
+	}
 	float phase = debug_time >= 0.0 ? debug_time : TIME;
 	float caustic = 0.0;
 	if (use_shore_data && caustic_strength > 0.0) {

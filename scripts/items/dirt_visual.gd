@@ -10,6 +10,10 @@ var patch_id: StringName
 var _base_scale := Vector3.ONE
 
 
+func _ready() -> void:
+	mesh.mesh = ModelLibrary.mesh("res://art/models/furniture_stain.glb")
+
+
 func configure(owner_item_id: StringName, owner_patch_id: StringName, anchor: Vector3, interactive := true) -> void:
 	item_id = owner_item_id
 	patch_id = owner_patch_id

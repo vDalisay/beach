@@ -1,7 +1,6 @@
 class_name RestorationSection
 extends Node
 
-const PALM_SCENE := preload("res://art/synty/wrappers/foliage_palm.tscn")
 const BUOY_SCENE := preload("res://art/synty/wrappers/prop_lifebuoy.tscn")
 const FISH_SCENE := preload("res://scenes/wildlife/fish_school.tscn")
 const TURTLE_SCENE := preload("res://scenes/wildlife/turtle.tscn")
@@ -14,6 +13,32 @@ const REEF_PLANT_ROCKS := {
 	&"reef_east:outer": [9, 12, 16],
 	&"reef_east:coral": [11, 13, 14, 17],
 }
+const CORAL_MODELS := [
+	"res://art/models/coral_branching.glb",
+	"res://art/models/coral_tube.glb",
+	"res://art/models/coral_fan.glb",
+	"res://art/models/coral_brain.glb",
+]
+const CORAL_COLORS := [Color("ef8b91"), Color("f2a65a"), Color("c99be0"), Color("95c7a1"), Color("e8667a")]
+const SEAWEED_MODELS := ["res://art/models/seagrass_tuft.glb", "res://art/models/seaweed_kelp.glb"]
+const SHORE_BIRD_SCENE := preload("res://art/replacements/wildlife/shore_bird.tscn")
+const GARDEN_SHADER := preload("res://shaders/reef_garden.gdshader")
+# Restoration coral gardens: coral, kelp and seagrass on and around every reef rock.
+const GARDEN_MODELS := [
+	"res://art/models/coral_branching.glb", "res://art/models/coral_fan.glb", "res://art/models/coral_tube.glb",
+	"res://art/models/coral_brain.glb", "res://art/models/seaweed_kelp.glb", "res://art/models/seagrass_tuft.glb",
+]
+# Cumulative model shares on rock tops, around rock bases and across the open seabed.
+const GARDEN_TOP_SHARES := [0.18, 0.32, 0.48, 0.76, 0.82, 1.0]
+const GARDEN_BASE_SHARES := [0.18, 0.3, 0.44, 0.6, 0.76, 1.0]
+const GARDEN_FILL_SHARES := [0.14, 0.24, 0.34, 0.64, 0.7, 1.0]
+const GARDEN_EXTRA_CORAL := [Color("c24d96"), Color("46559a")]
+const GARDEN_PLANT_COLORS := [Color(0.42, 0.73, 0.57), Color(0.66, 0.8, 0.52), Color(0.36, 0.6, 0.62)]
+const GARDEN_SPACING := 0.32
+const GARDEN_BASE_SPACING := 0.42
+# Open-seabed planting keeps this far from every litter item placed in the run.
+const GARDEN_LITTER_CLEARANCE := 1.1
+const FLYING_BIRD_SCENE := preload("res://art/replacements/wildlife/shore_bird_flying.tscn")
 const CORAL_OFFSETS := [
 	Vector2(-2.4, 1.1), Vector2(-1.7, 1.7), Vector2(-2.1, 3.4), Vector2(-2.6, 4.8),
 	Vector2(-0.6, 2.6), Vector2(0.2, 1.1), Vector2(0.5, 4.5), Vector2(0.0, 3.3),
@@ -26,6 +51,9 @@ var zone_roots: Dictionary = {}
 var anchors: Dictionary = {}
 var populations: Dictionary = {}
 var reef_habitat_anchors: Dictionary = {}
+var reef_garden_points: Dictionary = {}
+var _garden_cells: Dictionary = {}
+var _reef_litter_cells: Dictionary = {}
 var settings: SettingsStore
 
 
@@ -61,6 +89,16 @@ func _find_nodes(node: Node) -> void:
 			for point in (node.get_meta(&"reef_habitat_anchors") as Dictionary)[index]:
 				points.append(world.to_global(point))
 			reef_habitat_anchors[index] = points
+	if node.has_meta(&"reef_garden_points"):
+		var world := node as Node3D
+		var garden := node.get_meta(&"reef_garden_points") as Dictionary
+		for index in garden:
+			var points: Array[Vector4] = []
+			for value in garden[index]:
+				var point := value as Vector4
+				var at := world.to_global(Vector3(point.x, point.y, point.z))
+				points.append(Vector4(at.x, at.y, at.z, point.w))
+			reef_garden_points[index] = points
 	if node is BeachSection:
 		var section := node as BeachSection
 		sections[section.section_id] = section
@@ -124,17 +162,16 @@ func _build_section(section: BeachSection) -> void:
 			coral.scale = Vector3.ONE * [1.25, 0.85, 0.65][index % 3]
 			if str(section.zone_id).begins_with("reef_"):
 				coral.global_position.y = Coastline.surface_y(coral.global_position.x, coral.global_position.z) - 0.015
-				coral.scale = Vector3(0.85, [0.25, 0.50, 0.75][(index / 2) % 3], 0.85)
+				coral.scale = Vector3.ONE * [0.95, 1.35, 1.75][(index / 2) % 3]
 				var rocks := REEF_PLANT_ROCKS[section.section_id] as Array
 				var rock_index: int = rocks[(index / 2) % rocks.size()]
 				var points := reef_habitat_anchors.get(rock_index, []) as Array
 				if index % 2 == 1 and not points.is_empty():
 					coral.global_position = (points[index % points.size()] as Vector3) - Vector3.UP * 0.015
-					# Reuse the provisional mesh as low/medium/tall groups on the existing rocks.
-					var height: float = [0.28, 0.65, 1.10][index % 3]
-					var width: float = [0.85, 0.62, 0.50][index % 3]
-					height = minf(height, maxf(0.12, (0.08 - 0.30 - coral.global_position.y) / 1.9))
-					coral.scale = Vector3(width, height, width)
+					# Low, medium and tall groups on the existing rocks, kept below the surface.
+					var size: float = [0.95, 1.35, 1.85][index % 3]
+					size = minf(size, maxf(0.25, (0.08 - 0.30 - coral.global_position.y) / 0.95))
+					coral.scale = Vector3.ONE * size
 					coral.rotation.y = float(index) * 1.17
 		for index in range(2):
 			var starfish := STARFISH_SCENE.instantiate() as Node3D
@@ -142,13 +179,15 @@ func _build_section(section: BeachSection) -> void:
 			starfish.global_position = origin + Vector3(index * 2.1 - 1.0, 0.07, 5.0)
 		if str(section.zone_id).begins_with("reef_"):
 			_build_reef_plants(section)
+			_build_coral_garden(section)
 			_spawn_school(section.restoration_visual_root, StringName("section:%s:fish" % section.section_id), origin + Vector3(0, 1.2, 3.0))
 	elif kind == "buoy":
 		var buoy := BUOY_SCENE.instantiate() as Node3D
 		section.restoration_visual_root.add_child(buoy)
 		buoy.global_position = origin + Vector3(1.4, 0.7, -1.5)
 	elif kind == "palm":
-		var palm := PALM_SCENE.instantiate() as Node3D
+		var palm := FoliageVariants.instance_palm(section.section_id.hash())
+		palm.name = "FoliagePalm"
 		section.restoration_visual_root.add_child(palm)
 		palm.global_position = origin + Vector3(2.4, -0.15, -3.0)
 
@@ -185,9 +224,12 @@ func _build_zone(zone_id: StringName, root: Node3D) -> void:
 		root.add_child(buoy)
 		buoy.global_position = origin + Vector3(-2.0, 0.7, -1.0)
 	elif kind == "palm":
-		var palm := PALM_SCENE.instantiate() as Node3D
+		var palm := FoliageVariants.instance_palm(zone_id.hash())
+		palm.name = "FoliagePalm"
 		root.add_child(palm)
 		palm.global_position = origin + Vector3(-2.8, -0.15, -4.0)
+	if kind in ["palm", "buoy"]:
+		_add_shore_birds(zone_id, root, origin)
 	if zone_id == &"lounges":
 		var turtle_anchor := Node3D.new()
 		turtle_anchor.name = "TurtleRouteAnchor"
@@ -207,57 +249,28 @@ func _build_zone(zone_id: StringName, root: Node3D) -> void:
 func _coral_cluster(index: int) -> Node3D:
 	var cluster := Node3D.new()
 	var material := StandardMaterial3D.new()
-	var target := [Color("ef8b91"), Color("95c7a1"), Color("d3a1d5")][index % 3] as Color
+	material.vertex_color_use_as_albedo = true
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	material.roughness = 0.85
+	var target := CORAL_COLORS[index % CORAL_COLORS.size()] as Color
+	# Bleached grey before restoration; the tween brings back the coral's colour.
 	material.albedo_color = Color("405257")
-	material.emission_enabled = true
-	material.emission = target * 0.25
-	material.emission_energy_multiplier = 0.35
 	cluster.set_meta(&"target_color", target)
 	cluster.set_meta(&"material", material)
-	var vertices := PackedVector3Array()
-	var normals := PackedVector3Array()
-	var indices := PackedInt32Array()
-	for stem in 5:
-		var angle := (float(stem) + float(index) * 0.31) * TAU / 5.0
-		var outward := Vector3(cos(angle), 0, sin(angle))
-		var base := outward * 0.19
-		var fork := base + outward * 0.12 + Vector3.UP * (0.75 + float(stem % 3) * 0.14)
-		var crown := fork + outward * (0.16 + float(stem % 2) * 0.1) + Vector3.UP * (0.48 + float(index % 3) * 0.12)
-		_append_coral_branch(vertices, normals, indices, base, fork, 0.048, 0.028)
-		_append_coral_branch(vertices, normals, indices, fork, crown, 0.028, 0.006)
-		_append_coral_branch(vertices, normals, indices, fork - Vector3.UP * 0.12, fork - outward * 0.17 + Vector3.UP * 0.33, 0.022, 0.005)
-	var arrays := []
-	arrays.resize(Mesh.ARRAY_MAX)
-	arrays[Mesh.ARRAY_VERTEX] = vertices
-	arrays[Mesh.ARRAY_NORMAL] = normals
-	arrays[Mesh.ARRAY_INDEX] = indices
-	var mesh := ArrayMesh.new()
-	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-	var visual := MeshInstance3D.new()
-	visual.mesh = mesh
-	visual.material_override = material
-	cluster.add_child(visual)
+	var main := MeshInstance3D.new()
+	main.name = "Coral"
+	main.mesh = ModelLibrary.mesh(CORAL_MODELS[index % CORAL_MODELS.size()])
+	main.material_override = material
+	cluster.add_child(main)
+	var companion := MeshInstance3D.new()
+	companion.name = "Companion"
+	companion.mesh = ModelLibrary.mesh(CORAL_MODELS[(index + 2) % CORAL_MODELS.size()])
+	companion.material_override = material
+	companion.position = Vector3(0.32, 0.0, -0.18)
+	companion.rotation.y = float(index) * 0.9
+	companion.scale = Vector3.ONE * 0.55
+	cluster.add_child(companion)
 	return cluster
-
-
-func _append_coral_branch(vertices: PackedVector3Array, normals: PackedVector3Array, indices: PackedInt32Array, base: Vector3, tip: Vector3, base_radius: float, tip_radius: float) -> void:
-	var axis := (tip - base).normalized()
-	var side := Vector3.RIGHT if absf(axis.y) > 0.9 else axis.cross(Vector3.UP).normalized()
-	var depth := axis.cross(side).normalized()
-	var first := vertices.size()
-	for face in 6:
-		var angle := float(face) * TAU / 6.0
-		var radial := side * cos(angle) + depth * sin(angle)
-		vertices.append(base + radial * base_radius)
-		vertices.append(tip + radial * tip_radius)
-		normals.append(radial)
-		normals.append(radial)
-	for face in 6:
-		var bottom := first + face * 2
-		var top := bottom + 1
-		var next_bottom := first + ((face + 1) % 6) * 2
-		var next_top := next_bottom + 1
-		indices.append_array(PackedInt32Array([bottom, next_bottom, top, next_bottom, next_top, top]))
 
 
 func _build_reef_plants(section: BeachSection) -> void:
@@ -286,40 +299,306 @@ func _seagrass_bed(index: int) -> Node3D:
 	var bed := Node3D.new()
 	bed.name = "SeagrassBed%02d" % index
 	var material := StandardMaterial3D.new()
-	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	material.cull_mode = BaseMaterial3D.CULL_DISABLED
 	material.vertex_color_use_as_albedo = true
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	material.roughness = 0.85
 	material.albedo_color = Color(0.27, 0.35, 0.36)
 	bed.set_meta(&"material", material)
 	bed.set_meta(&"target_color", Color(0.42, 0.73, 0.57))
-	var vertices := PackedVector3Array()
-	var colors := PackedColorArray()
-	var indices := PackedInt32Array()
-	for blade in 9:
-		var angle := float(blade) * TAU / 9.0 + float(index) * 0.37
-		var outward := Vector3(cos(angle), 0, sin(angle))
-		var across := Vector3(-outward.z, 0, outward.x)
-		var height := 0.68 + float((blade * 3 + index) % 7) * 0.14
-		var width := 0.065 + float(blade % 3) * 0.018
-		var base := outward * (0.08 + float(blade % 2) * 0.12)
-		var tip := base + outward * (0.17 + float(index % 2) * 0.1) + Vector3.UP * height
-		var start := vertices.size()
-		vertices.append_array(PackedVector3Array([base - across * width, base + across * width, tip + across * 0.012, tip - across * 0.012]))
-		colors.append_array(PackedColorArray([Color(0.65, 0.72, 0.67), Color(0.65, 0.72, 0.67), Color.WHITE, Color.WHITE]))
-		indices.append_array(PackedInt32Array([start, start + 1, start + 2, start, start + 2, start + 3]))
-	var arrays := []
-	arrays.resize(Mesh.ARRAY_MAX)
-	arrays[Mesh.ARRAY_VERTEX] = vertices
-	arrays[Mesh.ARRAY_COLOR] = colors
-	arrays[Mesh.ARRAY_INDEX] = indices
-	var mesh := ArrayMesh.new()
-	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-	var visual := MeshInstance3D.new()
-	visual.name = "Blades"
-	visual.mesh = mesh
-	visual.material_override = material
-	bed.add_child(visual)
+	for tuft in 3:
+		var blades := MeshInstance3D.new()
+		blades.name = "Blades" if tuft == 0 else "Blades%d" % tuft
+		# Kelp in every other bed gives the tall layer; tufts fill around it.
+		var tall := tuft == 0 and index % 2 == 0
+		blades.mesh = ModelLibrary.mesh(SEAWEED_MODELS[1 if tall else 0])
+		blades.material_override = material
+		var angle := float(tuft) * TAU / 3.0 + float(index) * 0.5
+		blades.position = Vector3.ZERO if tuft == 0 else Vector3(cos(angle), 0.0, sin(angle)) * 0.32
+		blades.rotation.y = angle
+		blades.scale = Vector3.ONE * (1.0 if tuft == 0 else 0.7)
+		bed.add_child(blades)
 	return bed
+
+
+func _build_coral_garden(section: BeachSection) -> void:
+	# Dense coral and weed on and around this section's rocks and across its open seabed, clear
+	# of this run's litter so pickups stay in view. Bleached until the section is restored.
+	var rocks: Array[int] = []
+	for index in reef_garden_points:
+		if _garden_section(int(index)) == section.section_id:
+			rocks.append(int(index))
+	rocks.sort()
+	var random := RandomNumberGenerator.new()
+	random.seed = hash(section.section_id)
+	var placed := _garden_cells
+	var transforms: Array = []
+	var tints: Array = []
+	for model in GARDEN_MODELS.size():
+		transforms.append([])
+		tints.append([])
+	for rock_index in rocks:
+		for value in reef_garden_points[rock_index]:
+			var point := value as Vector4
+			var at := Vector3(point.x, point.y, point.z)
+			# Background ridges have no litter margin, so only their upper faces are planted.
+			if rock_index >= 100 and at.y < Coastline.surface_y(at.x, at.z) + 0.5:
+				continue
+			if rock_index < 100 and not REEF_DRESSING.blocks_point([at.x * 1000.0, at.y * 1000.0, at.z * 1000.0], 700.0):
+				continue
+			_plant_garden_piece(at, GARDEN_TOP_SHARES, random, placed, transforms, tints)
+		if rock_index < 100:
+			for at in _rock_base_points(rock_index, random):
+				if REEF_DRESSING.blocks_point([at.x * 1000.0, at.y * 1000.0, at.z * 1000.0], 700.0):
+					_plant_garden_piece(at, GARDEN_BASE_SHARES, random, placed, transforms, tints)
+	for at in _garden_fill_points(section, rocks, random):
+		_plant_garden_piece(at, GARDEN_FILL_SHARES, random, placed, transforms, tints, 1.2)
+	var garden := _garden_batches(section, "CoralGarden", transforms, tints)
+	if garden != null:
+		garden.set_meta(&"material", garden.get_meta(&"garden_material"))
+	# Restoration clears the litter strip; coral then grows back across it.
+	var regrowth_transforms: Array = []
+	var regrowth_tints: Array = []
+	for model in GARDEN_MODELS.size():
+		regrowth_transforms.append([])
+		regrowth_tints.append([])
+	for at in _regrowth_points(section, random):
+		_plant_garden_piece(at, GARDEN_FILL_SHARES, random, placed, regrowth_transforms, regrowth_tints, 1.2)
+	var regrowth := _garden_batches(section, "CoralRegrowth", regrowth_transforms, regrowth_tints)
+	if regrowth != null:
+		(regrowth.get_meta(&"garden_material") as ShaderMaterial).set_shader_parameter("growth", 0.0)
+		regrowth.set_meta(&"regrowth_material", regrowth.get_meta(&"garden_material"))
+		regrowth.hide()
+
+
+func _garden_batches(section: BeachSection, label: String, transforms: Array, tints: Array) -> Node3D:
+	# One MultiMesh per model under a node at the pieces' centre, sharing one fade material.
+	var center := Vector3.ZERO
+	var count := 0
+	for list in transforms:
+		for transform in list:
+			center += (transform as Transform3D).origin
+			count += 1
+	if count == 0:
+		return null
+	center /= float(count)
+	var material := ShaderMaterial.new()
+	material.shader = GARDEN_SHADER
+	material.set_shader_parameter("restored", 0.0)
+	var root := Node3D.new()
+	root.name = label
+	root.set_meta(&"garden_material", material)
+	section.add_child(root)
+	root.global_transform = Transform3D(Basis.IDENTITY, center)
+	for model in GARDEN_MODELS.size():
+		var list := transforms[model] as Array
+		if list.is_empty():
+			continue
+		var instances := MultiMesh.new()
+		instances.transform_format = MultiMesh.TRANSFORM_3D
+		instances.use_custom_data = true
+		# Vertex colour is multiplied by the instance colour in the Compatibility renderer.
+		instances.use_colors = true
+		instances.mesh = ModelLibrary.mesh(GARDEN_MODELS[model])
+		instances.instance_count = list.size()
+		for index in list.size():
+			var transform := list[index] as Transform3D
+			instances.set_instance_transform(index, Transform3D(transform.basis, transform.origin - center))
+			instances.set_instance_custom_data(index, tints[model][index])
+			instances.set_instance_color(index, Color.WHITE)
+		var batch := MultiMeshInstance3D.new()
+		batch.name = "%s%d" % [label, model]
+		batch.multimesh = instances
+		batch.material_override = material
+		batch.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		batch.visibility_range_end = 75.0
+		root.add_child(batch)
+	return root
+
+
+func _regrowth_points(section: BeachSection, random: RandomNumberGenerator) -> Array[Vector3]:
+	# The section's litter strip, with sand channels; optional finds keep a clear margin.
+	var low := Vector2(INF, INF)
+	var high := Vector2(-INF, -INF)
+	var keep_clear: Array[Vector2] = []
+	for value in session.state.items.values():
+		var record := value as ItemRecord
+		if record.home_section_id != section.section_id:
+			continue
+		var spot := record.last_world_transform.origin
+		if record.required:
+			low = low.min(Vector2(spot.x, spot.z))
+			high = high.max(Vector2(spot.x, spot.z))
+		else:
+			keep_clear.append(Vector2(spot.x, spot.z))
+	var result: Array[Vector3] = []
+	if not is_finite(low.x):
+		return result
+	for grid_x in range(floori(low.x), ceili(high.x) + 1):
+		for grid_z in range(floori(low.y), ceili(high.y) + 1):
+			var spot := Vector2(grid_x + random.randf_range(0.1, 0.9), grid_z + random.randf_range(0.1, 0.9))
+			if _garden_patch(spot) < -0.3 or REEF_DRESSING.blocks_point([spot.x * 1000.0, 0.0, spot.y * 1000.0], 0.0):
+				continue
+			var clear := true
+			for other in keep_clear:
+				if spot.distance_to(other) < GARDEN_LITTER_CLEARANCE:
+					clear = false
+					break
+			if clear:
+				result.append(Vector3(spot.x, Coastline.surface_y(spot.x, spot.y), spot.y))
+	return result
+
+
+func _garden_patch(spot: Vector2) -> float:
+	# Low-frequency value in [-2, 2]; below -0.3 leaves winding sand channels between thickets.
+	return sin(spot.x * 0.41 + 1.3 * sin(spot.y * 0.23)) + cos(spot.y * 0.37 - 0.8 * sin(spot.x * 0.19))
+
+
+func _garden_fill_points(section: BeachSection, rocks: Array[int], random: RandomNumberGenerator) -> Array[Vector3]:
+	# Patchy thickets across the section's pocket, clear of this run's litter and the rocks.
+	if _reef_litter_cells.is_empty():
+		for value in session.state.items.values():
+			var record := value as ItemRecord
+			if str(record.home_section_id).begins_with("reef_"):
+				var spot := record.last_world_transform.origin
+				var cell := Vector2i(floori(spot.x / GARDEN_LITTER_CLEARANCE), floori(spot.z / GARDEN_LITTER_CLEARANCE))
+				if not _reef_litter_cells.has(cell):
+					_reef_litter_cells[cell] = []
+				(_reef_litter_cells[cell] as Array).append(Vector2(spot.x, spot.z))
+	var low := Vector2(INF, INF)
+	var high := Vector2(-INF, -INF)
+	for value in session.state.items.values():
+		var record := value as ItemRecord
+		if record.home_section_id == section.section_id:
+			var spot := record.last_world_transform.origin
+			low = low.min(Vector2(spot.x, spot.z))
+			high = high.max(Vector2(spot.x, spot.z))
+	for rock_index in rocks:
+		if rock_index < 100:
+			var rock := REEF_DRESSING.STRUCTURES[rock_index] as Vector4
+			low = low.min(Vector2(rock.x, rock.y))
+			high = high.max(Vector2(rock.x, rock.y))
+	var result: Array[Vector3] = []
+	if not is_finite(low.x):
+		return result
+	low -= Vector2(3.0, 3.0)
+	high += Vector2(3.0, 3.0)
+	for grid_x in range(floori(low.x), ceili(high.x)):
+		for grid_z in range(floori(low.y), ceili(high.y)):
+			var spot := Vector2(grid_x + random.randf_range(0.15, 0.85), grid_z + random.randf_range(0.15, 0.85))
+			if _garden_patch(spot) < -0.3:
+				continue
+			if REEF_DRESSING.blocks_point([spot.x * 1000.0, 0.0, spot.y * 1000.0], 0.0) or _near_reef_litter(spot):
+				continue
+			result.append(Vector3(spot.x, Coastline.surface_y(spot.x, spot.y), spot.y))
+	return result
+
+
+func _near_reef_litter(spot: Vector2) -> bool:
+	var cell := Vector2i(floori(spot.x / GARDEN_LITTER_CLEARANCE), floori(spot.y / GARDEN_LITTER_CLEARANCE))
+	for offset_x in range(-1, 2):
+		for offset_z in range(-1, 2):
+			for litter in _reef_litter_cells.get(cell + Vector2i(offset_x, offset_z), []):
+				if spot.distance_to(litter as Vector2) < GARDEN_LITTER_CLEARANCE:
+					return true
+	return false
+
+
+func _garden_section(index: int) -> StringName:
+	for section_id in REEF_PLANT_ROCKS:
+		if index in (REEF_PLANT_ROCKS[section_id] as Array):
+			return section_id
+	# Unlisted rocks and background ridges join the nearest reef section.
+	var rock := REEF_DRESSING.STRUCTURES[index] as Vector4 if index < 100 else Vector4()
+	var spot := REEF_DRESSING.POSITIONS[index - 100] as Vector2 if index >= 100 else Vector2(rock.x, rock.y)
+	var nearest := StringName()
+	var nearest_distance := INF
+	for section_id in REEF_PLANT_ROCKS:
+		var positions := anchors.get(section_id, []) as Array
+		if positions.is_empty():
+			continue
+		var origin := positions[0] as Vector3
+		var distance := Vector2(origin.x, origin.z).distance_to(spot)
+		if distance < nearest_distance:
+			nearest_distance = distance
+			nearest = section_id
+	return nearest
+
+
+func _rock_base_points(rock_index: int, random: RandomNumberGenerator) -> Array[Vector3]:
+	# Seabed points along the rock's footprint edge, in the same frame as blocks_point.
+	var rock := REEF_DRESSING.STRUCTURES[rock_index] as Vector4
+	var shelf := REEF_DRESSING.structure_scale(rock_index)
+	var half := Vector2(3.5 + float(rock_index % 3) * 0.3, 2.5 + float(rock_index % 2) * 0.3) * shelf * 0.5
+	var perimeter := 4.0 * (half.x + half.y)
+	var steps := int(perimeter / GARDEN_BASE_SPACING)
+	var result: Array[Vector3] = []
+	for step in steps:
+		var along := (float(step) + random.randf() * 0.6) / float(steps) * perimeter
+		var local: Vector2
+		var outward: Vector2
+		if along < 2.0 * half.x:
+			local = Vector2(-half.x + along, -half.y)
+			outward = Vector2(0, -1)
+		elif along < 2.0 * (half.x + half.y):
+			local = Vector2(half.x, -half.y + along - 2.0 * half.x)
+			outward = Vector2(1, 0)
+		elif along < 4.0 * half.x + 2.0 * half.y:
+			local = Vector2(half.x - (along - 2.0 * (half.x + half.y)), half.y)
+			outward = Vector2(0, 1)
+		else:
+			local = Vector2(-half.x, half.y - (along - 4.0 * half.x - 2.0 * half.y))
+			outward = Vector2(-1, 0)
+		local += outward * lerpf(-0.15, 0.55, random.randf())
+		var spot := Vector2(rock.x, rock.y) + local.rotated(rock.z)
+		result.append(Vector3(spot.x, Coastline.surface_y(spot.x, spot.y), spot.y))
+	return result
+
+
+func _plant_garden_piece(at: Vector3, shares: Array, random: RandomNumberGenerator, placed: Dictionary, transforms: Array, tints: Array, size_scale := 1.0) -> void:
+	var cell := Vector2i(floori(at.x / GARDEN_SPACING), floori(at.z / GARDEN_SPACING))
+	if placed.has(cell):
+		return
+	var roll := random.randf()
+	var model := 0
+	while model < shares.size() - 1 and roll > float(shares[model]):
+		model += 1
+	var top := ModelLibrary.mesh(GARDEN_MODELS[model]).get_aabb().end.y
+	var size := lerpf(0.55, 1.2, random.randf()) * (0.7 if model == 4 else 1.0) * size_scale
+	# Every piece stays below the water surface.
+	size = minf(size, (-0.28 - at.y) / maxf(top, 0.05))
+	if size < 0.3:
+		return
+	placed[cell] = true
+	(transforms[model] as Array).append(Transform3D(Basis(Vector3.UP, random.randf() * TAU).scaled(Vector3.ONE * size), at - Vector3.UP * 0.03))
+	var palette: Array = GARDEN_PLANT_COLORS if model >= 4 else CORAL_COLORS + GARDEN_EXTRA_CORAL
+	(tints[model] as Array).append((palette[random.randi() % palette.size()] as Color).srgb_to_linear())
+
+
+func _add_shore_birds(zone_id: StringName, root: Node3D, origin: Vector3) -> void:
+	var ground := origin.y - 0.15
+	for index in 3:
+		var bird := SHORE_BIRD_SCENE.instantiate() as Node3D
+		bird.name = "ShoreBird%02d" % index
+		root.add_child(bird)
+		var angle := float(index) * 2.1 + float(absi(str(zone_id).hash()) % 7)
+		bird.global_position = Vector3(origin.x + 1.8 + cos(angle) * 1.4, ground, origin.z + 1.5 + sin(angle) * 1.1)
+		bird.rotation.y = angle * 1.7
+	var circle := PathAnimal.new()
+	circle.name = "ShoreBirdCircle"
+	root.add_child(circle)
+	circle.global_position = Vector3(origin.x, ground + 9.0, origin.z + 4.0)
+	for index in 2:
+		var flyer := FLYING_BIRD_SCENE.instantiate() as Node3D
+		flyer.name = "Flyer%02d" % index
+		flyer.rotation.y = PI
+		flyer.position = Vector3(float(index) * 1.6, float(index) * 0.8, float(index) * -1.2)
+		circle.add_child(flyer)
+	var loop: Array[Vector3] = []
+	for step in 8:
+		var angle := float(step) * TAU / 8.0
+		loop.append(Vector3(cos(angle) * 7.0, sin(angle * 2.0) * 0.6, sin(angle) * 5.0))
+	circle.configure(StringName("birds:%s" % zone_id), [], loop, 3.0, _reduced_motion())
+	circle.resume_loop()
 
 
 func _build_ambient(beach: Node3D) -> void:
@@ -349,14 +628,27 @@ func _spawn_school(root: Node3D, key: StringName, origin: Vector3) -> FishSchool
 
 func _set_section_colors(section: BeachSection, animate: bool) -> void:
 	for child in section.get_children() + section.restoration_visual_root.get_children():
+		if child.has_meta(&"regrowth_material"):
+			var regrowth := child.get_meta(&"regrowth_material") as ShaderMaterial
+			(child as Node3D).show()
+			if animate and not _reduced_motion():
+				var grow := create_tween().set_parallel(true).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+				grow.tween_property(regrowth, "shader_parameter/growth", 1.0, 2.4)
+				grow.tween_property(regrowth, "shader_parameter/restored", 1.0, 2.4)
+			else:
+				regrowth.set_shader_parameter("growth", 1.0)
+				regrowth.set_shader_parameter("restored", 1.0)
+			continue
 		if not child.has_meta(&"material"):
 			continue
-		var material := child.get_meta(&"material") as StandardMaterial3D
-		var target := child.get_meta(&"target_color") as Color
+		var material := child.get_meta(&"material") as Material
+		# Coral gardens fade their shader weight; the other habitat pieces tween a colour.
+		var property := "shader_parameter/restored" if material is ShaderMaterial else "albedo_color"
+		var target: Variant = 1.0 if material is ShaderMaterial else child.get_meta(&"target_color")
 		if animate and not _reduced_motion():
-			create_tween().tween_property(material, "albedo_color", target, 1.2)
+			create_tween().tween_property(material, property, target, 1.2)
 		else:
-			material.albedo_color = target
+			material.set(property, target)
 
 
 func _start_zone_population(zone_id: StringName, loaded: bool) -> void:

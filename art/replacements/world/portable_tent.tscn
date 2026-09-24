@@ -1,8 +1,7 @@
 [gd_scene load_steps=2 format=3]
 
-[ext_resource type="PackedScene" path="res://art/synty/wrappers/world_beach_shelter.tscn" id="1_shelter"]
+[ext_resource type="PackedScene" path="res://art/models/beach_tent.glb" id="1_model"]
 
-[node name="PortableBeachShelter" type="Node3D"]
+[node name="PortableBeachTent" type="Node3D"]
 
-[node name="SyntyShelter" parent="." instance=ExtResource("1_shelter")]
-scale = Vector3(0.8, 0.8, 0.8)
+[node name="Visual" parent="." instance=ExtResource("1_model")]

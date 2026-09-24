@@ -107,6 +107,94 @@
       "label_height": 14.2
     },
     {
+      "id": "foliage_palm_02",
+      "label": "Coconut palm 02",
+      "wrapper_scene": "res://art/synty/wrappers/foliage_palm_02.tscn",
+      "components": [
+        {"name": "Palm", "source_scene": "SM_Env_Tree_Palm_02_LOD0.tscn"}
+      ],
+      "visual_position": [0.004, 0.18, -0.004],
+      "gallery_position": [-5.0, 0.0, -10.0],
+      "label_height": 6.0
+    },
+    {
+      "id": "foliage_palm_03",
+      "label": "Coconut palm 03",
+      "wrapper_scene": "res://art/synty/wrappers/foliage_palm_03.tscn",
+      "components": [
+        {"name": "Palm", "source_scene": "SM_Env_Tree_Palm_03_LOD0.tscn"}
+      ],
+      "visual_position": [0.0, 0.44, 0.0],
+      "gallery_position": [-5.0, 0.0, -14.0],
+      "label_height": 6.0
+    },
+    {
+      "id": "foliage_palm_04",
+      "label": "Coconut palm 04",
+      "wrapper_scene": "res://art/synty/wrappers/foliage_palm_04.tscn",
+      "components": [
+        {"name": "Palm", "source_scene": "SM_Env_Tree_Palm_04_LOD0.tscn"}
+      ],
+      "visual_position": [-0.035, 11.68, 0.04],
+      "gallery_position": [-5.0, 0.0, -18.0],
+      "label_height": 6.0
+    },
+    {
+      "id": "foliage_palm_05",
+      "label": "Coconut palm 05",
+      "wrapper_scene": "res://art/synty/wrappers/foliage_palm_05.tscn",
+      "components": [
+        {"name": "Palm", "source_scene": "SM_Env_Tree_Palm_05_LOD0.tscn"}
+      ],
+      "visual_position": [-0.001, 0.48, -0.006],
+      "gallery_position": [-5.0, 0.0, -22.0],
+      "label_height": 6.0
+    },
+    {
+      "id": "foliage_palm_small_01",
+      "label": "Small palm 01",
+      "wrapper_scene": "res://art/synty/wrappers/foliage_palm_small_01.tscn",
+      "components": [
+        {"name": "Plant", "source_scene": "SM_Env_Tree_Palm_Small_01_LOD0.tscn"}
+      ],
+      "visual_position": [0.003, 0.18, 0.005],
+      "gallery_position": [-9.0, 0.0, -10.0],
+      "label_height": 6.0
+    },
+    {
+      "id": "foliage_palm_small_03",
+      "label": "Small palm 03",
+      "wrapper_scene": "res://art/synty/wrappers/foliage_palm_small_03.tscn",
+      "components": [
+        {"name": "Plant", "source_scene": "SM_Env_Tree_Palm_Small_03_LOD0.tscn"}
+      ],
+      "visual_position": [0.0, 0.08, 0.0],
+      "gallery_position": [-9.0, 0.0, -14.0],
+      "label_height": 6.0
+    },
+    {
+      "id": "foliage_bush_01",
+      "label": "Bush 01",
+      "wrapper_scene": "res://art/synty/wrappers/foliage_bush_01.tscn",
+      "components": [
+        {"name": "Plant", "source_scene": "SM_Env_Bush_01_LOD0.tscn"}
+      ],
+      "visual_position": [-0.018, 0.05, -0.09],
+      "gallery_position": [-9.0, 0.0, -18.0],
+      "label_height": 6.0
+    },
+    {
+      "id": "foliage_bush_02",
+      "label": "Bush 02",
+      "wrapper_scene": "res://art/synty/wrappers/foliage_bush_02.tscn",
+      "components": [
+        {"name": "Plant", "source_scene": "SM_Env_Bush_02_LOD0.tscn"}
+      ],
+      "visual_position": [0.017, 0.17, -0.024],
+      "gallery_position": [-9.0, 0.0, -22.0],
+      "label_height": 6.0
+    },
+    {
       "id": "water_test",
       "label": "Compatibility water test",
       "wrapper_scene": "res://art/synty/wrappers/water_test.tscn",
@@ -348,9 +436,9 @@
       "visual_position": [0, 0, 0], "gallery_position": [110, 0, -10], "label_height": 0.3
     },
     {
-      "id": "prop_small_rowboat", "label": "Small inflatable dinghy", "wrapper_scene": "res://art/synty/wrappers/prop_small_rowboat.tscn",
-      "components": [{"name": "Hull", "source_scene": "SM_Veh_RIB_Boat_01.tscn"}],
-      "visual_position": [0, 0.275, 0], "gallery_position": [117, 0, -10], "label_height": 1.2
+      "id": "prop_small_rowboat", "label": "Small wooden rowboat", "wrapper_scene": "res://art/synty/wrappers/prop_small_rowboat.tscn",
+      "components": [{"name": "Hull", "project_scene": "res://art/models/rowboat.glb"}, {"name": "Oars", "project_scene": "res://art/models/rowboat_oars.glb"}],
+      "visual_position": [0, 0, 0], "gallery_position": [117, 0, -10], "label_height": 1.2
     },
     {
       "id": "waste_crushed_can", "label": "Crushed drink can", "wrapper_scene": "res://art/synty/wrappers/waste_crushed_can.tscn",
@@ -504,33 +592,33 @@
     }
   ],
   "missing_assets": [
-    {"id": "A01", "label": "Turtle", "color": "55b868", "dimensions": [1.4, 0.45, 1.0], "intended_interaction": "Restoration wildlife and entanglement rescue", "status": "provisional_project_art", "consumer": "res://scenes/wildlife/turtle.tscn", "replacement_path": "res://scenes/wildlife/turtle.tscn"},
-    {"id": "A02", "label": "Small reef fish", "color": "3a8fd8", "dimensions": [0.45, 0.25, 0.18], "intended_interaction": "Authored underwater wildlife routes", "status": "provisional_project_art", "consumer": "res://scripts/wildlife/fish_school.gd", "replacement_path": "res://art/replacements/wildlife/reef_fish.tscn"},
-    {"id": "A03", "label": "Starfish", "color": "f08b36", "dimensions": [0.35, 0.08, 0.35], "intended_interaction": "Reef restoration wildlife", "status": "provisional_project_art", "consumer": "res://scripts/wildlife/starfish.gd", "replacement_path": "res://art/replacements/wildlife/starfish.tscn"},
-    {"id": "A04C", "label": "Coral forms", "color": "dd5a9d", "dimensions": [0.8, 0.9, 0.8], "intended_interaction": "Permanent reef restoration visuals", "status": "provisional_project_art", "consumer": "res://scripts/world/restoration_section.gd", "replacement_path": "res://art/replacements/reef/coral.tscn"},
-    {"id": "A04P", "label": "Seaweed and seagrass", "color": "6ba978", "dimensions": [0.6, 1.5, 0.6], "intended_interaction": "Permanent reef plant beds", "status": "provisional_project_art", "consumer": "res://scripts/world/restoration_section.gd", "replacement_path": "res://art/replacements/reef/sea_plants.tscn"},
-    {"id": "A05", "label": "Shore bird", "color": "eeeeee", "dimensions": [0.45, 0.5, 0.25], "intended_interaction": "Shore wildlife presentation", "status": "missing", "consumer": "none until C07 integration", "replacement_path": "res://art/replacements/wildlife/shore_bird.tscn"},
-    {"id": "A06", "label": "Poking stick", "color": "e6c84f", "dimensions": [0.08, 1.2, 0.08], "intended_interaction": "Starter handheld litter tool", "status": "explicit_substitute", "consumer": "res://scripts/core/progression.gd", "replacement_path": "res://art/replacements/tools/poking_stick.tscn"},
-    {"id": "A07V", "label": "Vacuum", "color": "9d5ad1", "dimensions": [0.65, 0.9, 0.45], "intended_interaction": "Purchased continuous cleanup tool", "status": "provisional_project_art", "consumer": "res://data/tools/vacuum.tres", "replacement_path": "res://scenes/tools/vacuum.tscn"},
-    {"id": "A07S", "label": "Sand cleaner", "color": "e9a43e", "dimensions": [0.65, 0.9, 0.45], "intended_interaction": "Purchased sand cleanup tool", "status": "provisional_project_art", "consumer": "res://data/tools/sand_cleaner.tres", "replacement_path": "res://scenes/tools/sand_cleaner.tscn"},
-    {"id": "A08", "label": "Detector", "color": "38ced1", "dimensions": [0.35, 1.1, 0.25], "intended_interaction": "Buried-item detection", "status": "provisional_project_art", "consumer": "res://data/tools/detector.tres", "replacement_path": "res://scenes/tools/metal_detector.tscn"},
-    {"id": "A09F", "label": "Flippers", "color": "ef8c32", "dimensions": [0.65, 0.2, 0.35], "intended_interaction": "Swimming equipment presentation", "status": "missing", "consumer": "none; passive item in res://data/tools/flippers.tres", "replacement_path": "res://art/replacements/equipment/flippers.tscn"},
-    {"id": "A09T", "label": "Oxygen tank", "color": "ef8c32", "dimensions": [0.4, 0.8, 0.35], "intended_interaction": "Swimming equipment presentation", "status": "missing", "consumer": "none; passive item in res://data/tools/oxygen_tank.tres", "replacement_path": "res://art/replacements/equipment/oxygen_tank.tscn"},
-    {"id": "A10", "label": "Cleaning cloth", "color": "f3f3f3", "dimensions": [0.35, 0.04, 0.35], "intended_interaction": "Handheld furniture cleaning", "status": "provisional_project_art", "consumer": "res://data/tools/cloth.tres", "replacement_path": "res://scenes/tools/cloth_placeholder.tscn"},
-    {"id": "A11R", "label": "Six-pack rescue rings", "color": "d64b45", "dimensions": [0.6, 0.12, 0.6], "intended_interaction": "Knife-removable rescue attachment", "status": "provisional_project_art", "consumer": "res://data/items/waste_rescue_ring.tres", "replacement_path": "res://art/replacements/waste/rescue_ring.tscn"},
-    {"id": "A11N", "label": "Tangled rescue net", "color": "d64b45", "dimensions": [0.6, 0.12, 0.6], "intended_interaction": "Knife-removable rescue attachment", "status": "provisional_project_art", "consumer": "res://data/items/waste_rescue_net.tres", "replacement_path": "res://art/replacements/waste/rescue_net.tscn"},
-    {"id": "A12S", "label": "Straw", "color": "5ab5d1", "dimensions": [0.25, 0.02, 0.02], "intended_interaction": "Loose PMD waste variant", "status": "provisional_project_art", "consumer": "res://data/items/waste_straw.tres", "replacement_path": "res://art/replacements/waste/straw.tscn"},
-    {"id": "A12W", "label": "Plastic wrap or bag", "color": "5ab5d1", "dimensions": [0.3, 0.02, 0.3], "intended_interaction": "Loose PMD waste variant", "status": "provisional_project_art", "consumer": "res://data/items/waste_plastic_wrap.tres", "replacement_path": "res://art/replacements/waste/plastic_wrap.tscn"},
-    {"id": "A12C", "label": "Empty drink carton", "color": "6bccb5", "dimensions": [0.18, 0.28, 0.13], "intended_interaction": "Loose PMD waste variant", "status": "provisional_project_art", "consumer": "res://data/items/waste_drink_carton.tres", "replacement_path": "res://art/replacements/waste/drink_carton.tscn"},
-    {"id": "A13F", "label": "Fries", "color": "e9993e", "dimensions": [0.28, 0.18, 0.28], "intended_interaction": "Loose food waste", "status": "provisional_project_art", "consumer": "res://data/items/waste_fries.tres", "replacement_path": "res://art/replacements/waste/fries.tscn"},
-    {"id": "A13H", "label": "Hamburger", "color": "a15c2e", "dimensions": [0.28, 0.18, 0.28], "intended_interaction": "Loose food waste", "status": "provisional_project_art", "consumer": "res://data/items/waste_hamburger.tres", "replacement_path": "res://art/replacements/waste/hamburger.tscn"},
-    {"id": "A14", "label": "Sealed oil container", "color": "34383d", "dimensions": [0.35, 0.55, 0.25], "intended_interaction": "General-waste pickup", "status": "provisional_project_art", "consumer": "res://data/items/waste_sealed_oil_container.tres", "replacement_path": "res://art/replacements/waste/oil_container.tscn"},
-    {"id": "A15R", "label": "Loose residue", "color": "8c6848", "dimensions": [0.3, 0.08, 0.3], "intended_interaction": "Collectable cloth-only residue", "status": "provisional_project_art", "consumer": "res://data/items/waste_residue.tres", "replacement_path": "res://art/replacements/dirt/residue_stain.tscn"},
-    {"id": "A15D", "label": "Furniture stains", "color": "8c6848", "dimensions": [0.3, 0.02, 0.3], "intended_interaction": "Cleanable furniture patches", "status": "provisional_project_art", "consumer": "res://scripts/items/dirt_visual.gd", "replacement_path": "res://art/replacements/dirt/furniture_stain.tscn"},
-    {"id": "A16L", "label": "Lifeguard tower", "color": "62a5cb", "dimensions": [3, 4, 3], "intended_interaction": "Beach lookout", "status": "explicit_substitute", "consumer": "res://scenes/world/lifeguard_lookout.tscn", "replacement_path": "res://scenes/world/lifeguard_lookout.tscn"},
-    {"id": "A16B", "label": "Rowboat", "color": "62a5cb", "dimensions": [2, 0.8, 1], "intended_interaction": "Sortable beach prop", "status": "explicit_substitute", "consumer": "res://data/items/prop_small_rowboat.tres", "replacement_path": "res://art/replacements/world/rowboat.tscn"},
-    {"id": "A16T", "label": "Portable tent", "color": "62a5cb", "dimensions": [2, 1.8, 2], "intended_interaction": "Sortable beach prop", "status": "explicit_substitute", "consumer": "res://data/items/prop_portable_tent.tres", "replacement_path": "res://art/replacements/world/portable_tent.tscn"},
-    {"id": "A16S", "label": "Storage shelf", "color": "62a5cb", "dimensions": [2, 1.8, 0.7], "intended_interaction": "Sorted prop destination", "status": "provisional_project_art", "consumer": "res://scenes/world/beach.tscn", "replacement_path": "res://art/replacements/world/storage_shelf.tscn"},
-    {"id": "A17", "label": "First-person hands", "color": "d9a27d", "dimensions": [0.22, 0.12, 0.45], "intended_interaction": "Visible hands and tool grips", "status": "provisional_project_art", "consumer": "res://scenes/player/player.tscn", "replacement_path": "res://art/first_person_hand.tscn"}
+    {"id": "A01", "label": "Turtle", "color": "55b868", "dimensions": [1.4, 0.45, 1.0], "intended_interaction": "Restoration wildlife and entanglement rescue", "status": "project_model", "consumer": "res://scenes/wildlife/turtle.tscn", "replacement_path": "res://scenes/wildlife/turtle.tscn", "model_scene": "res://scenes/wildlife/turtle.tscn"},
+    {"id": "A02", "label": "Small reef fish", "color": "3a8fd8", "dimensions": [0.45, 0.25, 0.18], "intended_interaction": "Authored underwater wildlife routes", "status": "project_model", "consumer": "res://scripts/wildlife/fish_school.gd", "replacement_path": "res://art/replacements/wildlife/reef_fish.tscn", "model_scene": "res://art/models/fish_blue_tang.glb"},
+    {"id": "A03", "label": "Starfish", "color": "f08b36", "dimensions": [0.35, 0.08, 0.35], "intended_interaction": "Reef restoration wildlife", "status": "project_model", "consumer": "res://scripts/wildlife/starfish.gd", "replacement_path": "res://art/replacements/wildlife/starfish.tscn", "model_scene": "res://art/models/starfish_orange.glb"},
+    {"id": "A04C", "label": "Coral forms", "color": "dd5a9d", "dimensions": [0.8, 0.9, 0.8], "intended_interaction": "Permanent reef restoration visuals", "status": "project_model", "consumer": "res://scripts/world/restoration_section.gd", "replacement_path": "res://art/replacements/reef/coral.tscn", "model_scene": "res://art/models/coral_branching.glb"},
+    {"id": "A04P", "label": "Seaweed and seagrass", "color": "6ba978", "dimensions": [0.6, 1.5, 0.6], "intended_interaction": "Permanent reef plant beds", "status": "project_model", "consumer": "res://scripts/world/restoration_section.gd", "replacement_path": "res://art/replacements/reef/sea_plants.tscn", "model_scene": "res://art/models/seaweed_kelp.glb"},
+    {"id": "A05", "label": "Shore bird", "color": "eeeeee", "dimensions": [0.45, 0.5, 0.25], "intended_interaction": "Shore wildlife presentation", "status": "project_model", "consumer": "res://scripts/world/restoration_section.gd", "replacement_path": "res://art/replacements/wildlife/shore_bird.tscn", "model_scene": "res://art/replacements/wildlife/shore_bird.tscn"},
+    {"id": "A06", "label": "Poking stick", "color": "e6c84f", "dimensions": [0.08, 1.2, 0.08], "intended_interaction": "Starter handheld litter tool", "status": "project_model", "consumer": "res://scripts/core/progression.gd", "replacement_path": "res://art/replacements/tools/poking_stick.tscn", "model_scene": "res://art/replacements/tools/poking_stick.tscn"},
+    {"id": "A07V", "label": "Vacuum", "color": "9d5ad1", "dimensions": [0.65, 0.9, 0.45], "intended_interaction": "Purchased continuous cleanup tool", "status": "project_model", "consumer": "res://data/tools/vacuum.tres", "replacement_path": "res://scenes/tools/vacuum.tscn", "model_scene": "res://scenes/tools/vacuum.tscn"},
+    {"id": "A07S", "label": "Sand cleaner", "color": "e9a43e", "dimensions": [0.65, 0.9, 0.45], "intended_interaction": "Purchased sand cleanup tool", "status": "project_model", "consumer": "res://data/tools/sand_cleaner.tres", "replacement_path": "res://scenes/tools/sand_cleaner.tscn", "model_scene": "res://scenes/tools/sand_cleaner.tscn"},
+    {"id": "A08", "label": "Detector", "color": "38ced1", "dimensions": [0.35, 1.1, 0.25], "intended_interaction": "Buried-item detection", "status": "project_model", "consumer": "res://data/tools/detector.tres", "replacement_path": "res://scenes/tools/metal_detector.tscn", "model_scene": "res://scenes/tools/metal_detector.tscn"},
+    {"id": "A09F", "label": "Flippers", "color": "ef8c32", "dimensions": [0.65, 0.2, 0.35], "intended_interaction": "Swimming equipment presentation", "status": "project_model", "consumer": "res://scripts/stations/equipment_shop.gd", "replacement_path": "res://art/replacements/equipment/flippers.tscn", "model_scene": "res://art/replacements/equipment/flippers.tscn"},
+    {"id": "A09T", "label": "Oxygen tank", "color": "ef8c32", "dimensions": [0.4, 0.8, 0.35], "intended_interaction": "Swimming equipment presentation", "status": "project_model", "consumer": "res://scripts/stations/equipment_shop.gd", "replacement_path": "res://art/replacements/equipment/oxygen_tank.tscn", "model_scene": "res://art/replacements/equipment/oxygen_tank.tscn"},
+    {"id": "A10", "label": "Cleaning cloth", "color": "f3f3f3", "dimensions": [0.35, 0.04, 0.35], "intended_interaction": "Handheld furniture cleaning", "status": "project_model", "consumer": "res://data/tools/cloth.tres", "replacement_path": "res://scenes/tools/cloth_placeholder.tscn", "model_scene": "res://scenes/tools/cloth_placeholder.tscn"},
+    {"id": "A11R", "label": "Six-pack rescue rings", "color": "d64b45", "dimensions": [0.6, 0.12, 0.6], "intended_interaction": "Knife-removable rescue attachment", "status": "project_model", "consumer": "res://data/items/waste_rescue_ring.tres", "replacement_path": "res://art/replacements/waste/rescue_ring.tscn", "model_scene": "res://art/replacements/waste/rescue_ring.tscn"},
+    {"id": "A11N", "label": "Tangled rescue net", "color": "d64b45", "dimensions": [0.6, 0.12, 0.6], "intended_interaction": "Knife-removable rescue attachment", "status": "project_model", "consumer": "res://data/items/waste_rescue_net.tres", "replacement_path": "res://art/replacements/waste/rescue_net.tscn", "model_scene": "res://art/replacements/waste/rescue_net.tscn"},
+    {"id": "A12S", "label": "Straw", "color": "5ab5d1", "dimensions": [0.25, 0.02, 0.02], "intended_interaction": "Loose PMD waste variant", "status": "project_model", "consumer": "res://data/items/waste_straw.tres", "replacement_path": "res://art/replacements/waste/straw.tscn", "model_scene": "res://art/replacements/waste/straw.tscn"},
+    {"id": "A12W", "label": "Plastic wrap or bag", "color": "5ab5d1", "dimensions": [0.3, 0.02, 0.3], "intended_interaction": "Loose PMD waste variant", "status": "project_model", "consumer": "res://data/items/waste_plastic_wrap.tres", "replacement_path": "res://art/replacements/waste/plastic_wrap.tscn", "model_scene": "res://art/replacements/waste/plastic_wrap.tscn"},
+    {"id": "A12C", "label": "Empty drink carton", "color": "6bccb5", "dimensions": [0.18, 0.28, 0.13], "intended_interaction": "Loose PMD waste variant", "status": "project_model", "consumer": "res://data/items/waste_drink_carton.tres", "replacement_path": "res://art/replacements/waste/drink_carton.tscn", "model_scene": "res://art/replacements/waste/drink_carton.tscn"},
+    {"id": "A13F", "label": "Fries", "color": "e9993e", "dimensions": [0.28, 0.18, 0.28], "intended_interaction": "Loose food waste", "status": "project_model", "consumer": "res://data/items/waste_fries.tres", "replacement_path": "res://art/replacements/waste/fries.tscn", "model_scene": "res://art/replacements/waste/fries.tscn"},
+    {"id": "A13H", "label": "Hamburger", "color": "a15c2e", "dimensions": [0.28, 0.18, 0.28], "intended_interaction": "Loose food waste", "status": "project_model", "consumer": "res://data/items/waste_hamburger.tres", "replacement_path": "res://art/replacements/waste/hamburger.tscn", "model_scene": "res://art/replacements/waste/hamburger.tscn"},
+    {"id": "A14", "label": "Sealed oil container", "color": "34383d", "dimensions": [0.35, 0.55, 0.25], "intended_interaction": "General-waste pickup", "status": "project_model", "consumer": "res://data/items/waste_sealed_oil_container.tres", "replacement_path": "res://art/replacements/waste/oil_container.tscn", "model_scene": "res://art/replacements/waste/oil_container.tscn"},
+    {"id": "A15R", "label": "Loose residue", "color": "8c6848", "dimensions": [0.3, 0.08, 0.3], "intended_interaction": "Collectable cloth-only residue", "status": "project_model", "consumer": "res://data/items/waste_residue.tres", "replacement_path": "res://art/replacements/dirt/residue_stain.tscn", "model_scene": "res://art/replacements/dirt/residue_stain.tscn"},
+    {"id": "A15D", "label": "Furniture stains", "color": "8c6848", "dimensions": [0.3, 0.02, 0.3], "intended_interaction": "Cleanable furniture patches", "status": "project_model", "consumer": "res://scripts/items/dirt_visual.gd", "replacement_path": "res://art/replacements/dirt/furniture_stain.tscn", "model_scene": "res://art/models/furniture_stain.glb"},
+    {"id": "A16L", "label": "Lifeguard tower", "color": "62a5cb", "dimensions": [3, 4, 3], "intended_interaction": "Beach lookout", "status": "project_model", "consumer": "res://scenes/world/lifeguard_lookout.tscn", "replacement_path": "res://scenes/world/lifeguard_lookout.tscn", "model_scene": "res://scenes/world/lifeguard_lookout.tscn"},
+    {"id": "A16B", "label": "Rowboat", "color": "62a5cb", "dimensions": [2, 0.8, 1], "intended_interaction": "Sortable beach prop", "status": "project_model", "consumer": "res://art/synty/wrappers/prop_small_rowboat.tscn", "replacement_path": "res://art/replacements/world/rowboat.tscn", "model_scene": "res://art/synty/wrappers/prop_small_rowboat.tscn"},
+    {"id": "A16T", "label": "Portable tent", "color": "62a5cb", "dimensions": [2, 1.8, 2], "intended_interaction": "Sortable beach prop", "status": "project_model", "consumer": "res://data/items/prop_portable_tent.tres", "replacement_path": "res://art/replacements/world/portable_tent.tscn", "model_scene": "res://art/replacements/world/portable_tent.tscn"},
+    {"id": "A16S", "label": "Storage shelf", "color": "62a5cb", "dimensions": [2, 1.8, 0.7], "intended_interaction": "Sorted prop destination", "status": "project_model", "consumer": "res://scripts/world/placement_slot.gd", "replacement_path": "res://art/replacements/world/storage_shelf.tscn", "model_scene": "res://art/replacements/world/storage_shelf.tscn"},
+    {"id": "A17", "label": "First-person hands", "color": "d9a27d", "dimensions": [0.22, 0.12, 0.45], "intended_interaction": "Visible hands and tool grips", "status": "synty_derived", "consumer": "res://scripts/player/fp_arms.gd", "replacement_path": "res://art/first_person_hand.tscn", "model_scene": "res://art/synty/hands/fp_arms.glb"}
   ]
 }

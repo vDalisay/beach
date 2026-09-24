@@ -130,7 +130,7 @@ func present_collected(item_id: StringName) -> void:
 		_presentation_views.erase(item_id)
 		if is_instance_valid(view):
 			view.queue_free()
-	)
+	, hand_rig.view_offset(hand_rig.bag_socket))
 
 
 func _on_primary_requested(target: Dictionary) -> void:
@@ -218,7 +218,7 @@ func _hold_target(target: Dictionary) -> void:
 		if is_instance_valid(view):
 			view.queue_free()
 		refresh_hand_visuals()
-	)
+	, hand_rig.view_offset(destination))
 
 
 func _target_context(target: Dictionary) -> Dictionary:

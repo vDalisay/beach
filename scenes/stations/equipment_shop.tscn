@@ -48,7 +48,7 @@ shape = SubResource("RackShape")
 
 [node name="OwnedTools" type="Node3D" parent="ToolRack"]
 unique_name_in_owner = true
-position = Vector3(0, 0.82, 0)
+position = Vector3(0, 0.91, 0)
 
 [node name="Label" type="Label3D" parent="ToolRack"]
 position = Vector3(0, 1.55, 0.2)

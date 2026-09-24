@@ -664,9 +664,9 @@ func _held_source_transform(item_id: StringName) -> Transform3D:
 		return Transform3D.IDENTITY
 	var definition := _definition_for_item(item_id)
 	if definition.hand_cost == 2:
-		return carry.hand_rig.large_prop_socket.global_transform
+		return carry.hand_rig.presentation_transform(carry.hand_rig.large_prop_socket)
 	var player_record := session.state.players[PLAYER_ID] as Dictionary
-	return carry.hand_rig.left_prop_socket.global_transform if int(player_record.get("selected_held_index", 0)) == 0 else carry.hand_rig.right_prop_socket.global_transform
+	return carry.hand_rig.presentation_transform(carry.hand_rig.left_prop_socket if int(player_record.get("selected_held_index", 0)) == 0 else carry.hand_rig.right_prop_socket)
 
 
 func _held_hand_cost(player_record: Dictionary) -> int:

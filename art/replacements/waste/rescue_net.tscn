@@ -1,8 +1,7 @@
 [gd_scene load_steps=2 format=3]
 
-[ext_resource type="Script" path="res://scripts/items/rescue_net_visual.gd" id="1_visual"]
+[ext_resource type="PackedScene" path="res://art/models/rescue_net.glb" id="1_model"]
 
-[node name="RescueNetPrototype" type="Node3D"]
+[node name="RescueNet" type="Node3D"]
 
-[node name="Visual" type="Node3D" parent="."]
-script = ExtResource("1_visual")
+[node name="Visual" parent="." instance=ExtResource("1_model")]

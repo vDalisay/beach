@@ -1,0 +1,14 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://art/models/gull_flying.glb" id="1_model"]
+[ext_resource type="Script" path="res://scripts/wildlife/flap_animator.gd" id="2_flap"]
+
+[node name="ShoreBirdFlying" type="Node3D"]
+
+[node name="Visual" parent="." instance=ExtResource("1_model")]
+
+[node name="Flap" type="Node" parent="."]
+script = ExtResource("2_flap")
+part_names = PackedStringArray("WingL", "WingR")
+amplitude = 0.3
+speed = 4.0

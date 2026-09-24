@@ -1,5 +1,48 @@
 # Performance measurements — P28
 
+## FIN-05 open-item follow-up — 24 September 2026
+
+This sample covers the city grid, reef gardens, view-model FOV and distant-litter colour fix from [plan 12, section 7](plan/12-look-and-model-pass.md#7-model-review-and-open-item-follow-up--24-september-2026). Machine and settings are unchanged: Ryzen 5 5600, RTX 3070, driver 595.79, 1920×1080, Godot 4.6.1 Compatibility.
+
+| Crowded shore profile (`validate_physics.gd -- --profile --c04-dense`) | Previous | Two quiet runs |
+|---|---:|---:|
+| Median frame | 6.94 ms | 7.15 / 7.27 ms |
+| Mean frame | 7.87 ms | 8.54 / 8.40 ms |
+| p95 frame | 16.67 ms | 17.24 / 16.40 ms |
+| Maximum draw calls | 3,640 | 3,659 |
+| Godot video memory | 1,608.4 MB | about 1,610 MB |
+
+A third run made while another heavy process was active gave 8.64 ms median and 19.89 ms p95 and is excluded; machine load moved the numbers more than the change did. The p95 stays within the earlier variance.
+
+In-place cost, from GPU medians: the new geometry was toggled with vsync off, 60 warm-up and 300 measured frames per state, using native viewport timing. The probes are [reef_profile](handoffs/images/FIN05-open-items/reef_profile.gd.txt) and [city_profile](handoffs/images/FIN05-open-items/city_profile.gd.txt).
+
+| Views | Without | With |
+|---|---:|---:|
+| Restored reef (3 views; 4,368 garden and regrowth pieces) | 1.17–1.29 ms | 2.01–2.28 ms |
+| City from the boulevard | 1.73 ms | 2.08 ms |
+| Along-shore | 3.56 ms | 4.08 ms |
+| Aerial | 3.85 ms | 4.78 ms |
+
+Frame and CPU columns in those probes vary with item streaming as the camera moves, so only GPU time is quoted. The distant-litter fix adds white instance colours only: 322 batches and 5,027 batched items, as before. Target-hardware, packaged and extended-session gates remain open.
+
+## FIN-05 look and model pass — 24 September 2026
+
+This sample covers the project models, palm variants, cumulus band, Synty arms and palette changes from the [look and model pass](plan/12-look-and-model-pass.md). It used the same crowded source-scene profile (`tests/validate_physics.gd -- --profile --c04-dense`, 1920×1080, 4× MSAA) on Ryzen 5 5600 / RTX 3070 / driver 595.79 and exited 0.
+
+| Metric | Previous | This pass |
+|---|---:|---:|
+| Median frame | 7.90 ms | 6.94 ms |
+| Mean frame | 9.24 ms | 7.87 ms |
+| p95 frame | 16.53 ms | 16.67 ms |
+| Maximum draw calls | 4,690 | 3,640 |
+| Nodes | 13,246 | 9,468 |
+| Full nearby item views | 1,209 | 608 |
+| Distant batches | 217 | 322 |
+| Batched distant items | 3,983 | 5,027 |
+| Godot static / video memory | 184.3 / 1,428.6 MB | 172.1 / 1,608.4 MB |
+
+The six former placeholder waste types were a box mesh plus a label, which `DistantItemVisuals` cannot batch. Their single-mesh models now join the distant MultiMeshes, which accounts for the lower view, node and draw counts. Video memory rose by about 180 MB with the extra palm/bush variants, cloud and model meshes and the arm atlas material. The p95 lies within the variance recorded below, so no p95 change is claimed. [Raw output](handoffs/images/FIN05-models/profile.txt). Target-hardware, packaged, restored worst-view and extended-session gates remain open.
+
 ## FIN-05 composition continuation — 24 September 2026
 
 After the continuous mainland, 51 batched inland palms, one additional existing mountain instance and rearranged existing reef habitat, the same crowded source-scene profile ran in Godot 4.6.1 Compatibility at 1920×1080 with 4× MSAA on Ryzen 5 5600 / RTX 3070 / driver 595.79. Across 600 frames: median 7.90 ms, mean 9.24 ms, p95 16.53 ms, average physics monitor 1.37 ms, maximum draws 4,690, Godot static/video memory 184.3/1,428.6 MB, 13,246 nodes and zero awake bodies. The item-view build substep took 3,223.7 ms. [Raw output](handoffs/images/FIN05-composition-final/profile.txt), [change and gameplay evidence](handoffs/C04.md#continuous-mainland-and-existing-habitat-composition--24-september-2026).

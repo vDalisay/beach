@@ -12,7 +12,6 @@ const TABLE := preload("res://art/synty/wrappers/world_pier_table.tscn")
 const CHAIR := preload("res://art/synty/wrappers/world_pier_chair.tscn")
 const SAND_RIDGE := preload("res://art/synty/wrappers/world_reef_ridge.tscn")
 const SAND_PILE := preload("res://art/synty/wrappers/world_sand_pile.tscn")
-const PALM := preload("res://art/synty/wrappers/foliage_palm.tscn")
 
 
 func _ready() -> void:
@@ -35,11 +34,10 @@ func _ready() -> void:
 		_tint_island_sand(pile, "Pile")
 		add_child(pile)
 	for index in 2:
-		var palm := PALM.instantiate() as Node3D
+		var palm := FoliageVariants.instance_palm(index * 2, 0.8 if index == 0 else 0.65)
 		palm.name = "SyntyIslandPalm%02d" % index
 		palm.position = Vector3(254 if index == 0 else 268, 1.5, 95 if index == 0 else 92)
 		palm.rotation.y = 0.7 if index == 0 else -1.1
-		palm.scale = Vector3.ONE * (0.8 if index == 0 else 0.65)
 		add_child(palm)
 	var island_shape := ConvexPolygonShape3D.new()
 	var island_vertices := PackedVector3Array()
@@ -50,8 +48,10 @@ func _ready() -> void:
 	_add_modules(PLATFORM, "Platform", 72, func(index: int) -> Transform3D:
 		return Transform3D(Basis.IDENTITY, Vector3(245 + (index % 4) * 2.5, 1.25, 37 + (index / 4) * 2.5))
 	)
+	# The head is 18 m wide like its collision; the outer column is stretched to 3 m to reach it.
 	_add_modules(PLATFORM, "Platform", 63, func(index: int) -> Transform3D:
-		return Transform3D(Basis.IDENTITY, Vector3(241 + (index % 7) * 2.5, 1.25, 67 + (index / 7) * 2.5))
+		var basis := Basis.from_scale(Vector3(1.2, 1, 1)) if index % 7 == 6 else Basis.IDENTITY
+		return Transform3D(basis, Vector3(241 + (index % 7) * 2.5, 1.25, 67 + (index / 7) * 2.5))
 	, "PierHeadPlatform")
 	_add_modules(POLE, "Pole", 12, func(index: int) -> Transform3D:
 		var x := (246.5 if index % 2 == 0 else 253.5) if index < 8 else (243.0 if index % 2 == 0 else 257.0)
@@ -62,22 +62,33 @@ func _ready() -> void:
 		var z := 13.0 + float(index / 4) * 2.5
 		return Transform3D(Basis(Vector3.RIGHT, -0.05), Vector3(245 + (index % 4) * 2.5, -0.08 + 0.05 * (z - 13.0), z))
 	, "Approach")
+	# A railing module runs 2.5 m along its local +X with its posts toward local -Z, so each side is
+	# yawed to run along its deck edge with the posts inboard. Sides yawed +90° run toward -Z.
 	_add_modules(RAILING, "Railing", 24, func(index: int) -> Transform3D:
 		if index < 12:
 			return Transform3D(Basis(Vector3.UP, -PI / 2.0), Vector3(245, 1.45, 37 + index * 2.5))
-		return Transform3D(Basis(Vector3.UP, PI / 2.0), Vector3(255, 1.45, 64.5 - (index - 12) * 2.5))
+		return Transform3D(Basis(Vector3.UP, PI / 2.0), Vector3(255, 1.45, 67 - (index - 12) * 2.5))
 	)
-	_add_modules(RAILING, "Railing", 25, func(index: int) -> Transform3D:
+	# Head sides, the far end (stretched to the 18 m head) and the two corners where the head widens.
+	_add_modules(RAILING, "Railing", 29, func(index: int) -> Transform3D:
 		if index < 9:
 			return Transform3D(Basis(Vector3.UP, -PI / 2.0), Vector3(241, 1.45, 67 + index * 2.5))
 		if index < 18:
-			return Transform3D(Basis(Vector3.UP, PI / 2.0), Vector3(259, 1.45, 87 - (index - 9) * 2.5))
-		return Transform3D(Basis.IDENTITY, Vector3(241 + (index - 18) * 2.5, 1.45, 89.5))
+			return Transform3D(Basis(Vector3.UP, PI / 2.0), Vector3(259, 1.45, 89.5 - (index - 9) * 2.5))
+		if index < 25:
+			return Transform3D(Basis.from_scale(Vector3(18.0 / 17.5, 1, 1)), Vector3(241 + (index - 18) * 18.0 / 7.0, 1.45, 89.5))
+		var corner: float = [243.0, 245.0, 257.0, 259.0][index - 25]
+		return Transform3D(Basis(Vector3.UP, PI) * Basis.from_scale(Vector3(0.8, 1, 1)), Vector3(corner, 1.45, 67))
 	, "PierHeadRailing")
+	# Approach sides: ten 2.4 m modules from the sand (z = 13) to the deck (z = 37), sheared so their
+	# rails follow the 5 % slope while the posts stay upright.
 	_add_modules(RAILING, "Railing", 20, func(index: int) -> Transform3D:
-		var z := 13.0 + float(index % 10) * 2.5
-		var yaw := -PI / 2.0 if index < 10 else PI / 2.0
-		return Transform3D(Basis(Vector3.UP, yaw) * Basis(Vector3.RIGHT, -0.05), Vector3(245 if index < 10 else 255, 0.2 + 0.05 * (z - 13.0), z))
+		var left := index < 10
+		var z := 13.0 + 2.4 * float(index % 10 if left else index % 10 + 1)
+		var slope := 0.05 if left else -0.05
+		var along := Basis(Vector3(0.96, 0.96 * slope, 0), Vector3.UP, Vector3.BACK)
+		var yaw := -PI / 2.0 if left else PI / 2.0
+		return Transform3D(Basis(Vector3.UP, yaw) * along, Vector3(245 if left else 255, 0.2 + 0.05 * (z - 13.0), z))
 	, "ApproachRailing")
 	var awning_red := StandardMaterial3D.new()
 	awning_red.albedo_color = Color(0.79, 0.14, 0.11)

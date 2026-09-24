@@ -19,6 +19,8 @@ const STRUCTURES := [
 	Vector4(30, 148, 0.9, 5.1), Vector4(39, 152, -0.3, 4.2), Vector4(50, 149, 0.5, 5.4),
 ]
 const REAR_SHELF_ROCKS := [6, 7, 8, 17]
+# One restoration-garden point per this many square metres of upward-facing rock.
+const GARDEN_AREA := 0.42
 
 
 static func structure_scale(index: int) -> float:
@@ -45,10 +47,13 @@ func _ready() -> void:
 	instances.transform_format = MultiMesh.TRANSFORM_3D
 	instances.mesh = source.mesh
 	instances.instance_count = POSITIONS.size()
+	var garden_points := {}
 	for index in POSITIONS.size():
 		var point := POSITIONS[index] as Vector2
 		var basis := Basis(Vector3.UP, float(index) * 1.37).scaled(Vector3(1.1, 2.5, 1.1))
-		instances.set_instance_transform(index, Transform3D(basis, Vector3(point.x, -2.95, point.y)))
+		var ridge_pose := Transform3D(basis, Vector3(point.x, -2.95, point.y))
+		instances.set_instance_transform(index, ridge_pose)
+		garden_points[100 + index] = _garden_points(source.mesh, ridge_pose, 100 + index)
 	var stone := preload("res://shaders/seabed_caustics.tres")
 	var visual := MultiMeshInstance3D.new()
 	visual.name = "SyntyReefRidges"
@@ -86,6 +91,7 @@ func _ready() -> void:
 			structure_meshes.set_instance_transform(ridge_index, visual_pose)
 			ridge_index += 1
 		habitat_anchors[index] = _surface_anchors(habitat_mesh, visual_pose)
+		garden_points[index] = _garden_points(habitat_mesh, visual_pose, index)
 		var body := StaticBody3D.new()
 		body.name = "ReefRock%02d" % (index + 1)
 		body.position = Vector3(rock.x, -2.25, rock.y)
@@ -109,6 +115,8 @@ func _ready() -> void:
 	add_child(mounds)
 	# Composition anchors follow rendered rock faces, not the simplified collision boxes.
 	set_meta(&"reef_habitat_anchors", habitat_anchors)
+	# Structures keep their index; background ridges are 100 + their index.
+	set_meta(&"reef_garden_points", garden_points)
 	wrapper.free()
 	mound_wrapper.free()
 
@@ -126,4 +134,33 @@ func _surface_anchors(mesh: Mesh, pose: Transform3D) -> Array[Vector3]:
 				highest = hit
 		if is_finite(highest.y):
 			result.append(pose * highest)
+	return result
+
+
+## Random points on the rock's upward-facing rendered faces (xyz, with the face normal's y).
+func _garden_points(mesh: Mesh, pose: Transform3D, seed_value: int) -> Array[Vector4]:
+	var result: Array[Vector4] = []
+	var faces := mesh.get_faces()
+	var random := RandomNumberGenerator.new()
+	random.seed = seed_value * 7919 + 17
+	for triangle in range(0, faces.size(), 3):
+		var a := pose * faces[triangle]
+		var b := pose * faces[triangle + 1]
+		var c := pose * faces[triangle + 2]
+		# Front faces wind clockwise, so this normal points out of the rock.
+		var normal := (c - a).cross(b - a)
+		var area := normal.length() * 0.5
+		if area < 0.001:
+			continue
+		normal /= area * 2.0
+		if normal.y < 0.45:
+			continue
+		for sample in int(area / GARDEN_AREA + random.randf()):
+			var u := random.randf()
+			var v := random.randf()
+			if u + v > 1.0:
+				u = 1.0 - u
+				v = 1.0 - v
+			var point := a + (b - a) * u + (c - a) * v
+			result.append(Vector4(point.x, point.y, point.z, normal.y))
 	return result

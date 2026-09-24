@@ -1,16 +1,7 @@
 [gd_scene load_steps=2 format=3]
 
-[ext_resource type="PackedScene" path="res://art/placeholders/missing_asset.tscn" id="1"]
+[ext_resource type="PackedScene" path="res://art/models/litter_straw.glb" id="1_model"]
 
-[node name="strawPlaceholder" instance=ExtResource("1")]
-compact_label = true
-asset_id = "A12S"
-display_name = "Plastic straw"
-cube_color = Color(0.35, 0.71, 0.82, 1)
-dimensions = Vector3(0.25, 0.02, 0.02)
+[node name="Straw" type="Node3D"]
 
-[node name="Label" parent="." index="1"]
-font_size = 16
-pixel_size = 0.002
-no_depth_test = false
-visibility_range_end = 5.0
+[node name="Visual" parent="." instance=ExtResource("1_model")]

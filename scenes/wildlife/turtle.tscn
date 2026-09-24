@@ -1,135 +1,15 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=3 format=3]
 
-[sub_resource type="StandardMaterial3D" id="ShellMaterial"]
-albedo_color = Color(0.25, 0.59, 0.46, 1)
-roughness = 0.82
-emission_enabled = true
-emission = Color(0.16, 0.36, 0.28, 1)
-emission_energy_multiplier = 0.6
-
-[sub_resource type="StandardMaterial3D" id="SkinMaterial"]
-albedo_color = Color(0.43, 0.77, 0.59, 1)
-roughness = 0.83
-emission_enabled = true
-emission = Color(0.23, 0.42, 0.31, 1)
-emission_energy_multiplier = 0.6
-
-[sub_resource type="StandardMaterial3D" id="RimMaterial"]
-albedo_color = Color(0.14, 0.35, 0.28, 1)
-roughness = 0.88
-
-[sub_resource type="StandardMaterial3D" id="ScuteMaterial"]
-albedo_color = Color(0.41, 0.67, 0.43, 1)
-roughness = 0.86
-
-[sub_resource type="StandardMaterial3D" id="EyeMaterial"]
-albedo_color = Color(0.07, 0.17, 0.15, 1)
-roughness = 0.3
-
-[sub_resource type="SphereMesh" id="AnimalSphere"]
-radial_segments = 12
-rings = 6
-
-[sub_resource type="CylinderMesh" id="ShellRim"]
-top_radius = 0.37
-bottom_radius = 0.38
-height = 0.065
-radial_segments = 12
-
-[sub_resource type="CylinderMesh" id="ShellScute"]
-top_radius = 0.13
-bottom_radius = 0.13
-height = 0.02
-radial_segments = 6
+[ext_resource type="PackedScene" path="res://art/models/turtle.glb" id="1_model"]
+[ext_resource type="Script" path="res://scripts/wildlife/flap_animator.gd" id="2_flap"]
 
 [node name="Turtle" type="Node3D"]
 
-[node name="Shell" type="MeshInstance3D" parent="."]
-mesh = SubResource("AnimalSphere")
-surface_material_override/0 = SubResource("ShellMaterial")
-scale = Vector3(0.72, 0.28, 0.5)
+[node name="Visual" parent="." instance=ExtResource("1_model")]
+scale = Vector3(0.85, 0.85, 0.85)
 
-[node name="ShellRim" type="MeshInstance3D" parent="."]
-position = Vector3(0, -0.052, 0)
-scale = Vector3(1, 1, 0.68)
-mesh = SubResource("ShellRim")
-surface_material_override/0 = SubResource("RimMaterial")
-
-[node name="ScuteCenter" type="MeshInstance3D" parent="."]
-position = Vector3(0, 0.141, 0)
-mesh = SubResource("ShellScute")
-surface_material_override/0 = SubResource("ScuteMaterial")
-
-[node name="ScuteLeft" type="MeshInstance3D" parent="."]
-position = Vector3(-0.2, 0.108, 0)
-rotation = Vector3(0, 0, -0.24)
-scale = Vector3(0.8, 0.8, 0.8)
-mesh = SubResource("ShellScute")
-surface_material_override/0 = SubResource("ScuteMaterial")
-
-[node name="ScuteRight" type="MeshInstance3D" parent="."]
-position = Vector3(0.2, 0.108, 0)
-rotation = Vector3(0, 0, 0.24)
-scale = Vector3(0.8, 0.8, 0.8)
-mesh = SubResource("ShellScute")
-surface_material_override/0 = SubResource("ScuteMaterial")
-
-[node name="ScuteFront" type="MeshInstance3D" parent="."]
-position = Vector3(0, 0.105, -0.16)
-rotation = Vector3(-0.25, 0, 0)
-scale = Vector3(0.8, 0.8, 0.8)
-mesh = SubResource("ShellScute")
-surface_material_override/0 = SubResource("ScuteMaterial")
-
-[node name="ScuteBack" type="MeshInstance3D" parent="."]
-position = Vector3(0, 0.105, 0.16)
-rotation = Vector3(0.25, 0, 0)
-scale = Vector3(0.8, 0.8, 0.8)
-mesh = SubResource("ShellScute")
-surface_material_override/0 = SubResource("ScuteMaterial")
-
-[node name="Head" type="MeshInstance3D" parent="."]
-position = Vector3(0, 0.02, -0.36)
-mesh = SubResource("AnimalSphere")
-surface_material_override/0 = SubResource("SkinMaterial")
-scale = Vector3(0.22, 0.18, 0.23)
-
-[node name="LeftEye" type="MeshInstance3D" parent="."]
-position = Vector3(-0.095, 0.09, -0.47)
-mesh = SubResource("AnimalSphere")
-surface_material_override/0 = SubResource("EyeMaterial")
-scale = Vector3(0.035, 0.04, 0.025)
-
-[node name="RightEye" type="MeshInstance3D" parent="."]
-position = Vector3(0.095, 0.09, -0.47)
-mesh = SubResource("AnimalSphere")
-surface_material_override/0 = SubResource("EyeMaterial")
-scale = Vector3(0.035, 0.04, 0.025)
-
-[node name="LeftFlipper" type="MeshInstance3D" parent="."]
-position = Vector3(-0.47, -0.1, -0.15)
-rotation = Vector3(0, 0, -0.25)
-mesh = SubResource("AnimalSphere")
-surface_material_override/0 = SubResource("SkinMaterial")
-scale = Vector3(0.35, 0.08, 0.16)
-
-[node name="RightFlipper" type="MeshInstance3D" parent="."]
-position = Vector3(0.47, -0.1, -0.15)
-rotation = Vector3(0, 0, 0.25)
-mesh = SubResource("AnimalSphere")
-surface_material_override/0 = SubResource("SkinMaterial")
-scale = Vector3(0.35, 0.08, 0.16)
-
-[node name="LeftRearFlipper" type="MeshInstance3D" parent="."]
-position = Vector3(-0.3, -0.11, 0.21)
-rotation = Vector3(0, -0.45, 0)
-mesh = SubResource("AnimalSphere")
-surface_material_override/0 = SubResource("SkinMaterial")
-scale = Vector3(0.24, 0.07, 0.12)
-
-[node name="RightRearFlipper" type="MeshInstance3D" parent="."]
-position = Vector3(0.3, -0.11, 0.21)
-rotation = Vector3(0, 0.45, 0)
-mesh = SubResource("AnimalSphere")
-surface_material_override/0 = SubResource("SkinMaterial")
-scale = Vector3(0.24, 0.07, 0.12)
+[node name="Flap" type="Node" parent="."]
+script = ExtResource("2_flap")
+part_names = PackedStringArray("FlipperFL", "FlipperFR", "FlipperBL", "FlipperBR")
+amplitude = 0.32
+speed = 2.0

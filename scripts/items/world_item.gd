@@ -123,7 +123,7 @@ func outline_overlay_count() -> int:
 	return _outline_overlays.size()
 
 
-func travel_to(socket: Node3D, duration: float, shrink: bool, finished: Callable) -> void:
+func travel_to(socket: Node3D, duration: float, shrink: bool, finished: Callable, end_offset := Vector3.ZERO) -> void:
 	freeze = true
 	sleeping = true
 	collision_layer = 0
@@ -133,7 +133,7 @@ func travel_to(socket: Node3D, duration: float, shrink: bool, finished: Callable
 	reparent(socket, true)
 	_presentation_tween = create_tween().set_parallel(true)
 	_presentation_tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
-	_presentation_tween.tween_property(self, "transform", Transform3D.IDENTITY, duration)
+	_presentation_tween.tween_property(self, "transform", Transform3D(Basis.IDENTITY, end_offset), duration)
 	if shrink:
 		_presentation_tween.tween_property(visual_root, "scale", Vector3.ONE * 0.12, duration)
 	_presentation_tween.chain().tween_callback(finished)

@@ -1,0 +1,190 @@
+extends SceneTree
+# Local probe (builds/ is ignored): captures the six reworked models where they appear in a real run.
+#   godot --path . --script res://builds/fix_probe.gd -- --out=res://builds/fix_probe
+var main: BeachMain
+var session: RunSession
+var player: BeachPlayer
+var viewport: SubViewport
+var camera: Camera3D
+var out := "res://builds/fix_probe"
+
+
+func _init() -> void:
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--out="):
+			out = arg.trim_prefix("--out=")
+	call_deferred("_run")
+
+
+func frames(count: int) -> void:
+	for frame in count:
+		await physics_frame
+
+
+func save(image: Image, label: String) -> void:
+	image.save_png(ProjectSettings.globalize_path(out).path_join(label + ".png"))
+	print("CAPTURED ", label)
+
+
+func capture_player(label: String) -> void:
+	await frames(20)
+	await RenderingServer.frame_post_draw
+	save(root.get_texture().get_image(), label)
+
+
+func capture_free(label: String, origin: Vector3, target: Vector3) -> void:
+	camera.global_position = origin
+	camera.look_at(target)
+	camera.environment = SwimService.UNDERWATER_ENVIRONMENT if origin.y < session.swim_service.water.surface_y else null
+	player.global_position = origin
+	await frames(40)
+	await RenderingServer.frame_post_draw
+	save(viewport.get_texture().get_image(), label)
+
+
+func equip(tool_id: StringName) -> void:
+	var owner := session.state.players[&"local"] as Dictionary
+	if not (owner.owned_tools as Array[StringName]).has(tool_id):
+		(owner.owned_tools as Array[StringName]).append(tool_id)
+	owner.equipped_handheld_ids = [&"stick", tool_id] as Array[StringName]
+	owner.active_slot = 1
+	session.progression.refresh_tool_visual()
+
+
+func _run() -> void:
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(out))
+	main = (load("res://scenes/main.tscn") as PackedScene).instantiate() as BeachMain
+	root.add_child(main)
+	main.save_service.save_root = "user://test_runs/fix_probe"
+	main.seed_input.text = "full-run-integration"
+	session = main.start_run() as RunSession
+	player = session.get_node("Player") as BeachPlayer
+	for path in ["res://shaders/beach_water.tres", "res://shaders/beach_sand.tres", "res://shaders/seabed_caustics.tres"]:
+		(load(path) as ShaderMaterial).set_shader_parameter("debug_time", 4.0)
+
+	# First person: the cloth in hand, looking out and looking down as if wiping.
+	player.global_position = Vector3(0, 0.2, 27)
+	player.look_at(Vector3(0, 0.2, 100))
+	player.camera.rotation.x = -0.12
+	await frames(60)
+	equip(&"cloth")
+	(main.get_node("UI") as CanvasLayer).visible = false
+	await capture_player("cloth-in-hand")
+	player.camera.rotation.x = -0.7
+	await capture_player("cloth-in-hand-down")
+	player.camera.rotation.x = -0.12
+
+	# Free camera views through a second viewport onto the same world.
+	viewport = SubViewport.new()
+	viewport.size = Vector2i(1920, 1080)
+	viewport.msaa_3d = main.get_viewport().msaa_3d
+	viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	viewport.world_3d = (session.get_node("Beach") as Node3D).get_world_3d()
+	root.add_child(viewport)
+	camera = Camera3D.new()
+	camera.fov = 70.0
+	viewport.add_child(camera)
+	camera.make_current()
+	camera.near = player.camera.near
+	camera.far = player.camera.far
+	player.visible = false
+	player.set_physics_process(false)
+	session.swim_service.set_physics_process(false)
+
+	# The cloth on the tool rack.
+	var owner := session.state.players[&"local"] as Dictionary
+	for tool_id in [&"knife", &"detector", &"vacuum", &"sand_cleaner", &"flippers", &"oxygen_tank"]:
+		(owner.owned_tools as Array[StringName]).append(tool_id)
+	for shop in root.find_children("*", "Node3D", true, false):
+		if shop.has_method("refresh_rack"):
+			shop.call("refresh_rack")
+			await process_frame
+			var rack := shop.get_node("ToolRack") as Node3D
+			var toward := rack.global_basis.z.normalized()
+			await capture_free("rack", rack.global_position + toward * 1.9 + Vector3.UP * 1.45, rack.global_position + Vector3.UP * 0.75)
+			var owned := shop.get(&"owned_tools_root") as Node3D
+			var cloth_anchor := owned.get_child(0) as Node3D
+			var close_origin := cloth_anchor.global_position + toward * 0.55 + Vector3.UP * 0.35
+			var close_target := cloth_anchor.global_position + Vector3.UP * 0.05
+			await capture_free("rack-cloth", close_origin, close_target)
+			# Probe-only evidence (no project change): the counter mesh hidden shows the cloth is
+			# there, 2 cm under the counter top; then the tools raised to the counter top.
+			var counter_visual := shop.get_node("Counter/SyntyCounter") as Node3D
+			counter_visual.visible = false
+			await capture_free("rack-cloth-xray", close_origin, close_target)
+			counter_visual.visible = true
+			owned.position.y += 0.09
+			var cloth := cloth_anchor.get_child(0) as Node3D
+			cloth.position.y = 0.6 * 0.0167
+			await capture_free("rack-cloth-raised", close_origin + Vector3.UP * 0.09, close_target + Vector3.UP * 0.09)
+			owned.position.y -= 0.09
+			break
+
+	# The lifeguard lookout from the sea side, wide and at the ramp.
+	await capture_free("lookout", Vector3(-33.5, 2.2, 9.5), Vector3(-37.5, 2.3, 0))
+	await capture_free("lookout-ramp", Vector3(-34.2, 1.4, 6.8), Vector3(-37.3, 1.2, 1.2))
+
+	# Rescue turtles with the six-pack rings and net draped on the shell.
+	var site_ids: Array[String] = []
+	for site_id in session.rescue_knife.sites:
+		site_ids.append(str(site_id))
+	site_ids.sort()
+	var site := session.rescue_knife.sites[StringName(site_ids[0])] as RescueSite
+	var at := site.global_position
+	print("RESCUE site=%s pos=%s surface=%.2f" % [site_ids[0], at, session.swim_service.water.surface_y])
+	await capture_free("rescue-turtle", at + Vector3(0.9, 0.75, 1.35), at + Vector3(0, 0.1, 0))
+	await capture_free("rescue-turtle-side", at + Vector3(-1.5, 0.35, -0.3), at + Vector3(0, 0.1, 0))
+	await capture_free("rescue-turtle-top", at + Vector3(0.05, 1.7, 0.6), at)
+
+	# Rowboats: a loose one in the shallows and one moored in the rowboat placement row.
+	var boats: Array[String] = []
+	for item_id in session.state.items:
+		var record := session.state.items[item_id] as ItemRecord
+		if record.definition_id == &"prop_small_rowboat" and record.location == ItemRecord.Location.WORLD:
+			boats.append(str(item_id))
+	boats.sort()
+	print("ROWBOATS world=%d" % boats.size())
+	if not boats.is_empty():
+		var loose := (session.state.items[StringName(boats[0])] as ItemRecord).last_world_transform.origin
+		var view := session.item_view_manager.view_for(StringName(boats[0]))
+		if view != null:
+			loose = view.global_position
+			var meshes := view.find_children("*", "MeshInstance3D", true, false)
+			print("ROWBOAT view meshes=%d names=%s" % [meshes.size(), meshes.map(func(m: Node) -> String: return str(m.name))])
+		await capture_free("rowboat-loose", loose + Vector3(2.6, 1.9, 3.2), loose + Vector3(0, 0.3, 0))
+		var service := session.placement_service
+		var slot_ids: Array[String] = []
+		for slot_id in service.slots:
+			if str((service.slots[slot_id] as Dictionary).pool_id) == "mooring:shallows:rowboats":
+				slot_ids.append(str(slot_id))
+		slot_ids.sort()
+		var held := session.item_store.try_hold(&"local", StringName(boats[1]))
+		var destination := service.slot_transform(StringName(slot_ids[0])).origin
+		player.global_position = destination + Vector3(0, 0, 1.8)
+		player.camera.look_at(destination + Vector3.UP * 0.65)
+		await frames(2)
+		var placed := service.try_place(&"local", StringName(slot_ids[0]))
+		print("ROWBOAT hold=%s place=%s %s slot=%s" % [held.ok, placed.ok, placed.message, slot_ids[0]])
+		await frames(90)
+		await capture_free("rowboat-moored", destination + Vector3(3.4, 2.4, 3.6), destination + Vector3(0, 0.3, 0))
+
+	# The fan coral staged on the reef floor with the restored coral material.
+	var fan_spot := Vector3(2.5, 0.0, 104.0)
+	fan_spot.y = Coastline.surface_y(fan_spot.x, fan_spot.z)
+	for index in 3:
+		var fan := MeshInstance3D.new()
+		fan.mesh = ModelLibrary.mesh("res://art/models/coral_fan.glb")
+		var material := StandardMaterial3D.new()
+		material.vertex_color_use_as_albedo = true
+		material.cull_mode = BaseMaterial3D.CULL_DISABLED
+		material.roughness = 0.85
+		material.albedo_color = [Color("c99be0"), Color("ef8b91"), Color("f2a65a")][index]
+		fan.material_override = material
+		session.add_child(fan)
+		fan.global_position = fan_spot + Vector3(float(index - 1) * 0.8, 0.0, float(index % 2) * 0.5)
+		fan.global_position.y = Coastline.surface_y(fan.global_position.x, fan.global_position.z) - 0.02
+		fan.rotation.y = float(index) * 0.7 - 0.7
+		fan.scale = Vector3.ONE * [1.2, 1.5, 1.0][index]
+	await capture_free("reef-fan", fan_spot + Vector3(0.4, 0.9, -2.4), fan_spot + Vector3(0, 0.45, 0))
+	main.free()
+	quit()
