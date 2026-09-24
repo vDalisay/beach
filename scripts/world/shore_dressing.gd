@@ -67,9 +67,7 @@ func _build_sand_surface() -> void:
 	for index in 401:
 		var x := float(index * 2.5 - 500)
 		var shore_z := Coastline.shore_z(x)
-		var flank := maxf(absf(x) - 80.0, 0.0)
-		var taper_width := maxf(6.0, 18.0 - maxf(absf(x) - 180.0, 0.0) * 0.03)
-		var inland_z := minf(-36.0 + flank * 0.9, shore_z - taper_width)
+		var inland_z := Coastline.inland_z(x)
 		var points := [Vector2(inland_z, 0.012), Vector2(shore_z - 2.0, 0.012), Vector2(shore_z + 28.0, -2.5), Vector2(shore_z + 55.0, -3.2), Vector2(800.0, -3.2)]
 		var tints := [Color.WHITE, Color.WHITE, Color(0.95, 0.85, 1), Color(0.65, 0.75, 0.95), Color(0.65, 0.75, 0.95)]
 		for point_index in points.size():

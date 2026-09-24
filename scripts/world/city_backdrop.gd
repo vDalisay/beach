@@ -1,5 +1,7 @@
 extends Node3D
 
+const Coastline = preload("res://scripts/world/coastline.gd")
+
 const CITY_WINDOW := preload("res://art/synty/wrappers/world_city_window.tscn")
 const LOWRISE_WINDOW := preload("res://art/synty/wrappers/world_lowrise_window.tscn")
 const DECO_WINDOW := preload("res://art/synty/wrappers/world_deco_window.tscn")
@@ -30,6 +32,7 @@ const BUILDINGS := [
 
 func _ready() -> void:
 	_add_inland_ground()
+	_add_headland_ridges()
 	var city_walls: Array[Transform3D] = []
 	var lowrise_walls: Array[Transform3D] = []
 	var deco_walls: Array[Transform3D] = []
@@ -188,6 +191,49 @@ func _add_inland_ground() -> void:
 	road.material_override = asphalt
 	road.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(road)
+
+
+func _add_headland_ridges() -> void:
+	var finish := StandardMaterial3D.new()
+	finish.vertex_color_use_as_albedo = true
+	finish.roughness = 1.0
+	finish.cull_mode = BaseMaterial3D.CULL_DISABLED
+	finish.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	var ridge_heights := [0.0, 3.0, 6.0, 9.0, 7.0, 8.0, 3.0, 0.0]
+	for side in [-1.0, 1.0]:
+		var vertices := PackedVector3Array()
+		var colors := PackedColorArray()
+		var normals := PackedVector3Array()
+		var indices := PackedInt32Array()
+		for index in ridge_heights.size():
+			var sample: int = index if side > 0.0 else ridge_heights.size() - 1 - index
+			var x: float = side * (90.0 + float(sample) * 24.0)
+			var height: float = ridge_heights[sample]
+			var front := Coastline.inland_z(x) + 2.0
+			var ridge_z := -76.0 + 10.0 * sin(x * 0.055)
+			for point in [Vector3(x, -0.1, front), Vector3(x, height * 0.25, lerpf(front, ridge_z, 0.45)), Vector3(x, height, ridge_z), Vector3(x, -3.5, ridge_z - 65.0)]:
+				vertices.append(point)
+				normals.append(Vector3.UP)
+			var shade := 0.94 + 0.04 * float(sample % 3)
+			colors.append_array(PackedColorArray([Color(0.88, 0.74, 0.54), Color(0.87, 0.72, 0.53) * shade, Color(0.79, 0.69, 0.52) * shade, Color(0.73, 0.67, 0.53) * shade]))
+			if index > 0:
+				var a := (index - 1) * 4
+				for strip in 3:
+					indices.append_array(PackedInt32Array([a + strip, a + strip + 4, a + strip + 1, a + strip + 4, a + strip + 5, a + strip + 1]))
+		var arrays := []
+		arrays.resize(Mesh.ARRAY_MAX)
+		arrays[Mesh.ARRAY_VERTEX] = vertices
+		arrays[Mesh.ARRAY_NORMAL] = normals
+		arrays[Mesh.ARRAY_COLOR] = colors
+		arrays[Mesh.ARRAY_INDEX] = indices
+		var mesh := ArrayMesh.new()
+		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+		mesh.surface_set_material(0, finish)
+		var ridge := MeshInstance3D.new()
+		ridge.name = "WestHeadland" if side < 0.0 else "EastHeadland"
+		ridge.mesh = mesh
+		ridge.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		add_child(ridge)
 
 
 func _add_boulevard_details() -> void:
