@@ -93,6 +93,7 @@ func run() -> void:
 		var origin := rock.global_position
 		var hit := beach.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(origin.x, 0, origin.z), Vector3(origin.x, -5, origin.z)))
 		check(hit.get("collider") == rock, "%s has a solid elevated reef surface" % rock_name)
+	check(await _cross_surface(main.run_root as RunSession), "normal movement enters and leaves the water with air recovery")
 	var west_reached := await _swim_lane(Vector3(2.5, -2.1, 101), Vector3(2.5, -2.1, 119))
 	var east_reached := await _swim_lane(Vector3(40, -2.1, 118), Vector3(40, -2.1, 137))
 	check(west_reached and east_reached, "player swims through both structural reef channels")
@@ -337,6 +338,61 @@ func _swim_lane(start: Vector3, target: Vector3) -> bool:
 	_send_stick(0.0)
 	print("REEF_LANE start=%s target=%s stopped=%s swimming=%s" % [start, target, player.global_position, player.movement.is_swimming])
 	return false
+
+
+func _cross_surface(session: RunSession) -> bool:
+	var record := session.state.players[&"local"] as Dictionary
+	var water := session.swim_service.water
+	player.global_position = Vector3(0, 0.2, 26)
+	player.velocity = Vector3.ZERO
+	record.air_remaining = 10.0
+	player.look_at(Vector3(0, player.global_position.y, 60), Vector3.UP)
+	_send_stick(-1.0)
+	var swimming := false
+	for frame in 500:
+		await physics_frame
+		if player.movement.is_swimming and player.global_position.z > 45.0:
+			swimming = true
+			break
+	_send_stick(0.0)
+	var dive := InputEventJoypadButton.new()
+	dive.button_index = JOY_BUTTON_B
+	dive.pressed = true
+	Input.parse_input_event(dive)
+	var submerged := false
+	for frame in 150:
+		await physics_frame
+		if bool(record.immersed) and float(record.air_remaining) < 10.0:
+			submerged = true
+			break
+	dive.pressed = false
+	Input.parse_input_event(dive)
+	var deep_position := player.global_position
+	var rise := InputEventJoypadButton.new()
+	rise.button_index = JOY_BUTTON_A
+	rise.pressed = true
+	Input.parse_input_event(rise)
+	var surfaced := false
+	for frame in 180:
+		await physics_frame
+		if not bool(record.immersed):
+			surfaced = true
+			break
+	rise.pressed = false
+	Input.parse_input_event(rise)
+	player.look_at(Vector3(0, player.global_position.y, 20), Vector3.UP)
+	_send_stick(-1.0)
+	var dry := false
+	for frame in 720:
+		await physics_frame
+		if not water.contains_horizontal(player.global_position) and not bool(record.immersed) and not player.movement.is_swimming:
+			dry = true
+			break
+	_send_stick(0.0)
+	for frame in 75:
+		await physics_frame
+	print("SURFACE_CROSSING swimming=%s submerged=%s at=%s surfaced=%s dry=%s at=%s air=%.2f" % [swimming, submerged, deep_position, surfaced, dry, player.global_position, float(record.air_remaining)])
+	return swimming and submerged and surfaced and dry and is_equal_approx(float(record.air_remaining), 10.0)
 
 
 func _send_stick(value: float) -> void:
