@@ -207,6 +207,12 @@ func refresh_tool_visual() -> void:
 		visual.position = Vector3(0.02, -0.16, 0.05)
 		visual.rotation = Vector3(-0.9, 0.0, -0.15)
 		visual.scale = Vector3.ONE * 0.48
+	elif visual != null and tool_id == &"cloth":
+		visual.position = Vector3(-0.03, -0.03, 0.0)
+		visual.scale = Vector3.ONE * 0.65
+	elif visual != null and tool_id == &"knife":
+		visual.position = Vector3(-0.05, -0.06, 0.0)
+		visual.scale = Vector3.ONE * 0.75
 	elif visual != null and tool_id in [&"sand_cleaner", &"vacuum", &"detector"]:
 		visual.scale = Vector3.ONE * 0.5
 
