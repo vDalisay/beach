@@ -266,16 +266,13 @@ func _add_clouds() -> void:
 	var cloud_finish := StandardMaterial3D.new()
 	cloud_finish.albedo_color = Color(0.87, 0.91, 0.94)
 	cloud_finish.cull_mode = BaseMaterial3D.CULL_DISABLED
-	for index in 2:
-		var clouds := CLOUD_RING.instantiate() as Node3D
-		clouds.name = "SyntyCloudRing" if index == 0 else "SyntyCloudRingUpper"
-		clouds.position = Vector3.ZERO if index == 0 else Vector3(0, 55, 0)
-		clouds.rotation.y = 0.0 if index == 0 else 0.7
-		clouds.scale = Vector3(2.2, 4, 2.2) if index == 0 else Vector3(1.6, 3.5, 1.6)
-		for mesh in clouds.find_children("*", "MeshInstance3D", true, false):
-			(mesh as MeshInstance3D).material_override = cloud_finish
-			(mesh as MeshInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		add_child(clouds)
+	var clouds := CLOUD_RING.instantiate() as Node3D
+	clouds.name = "SyntyCloudRing"
+	clouds.scale = Vector3(2.2, 4, 2.2)
+	for mesh in clouds.find_children("*", "MeshInstance3D", true, false):
+		(mesh as MeshInstance3D).material_override = cloud_finish
+		(mesh as MeshInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(clouds)
 
 
 func _add_building(walls: Array[Transform3D], roofs: Array[Transform3D], center_x: float, center_z: float, columns: int, floors: int, depth: int) -> void:
