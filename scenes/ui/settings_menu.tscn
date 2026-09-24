@@ -35,6 +35,7 @@ text = "Showing: Keyboard & mouse"
 [node name="Scroll" type="ScrollContainer" parent="Margin/Layout"]
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
+follow_focus = true
 
 [node name="Content" type="VBoxContainer" parent="Margin/Layout/Scroll"]
 size_flags_horizontal = 3
