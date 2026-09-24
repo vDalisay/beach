@@ -331,6 +331,7 @@ func _audit_occupied_slots(session: RunSession) -> bool:
 
 func _audit_occupied_meshes(session: RunSession) -> bool:
 	var bounds := {}
+	var visuals := {}
 	for item_value in session.state.items.values():
 		var item := item_value as ItemRecord
 		if item.location != ItemRecord.Location.SLOTTED:
@@ -338,21 +339,39 @@ func _audit_occupied_meshes(session: RunSession) -> bool:
 		var body := session.placement_service.slotted_views.get(item.item_id) as StaticBody3D
 		if body == null:
 			continue
-		var box := _visual_bounds(body.get_node("VisualRoot"))
+		var visual := body.get_node("VisualRoot")
+		var box := _visual_bounds(visual)
 		if box.has_surface():
 			bounds[str(item.slot_id)] = box
+			visuals[str(item.slot_id)] = visual
 	var keys := bounds.keys()
 	var shade_candidates := 0
+	var shade_contacts := PackedStringArray()
 	var overlaps := PackedStringArray()
 	for i in keys.size():
 		for j in range(i + 1, keys.size()):
 			if (bounds[keys[i]] as AABB).intersects(bounds[keys[j]] as AABB):
-				if str(keys[i]).contains("parasol") or str(keys[j]).contains("parasol"):
+				var shade_id := str(keys[i]) if str(keys[i]).contains("parasol") else str(keys[j])
+				if shade_id.contains("parasol"):
 					shade_candidates += 1
+					var other_id := str(keys[j]) if shade_id == str(keys[i]) else str(keys[i])
+					if not _shade_clears_occupied(visuals[shade_id], bounds[other_id]):
+						shade_contacts.append("%s / %s" % [shade_id, other_id])
 				else:
 					overlaps.append("%s / %s" % [keys[i], keys[j]])
-	print("C04_MESH_AABB occupied=%d nonshade=%d shade_candidates=%d first=%s" % [keys.size(), overlaps.size(), shade_candidates, ", ".join(overlaps.slice(0, 10))])
-	return overlaps.is_empty()
+	print("C04_MESH_AABB occupied=%d nonshade=%d shade_candidates=%d shade_contacts=%d first=%s" % [keys.size(), overlaps.size(), shade_candidates, shade_contacts.size(), ", ".join((overlaps + shade_contacts).slice(0, 10))])
+	return overlaps.is_empty() and shade_contacts.is_empty()
+
+
+func _shade_clears_occupied(parasol_visual: Node, other: AABB) -> bool:
+	# The umbrella mesh has a narrow shaft below 1.7 m and a canopy above it.
+	var meshes := parasol_visual.find_children("*", "MeshInstance3D", true, false)
+	if meshes.is_empty():
+		return false
+	var pole := (meshes[0] as MeshInstance3D).global_position
+	if other.end.y >= pole.y + 1.65:
+		return false
+	return pole.x < other.position.x - 0.1 or pole.x > other.end.x + 0.1 or pole.z < other.position.z - 0.1 or pole.z > other.end.z + 0.1
 
 
 func _visual_bounds(node: Node) -> AABB:
