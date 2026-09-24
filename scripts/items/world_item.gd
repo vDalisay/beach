@@ -252,7 +252,8 @@ func _limit_small_item_draws(node: Node) -> void:
 	if definition.collision_profile == ItemDefinition.CollisionProfile.LARGE:
 		return
 	if node is GeometryInstance3D:
-		(node as GeometryInstance3D).visibility_range_end = 35.0
+		var geometry := node as GeometryInstance3D
+		geometry.visibility_range_end = minf(geometry.visibility_range_end, 35.0) if geometry.visibility_range_end > 0.0 else 35.0
 	for child in node.get_children():
 		_limit_small_item_draws(child)
 

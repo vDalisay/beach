@@ -3,6 +3,7 @@ extends Node3D
 
 @export var asset_id := "A00"
 @export var display_name := "Missing asset"
+@export var compact_label := false
 @export var cube_color := Color.MAGENTA
 @export var dimensions := Vector3.ONE
 
@@ -34,7 +35,7 @@ func _refresh() -> void:
 	material.roughness = 0.8
 	mesh_instance.material_override = material
 
-	label.text = "%s · %s" % [asset_id, display_name]
+	label.text = asset_id if compact_label else "%s · %s" % [asset_id, display_name]
 	label.position.y = dimensions.y + 0.25
 
 

@@ -161,7 +161,9 @@ func _click_world_item(player: BeachPlayer, session: RunSession, item_id: String
 		player.global_position = view.global_position + offset
 		player.camera.look_at(view.global_position + Vector3.UP * 0.05)
 		await physics_frame
-		if str(player.interactor.update_target().get("id", "")) == str(item_id):
+		player.camera.look_at(view.global_position + Vector3.UP * 0.05)
+		var target := player.interactor.update_target()
+		if str(target.get("id", "")) == str(item_id):
 			aimed = true
 			break
 	if not aimed:

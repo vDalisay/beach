@@ -2,7 +2,7 @@ class_name ManifestGenerator
 extends RefCounted
 
 const GENERATOR_VERSION := "manifest-1"
-const CONTENT_VERSION := "beach-content-7"
+const CONTENT_VERSION := "beach-content-8"
 const REEF_DRESSING := preload("res://scripts/world/reef_dressing.gd")
 const BEACH_PATH := "res://data/world/beach_01.tres"
 const QUOTAS_PATH := "res://data/world/section_quotas.tres"
@@ -10,6 +10,13 @@ const ANCHORS_PATH := "res://data/world/spawn_anchors.tres"
 const CATALOG_DIR := "res://data/items"
 const CATEGORY_KEYS := [&"pmd", &"organic", &"general", &"glass"]
 const WALK_ROUTE_CLEARANCE_MM := 1800
+const SMALL_ITEM_JITTER_MM := 150
+const SERVICE_EXCLUSION_HALF_SIZE_MM := Vector2i(9000, 8000)
+const LOOKOUT_X_MM := [-37500, 27500]
+const LOOKOUT_HALF_SIZE_MM := 2000
+const BURIED_PIER_BOUNDS_MM := [52000, 34000, 96000]
+const SHALLOW_RESCUE_MIN_Z_MM := 54000
+const WASTE_CLUSTER_BONUS := 0.9
 const RESCUE_COUNTS := {
 	&"pier:moorings": 4,
 	&"shallows:west": 4,
@@ -58,7 +65,10 @@ func generate(
 		var litter_rng := stream_rng(seed_text, str(section_id), "litter", content_hash)
 		var props_rng := stream_rng(seed_text, str(section_id), "props", content_hash)
 		var sand_pack: bool = "sand" in pack.tags
-		var prop_cells := _integer_range(480 if sand_pack else 640, 740)
+		var prop_cells: Array[int] = []
+		for cell in range(480 if sand_pack else 640, 740):
+			if not _in_fixed_exclusion(_cell_position(pack, cell, columns, spacing, true), beach):
+				prop_cells.append(cell)
 		_shuffle(prop_cells, props_rng)
 		var assigned_prop_cells: Array[int] = []
 		var reserved := {}
@@ -68,9 +78,9 @@ func generate(
 			reserved[cell] = true
 		var waste_cells: Array[int] = []
 		for cell in (740 if sand_pack else 640):
-			if not reserved.has(cell):
+			if not reserved.has(cell) and not _in_fixed_exclusion(_cell_position(pack, cell, columns, spacing, false), beach):
 				waste_cells.append(cell)
-		_shuffle(waste_cells, litter_rng)
+		_order_waste_cells(waste_cells, columns, litter_rng)
 		var section_rows: Array[Dictionary] = []
 		var ordinal := 1
 
@@ -235,7 +245,44 @@ func compute_content_hash(definitions: Dictionary, beach: BeachDefinition, quota
 		anchors.get_meta(&"pile_patterns"),
 		RESCUE_COUNTS,
 		WALK_ROUTE_CLEARANCE_MM,
+		SMALL_ITEM_JITTER_MM,
+		[SERVICE_EXCLUSION_HALF_SIZE_MM.x, SERVICE_EXCLUSION_HALF_SIZE_MM.y],
+		LOOKOUT_X_MM,
+		LOOKOUT_HALF_SIZE_MM,
+		BURIED_PIER_BOUNDS_MM,
+		SHALLOW_RESCUE_MIN_Z_MM,
+		WASTE_CLUSTER_BONUS,
 	]).sha256_text()
+
+
+func _in_service_exclusion(position: Array[int], beach: BeachDefinition) -> bool:
+	for service_value in (beach.starting_state.get("service_points", {}) as Dictionary).values():
+		var center := service_value as Vector3
+		if absf(float(position[0]) - center.x * 1000.0) <= SERVICE_EXCLUSION_HALF_SIZE_MM.x + SMALL_ITEM_JITTER_MM and absf(float(position[2]) - center.z * 1000.0) <= SERVICE_EXCLUSION_HALF_SIZE_MM.y + SMALL_ITEM_JITTER_MM:
+			return true
+	return false
+
+
+func _in_fixed_exclusion(position: Array[int], beach: BeachDefinition) -> bool:
+	if _in_service_exclusion(position, beach):
+		return true
+	for lookout_x in LOOKOUT_X_MM:
+		if absi(position[0] - lookout_x) <= LOOKOUT_HALF_SIZE_MM and absi(position[2]) <= LOOKOUT_HALF_SIZE_MM:
+			return true
+	return false
+
+
+func _order_waste_cells(cells: Array[int], columns: int, rng: RandomNumberGenerator) -> void:
+	var centers: Array[Vector2] = [Vector2(rng.randf_range(2.0, columns - 3.0), rng.randf_range(8.0, 18.0)), Vector2(rng.randf_range(2.0, columns - 3.0), rng.randf_range(25.0, 39.0))]
+	var scores := {}
+	for cell in cells:
+		var point := Vector2(float(cell % columns), float(cell / columns))
+		var nearest := 0.0
+		for center in centers:
+			var distance := point - center
+			nearest = maxf(nearest, exp(-0.5 * (pow(distance.x / 4.0, 2.0) + pow(distance.y / 7.0, 2.0))))
+		scores[cell] = rng.randf() + nearest * WASTE_CLUSTER_BONUS
+	cells.sort_custom(func(a: int, b: int) -> bool: return a < b if is_equal_approx(float(scores[a]), float(scores[b])) else float(scores[a]) < float(scores[b]))
 
 
 func _clear_walk_route(rows: Array[Dictionary], route: Array, anchors: Resource, definitions: Dictionary) -> void:
@@ -462,6 +509,9 @@ func _new_row(
 	use_prop_origin := false
 ) -> Dictionary:
 	var position := _cell_position(pack, cell, columns, spacing, use_prop_origin)
+	if definition.kind == ItemDefinition.Kind.WASTE and definition.collision_profile != ItemDefinition.CollisionProfile.LARGE:
+		position[0] += rng.randi_range(-SMALL_ITEM_JITTER_MM, SMALL_ITEM_JITTER_MM)
+		position[2] += rng.randi_range(-SMALL_ITEM_JITTER_MM, SMALL_ITEM_JITTER_MM)
 	if "water_surface" in pack.tags and definition.float_mode == ItemDefinition.FloatMode.FLOAT and not (use_prop_origin and pack.has("prop_origin_mm")):
 		position[1] = 80
 	return {
@@ -545,6 +595,8 @@ func _assign_rescues(rows_by_section: Dictionary, definitions: Dictionary, seed_
 		var general: Array = []
 		for row_value in rows_by_section[section_id]:
 			var row := row_value as Dictionary
+			if section_id == &"shallows:west" and int(row.position_mm[2]) < SHALLOW_RESCUE_MIN_Z_MM:
+				continue
 			if row.category == "pmd":
 				pmd.append(row)
 			elif row.category == "general":
@@ -584,6 +636,10 @@ func _assign_buried(
 			var pack := packs[section_id] as Dictionary
 			var max_bury := maxi(120, int(pack.max_depth_mm)) if "water_surface" not in pack.tags else 450
 			var depth := rng.randi_range(120, mini(450, max_bury))
+			var spacing := int(anchors.get_meta(&"grid_spacing_mm"))
+			var origin := pack.origin_mm as PackedInt32Array
+			row.position_mm[0] = origin[0] + roundi(float(int(row.position_mm[0]) - origin[0]) / spacing) * spacing
+			row.position_mm[2] = origin[2] + roundi(float(int(row.position_mm[2]) - origin[2]) / spacing) * spacing
 			row.definition_id = str((definitions[category_data[2]] as ItemDefinition).definition_id)
 			row.location = "BURIED"
 			row.buried_depth_mm = depth
@@ -710,12 +766,19 @@ func _select_round_robin(
 		var candidates: Array = []
 		for row_value in rows_by_section[section_id]:
 			var row := row_value as Dictionary
-			if row.category == category and row.location == "WORLD":
+			if row.category == category and row.location == "WORLD" and (stream_name != "buried" or _buried_candidate_clear(row)):
 				candidates.append(row)
 		var rng := stream_rng(seed_text, section_text, stream_name, content_hash)
 		_shuffle(candidates, rng)
 		queues[section_id] = {"rows": candidates, "rng": rng}
 	return _round_robin_queues(queues, target)
+
+
+func _buried_candidate_clear(row: Dictionary) -> bool:
+	if str(row.section_id) != "pier:moorings":
+		return true
+	var position := row.position_mm as Array
+	return not (int(position[0]) >= BURIED_PIER_BOUNDS_MM[0] and int(position[2]) >= BURIED_PIER_BOUNDS_MM[1] and int(position[2]) <= BURIED_PIER_BOUNDS_MM[2])
 
 
 func _round_robin_queues(queues: Dictionary, target: int) -> Array:

@@ -343,15 +343,23 @@ func check_manifest_generation() -> void:
 	check(hashes.size() == 10, "ten fixed seeds produce ten distinct valid layouts")
 	if fixture.is_empty():
 		return
-	check(str(fixture.content_hash) == "b8dfd057b66625b1a6a019939f592efe6dc99841356d54768f5b58010554b22b", "fixture content hash is pinned")
-	check(str(fixture.manifest_hash) == "4dd4548516d6b99d93d9906bccdb4f8c1a8f173025612a157b02b84a911ba9c7", "fixture manifest hash is pinned")
+	check(str(fixture.content_hash) == "4712283664ce031103f232807f8c9348d7601db1c1783999b9cdfd1ebcefa60f", "fixture content hash is pinned")
+	check(str(fixture.manifest_hash) == "6d6a84fa1b520dfa9603e2900cf1534169b37953a01755825a41be6ccd6f8622", "fixture manifest hash is pinned")
+	var catalog_present := {}
+	for row_value in fixture.rows:
+		catalog_present[StringName(str((row_value as Dictionary).definition_id))] = true
+	var catalog_missing := PackedStringArray()
+	for definition_id in [&"waste_straw", &"waste_plastic_wrap", &"waste_drink_carton", &"waste_fries", &"waste_hamburger", &"waste_sealed_oil_container"]:
+		if not catalog_present.has(definition_id):
+			catalog_missing.append(str(definition_id))
+	check(catalog_missing.is_empty(), "new litter families appear in the playable manifest: %s" % ", ".join(catalog_missing))
 	var normalized := generator.normalize_seed("  Côte, \"Azure\" 🌊  ")
 	check(normalized.ok and normalized.seed == "Côte, \"Azure\" 🌊", "seed normalization trims only surrounding whitespace")
 	check(not generator.normalize_seed("bad\nseed").ok, "control characters are rejected")
 	check(not generator.normalize_seed("é".repeat(33)).ok, "seed limit counts UTF-8 bytes")
 	var stream := generator.derive_stream(str(normalized.seed), "reef_west:coral", "buried", str(fixture.content_hash))
-	check(stream.canonical == "[\"manifest-1\",\"b8dfd057b66625b1a6a019939f592efe6dc99841356d54768f5b58010554b22b\",\"Côte, \\\"Azure\\\" 🌊\",\"reef_west:coral\",\"buried\"]", "Unicode stream canonical bytes are pinned")
-	check(stream.hash == "528eab1ee3505ad8a5c9529a7156d5f75f631e262ac67f12bd14e10acaccc9a3" and int(stream.rng_seed) == 371805019184629165, "Unicode stream SHA-256 and 60-bit seed are pinned")
+	check(stream.canonical == "[\"manifest-1\",\"4712283664ce031103f232807f8c9348d7601db1c1783999b9cdfd1ebcefa60f\",\"Côte, \\\"Azure\\\" 🌊\",\"reef_west:coral\",\"buried\"]", "Unicode stream canonical bytes are pinned")
+	check(stream.hash == "783412f8b8fbabad03e718b79158a8bb974986fb5c2bc16b73c7f362ef6e55d3" and int(stream.rng_seed) == 541348052675312314, "Unicode stream SHA-256 and 60-bit seed are pinned")
 
 	var state := generator.create_run_state(fixture, "manifest-check")
 	check(state.required_total == 5700 and state.items.size() == 5740, "manifest creates one record per stable ID")

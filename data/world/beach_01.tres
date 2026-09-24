@@ -6,7 +6,7 @@
 [resource]
 script = ExtResource("1_beach")
 beach_id = &"beach_01"
-version = "7"
+version = "8"
 scene_path = "res://scenes/world/beach.tscn"
 spawn_anchor_resource = ExtResource("2_anchors")
 ordered_zones = Array[StringName]([&"arrival", &"sports", &"lounges", &"sandplay", &"pier", &"shallows", &"reef_west", &"reef_east"])

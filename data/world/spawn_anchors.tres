@@ -2,7 +2,7 @@
 
 [resource]
 resource_name = "beach_01_spawn_packs_v2"
-metadata/content_version = "beach-content-7"
+metadata/content_version = "beach-content-8"
 metadata/grid_columns = 16
 metadata/grid_rows = 48
 metadata/grid_spacing_mm = 700

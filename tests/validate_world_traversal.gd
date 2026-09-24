@@ -127,6 +127,32 @@ func run() -> void:
 			check(pickup_can.location == ItemRecord.Location.BAG, "normal primary input collects reef can into the original bag")
 		player.set_physics_process(true)
 		session.swim_service.set_physics_process(true)
+	var new_families := [&"waste_straw", &"waste_plastic_wrap", &"waste_drink_carton", &"waste_fries", &"waste_hamburger", &"waste_sealed_oil_container"]
+	var collected_new: Array[StringName] = []
+	for definition_id in new_families:
+		var collected_id := await _collect_catalog_item(session, definition_id)
+		check(not collected_id.is_empty(), "normal primary input collects %s from the playable beach" % definition_id)
+		if not collected_id.is_empty():
+			collected_new.append(collected_id)
+	if collected_new.size() == new_families.size():
+		var sorting := session.sorting_stations[&"sorting:S1"] as SortingStation
+		check(sorting.try_unload(&"local").ok, "new litter and the reef can unload to the real sorting table")
+		for item_id in collected_new:
+			var item := session.state.items[item_id] as ItemRecord
+			var category: StringName = [&"pmd", &"organic", &"general", &"glass"][(session.definitions[item.definition_id] as ItemDefinition).waste_category]
+			var sorted := sorting.try_sort(item_id, category)
+			check(sorted.ok and bool(sorted.receipt.get("correct", false)), "%s sorts into %s" % [item.definition_id, category])
+		if pickup_can != null and pickup_can.location == ItemRecord.Location.TABLE:
+			check(sorting.try_sort(pickup_can.item_id, &"pmd").ok, "reef can joins the PMD bin")
+		for category in [&"pmd", &"organic", &"general"]:
+			var sealed := sorting.try_seal(category)
+			check(sealed.ok, "S1 seals the %s sample bin" % category)
+			if sealed.ok:
+				var bag_id := StringName(str(sealed.receipt.bag_id))
+				var container := session.waste_containers[StringName("container:S1:%s" % category)] as WasteContainer
+				check(session.item_store.try_hold_bag(&"local", bag_id).ok and container.try_deposit_bag(&"local", bag_id).ok, "%s bag enters its real container" % category)
+		check(session.collection_service.try_collect_containers(&"local").ok and session.progress_service.completed_waste >= 7, "collection credits the new families and reef can")
+	check(session.state.validate_invariants(session.definitions).is_empty(), "catalog collection and payment preserve ownership")
 	var chair_id := StringName()
 	for item_value in session.state.items.values():
 		var item := item_value as ItemRecord
@@ -141,7 +167,7 @@ func run() -> void:
 	var carried_off_pier := await _walk_lane(Vector3(62.5, 1.5, 31))
 	check(carried_onto_pier and carried_off_pier and (session.state.items[chair_id] as ItemRecord).location == ItemRecord.Location.HELD, "player carries a real chair onto and off the pier")
 
-	print("P05_TRAVERSAL waypoints=%d distance=%.1fm huts=%d reefs=%d reef_items=%d reef_overlaps=%d pier_carry=%d failures=%d" % [route.size(), traversed, hut_entries, int(west_reached) + int(east_reached), reef_checked, reef_overlaps + physics_overlaps, int(carried_onto_pier and carried_off_pier), failures])
+	print("P05_TRAVERSAL waypoints=%d distance=%.1fm huts=%d reefs=%d reef_items=%d reef_overlaps=%d catalog=%d/6 pier_carry=%d failures=%d" % [route.size(), traversed, hut_entries, int(west_reached) + int(east_reached), reef_checked, reef_overlaps + physics_overlaps, collected_new.size(), int(carried_onto_pier and carried_off_pier), failures])
 	quit(failures)
 
 
@@ -158,6 +184,40 @@ func _walk_lane(target: Vector3) -> bool:
 	for index in player.get_slide_collision_count():
 		print("PIER_COLLIDER %s" % player.get_slide_collision(index).get_collider())
 	return false
+
+
+func _collect_catalog_item(session: RunSession, definition_id: StringName) -> StringName:
+	player.set_physics_process(false)
+	for item_value in session.state.items.values():
+		var item := item_value as ItemRecord
+		if item.definition_id != definition_id or item.location != ItemRecord.Location.WORLD or item.home_zone_id not in [&"arrival", &"sports", &"lounges", &"sandplay", &"pier"]:
+			continue
+		var view := session.item_view_manager.view_for(item.item_id)
+		if view == null:
+			continue
+		for offset in [Vector3(0, 0, 1.2), Vector3(1.2, 0, 0), Vector3(0, 0, -1.2), Vector3(-1.2, 0, 0)]:
+			player.global_position = view.global_position + offset
+			player.camera.look_at(view.global_position + Vector3.UP * 0.08)
+			await physics_frame
+			var aimed := player.interactor.update_target()
+			if str(aimed.get("id", "")) != str(item.item_id) or not (aimed.get("actions", PackedStringArray()) as PackedStringArray).has("collect"):
+				continue
+			player.velocity = Vector3.ZERO
+			player.set_physics_process(true)
+			var press := InputEventMouseButton.new()
+			press.button_index = MOUSE_BUTTON_LEFT
+			press.pressed = true
+			Input.parse_input_event(press)
+			await _physics_frames(3)
+			press.pressed = false
+			Input.parse_input_event(press)
+			await physics_frame
+			player.set_physics_process(false)
+			if item.location == ItemRecord.Location.BAG:
+				player.set_physics_process(true)
+				return item.item_id
+	player.set_physics_process(true)
+	return StringName()
 
 
 func _swim_lane(start: Vector3, target: Vector3) -> bool:

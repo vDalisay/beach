@@ -2,7 +2,7 @@
 
 `data/asset_manifest.json` stages **86 Synty wrapper roles / 244 source and dependency files** from the locally licensed Palm City conversion. The wrapper scene and every source component are named there. `tools/stage_assets.gd` regenerates `art/synty/`; `tests/run_checks.gd` verifies the closure and loads every wrapper. Generated/vendor files stay out of Git.
 
-The manifest's 27 `missing_assets` rows name each open role, its current status, the actual runtime consumer, and a replacement path. **A path is not a connection:** where the consumer is a script, passive tool, or `none`, adding a model at `replacement_path` alone will not display it. C05/C07/C08 must wire and inspect it. A direct scene replacement must preserve the gameplay node contract and scale. The gallery shows these requests as placeholders; it does not prove that cubes appear in gameplay.
+The manifest's 28 `missing_assets` rows name each open role, its current status, the actual runtime consumer, and a replacement path. **A path is not a connection:** where the consumer is a script, passive tool, or `none`, adding a model at `replacement_path` alone will not display it. C07/C08 must wire and inspect those roles. A direct scene replacement must preserve the gameplay node contract and scale. The gallery shows these requests as placeholders; it does not prove that cubes appear in gameplay.
 
 | Roles | What renders now | Runtime connection / remaining work |
 |---|---|---|
@@ -14,7 +14,7 @@ The manifest's 27 `missing_assets` rows name each open role, its current status,
 | A07V vacuum, A07S sand cleaner, A08 detector, A10 cloth | Project-owned primitive visual scenes | Each `data/tools/*.tres` points to its named `scenes/tools/*.tscn`; those scenes can be replaced in place. |
 | A09F flippers, A09T tank | Passive gameplay only; no worn models | The tool resources have no visual scene contract; C08 must add presentation when models exist. |
 | A11R rings, A11N net | Project-owned rescue silhouettes | Each item definition points to its matching `art/replacements/waste/*.tscn`; direct replacement is possible. |
-| A12S straw, A12W wrap/bag, A13F fries, A13H hamburger, A14 oil container | No distinct item or model | C05 adds definitions/allocation within existing quotas and wires each visual. Staged Synty cup and other food forms cover different roles. |
+| A12S straw, A12W wrap/bag, A12C carton, A13F fries, A13H hamburger, A14 oil container | Distinct item definitions and labelled, coloured project placeholders | C05 wires each definition to its matching runtime scene under `art/replacements/waste/`. The named final models remain missing; replacing a scene at that path reaches world, table and placement presentation. |
 | A15R residue, A15D furniture stain | Flat project-owned residue/stain | Residue item points to `residue_stain.tscn`; `dirt_visual.gd` constructs furniture stains and needs a scene hook. |
 | A16L lookout, A16B rowboat, A16T tent, A16S shelf | Synty dock/flag lookout, RIB hull, scaled Synty shelter, project-owned storage | Lookout scene and tent visual can be replaced in place. Rowboat definition points to the Synty wrapper; shelf geometry is in the beach scene. |
 | A17 hands | Project-owned low-poly scene | `scenes/player/player.tscn` instances `art/first_person_hand.tscn`; direct visual replacement is possible. |
