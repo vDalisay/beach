@@ -4,6 +4,15 @@ extends CharacterBody3D
 signal pause_changed(paused: bool)
 signal booklet_requested
 signal scanner_requested
+signal cue_played(cue: StringName, info: Dictionary)
+
+const CUES: Array[StringName] = [
+	&"whiff", &"poke", &"bag_catch", &"rejected", &"hold", &"hold_bag", &"throw", &"place",
+	&"deposit", &"clean", &"clean_done", &"cut", &"animal_freed", &"detector_ping", &"reveal",
+	&"sift", &"vacuum_tick", &"vacuum_full", &"equip", &"scanner_pulse", &"collect_call",
+	&"sort", &"seal", &"unload", &"sell", &"set_complete", &"section_restored",
+	&"zone_restored", &"run_complete",
+]
 
 @export var input_reader: InputReader
 @export var movement: PlayerMovement
@@ -115,6 +124,15 @@ func set_input_enabled(enabled: bool) -> void:
 	if not enabled:
 		velocity = Vector3.ZERO
 		interactor.clear_target()
+
+
+## Presentation-only feedback for something the player did or tried. Never changes state.
+func play_cue(cue: StringName, info: Dictionary = {}) -> void:
+	if OS.is_debug_build() and cue not in CUES:
+		push_warning("Unknown feel cue: %s" % cue)
+	if hand_rig != null and hand_rig.has_method(&"play_cue"):
+		hand_rig.play_cue(cue, info)
+	cue_played.emit(cue, info)
 
 
 func enter_swimming() -> void:
