@@ -1,6 +1,6 @@
 # Beach — full-release implementation plan
 
-The reference-led lighting, water and post-processing work is specified in the [reference look implementation plan](09-reference-look-plan.md). It refines C04–C07 without changing the current completion order.
+The [reference look implementation specification](09-reference-look-plan.md) defines the lighting values, shader calculations, resource connections and execution packets for C06, coordinated with C04–C07.
 
 Current status — 24 September 2026: [the checkpoint review](08-checkpoint-review.md) covers `3c6b431` and its reproduced F13–F15 failures. [C03a](../handoffs/C03a.md) closes remapped table confirmation and loaded-checkpoint continuation. [C04's resumed pass](../handoffs/C04.md#resumed-layout-pass--24-september-2026) moves reef objectives out of real colliders, shortens the pier and composes actual seating pools. [The latest C04 shore pocket](../handoffs/C04.md#shore-side-sports-pocket--24-september-2026) places real sports seating by the along-shore lane; content-8 occupied checks still clear all 300 pickup rays/collider overlaps, with controller-driven lounge and sports approaches. Full visual and all-family on-foot acceptance remain open. [C05 work in progress](../handoffs/C05.md) adds six named waste forms and authored clutter/exclusion bounds under `beach-content-8`, with normal pickup/sorting, buried, rescue, save and economy checks passing. Finish C04/C05, then C06–C09 under the [completion plan](07-completion-plan.md). Final visuals and release evidence remain open.
 
