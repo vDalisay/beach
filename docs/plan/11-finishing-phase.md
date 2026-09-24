@@ -128,7 +128,7 @@ All boxes started open at consolidation; later checked boxes require completion 
 
 ## FIN-08 — Final visual and interaction acceptance
 
-**Scope:** V07 plus final C08 presentation and affected checks from FIN-02–04. Dependencies: final composition/assets and V00–V06.
+**Scope:** V07 plus final C08 presentation and affected checks from FIN-02–04. Dependencies: final composition/assets and V00–V06. The [game-feel plan](12-game-feel.md) (J00–J14) specifies the interaction and completion presentation to build for this step. Its evidence goes to [J-feel](../handoffs/J-feel.md), and J packets do not wait for final assets. This step's "Done when" is unchanged.
 
 - Inspect the complete reference rubric using matched dirty/restored aerial, along-shore, seating, pier and underwater views plus an ordinary HUD-visible walk/swim recording. Use the look specification's capture parity and animation-phase rules. Record retained values/resources, not just screenshots or proposed defaults.
 - Fit all tool grips, left-hand bag, two small props, one large prop and two disposal bags at FOV extremes while moving, crouching and swimming. Finish hover/target/travel/ghost/pulse/group-sweep readability, reset scales correctly, and honour reduced motion. Do not obscure targets or category information.
