@@ -1,6 +1,7 @@
 extends Node3D
 
 const RIDGE := preload("res://art/synty/wrappers/world_reef_ridge.tscn")
+const MOUND := preload("res://art/synty/wrappers/world_reef_mound.tscn")
 const POSITIONS := [
 	Vector2(0.5, 95), Vector2(7.5, 91), Vector2(15.5, 98),
 	Vector2(2, 137), Vector2(9.25, 142), Vector2(17, 132),
@@ -32,6 +33,8 @@ static func blocks_point(position_mm: Array, margin_mm := 1200.0) -> bool:
 func _ready() -> void:
 	var wrapper := RIDGE.instantiate() as Node3D
 	var source := wrapper.get_node("Visual/Ridge") as MeshInstance3D
+	var mound_wrapper := MOUND.instantiate() as Node3D
+	var mound_source := mound_wrapper.get_node("Visual/Mound") as MeshInstance3D
 	var instances := MultiMesh.new()
 	instances.transform_format = MultiMesh.TRANSFORM_3D
 	instances.mesh = source.mesh
@@ -51,13 +54,25 @@ func _ready() -> void:
 	var structure_meshes := MultiMesh.new()
 	structure_meshes.transform_format = MultiMesh.TRANSFORM_3D
 	structure_meshes.mesh = source.mesh
-	structure_meshes.instance_count = STRUCTURES.size()
+	structure_meshes.instance_count = STRUCTURES.size() * 2 / 3
+	var mound_meshes := MultiMesh.new()
+	mound_meshes.transform_format = MultiMesh.TRANSFORM_3D
+	mound_meshes.mesh = mound_source.mesh
+	mound_meshes.instance_count = STRUCTURES.size() / 3
+	var ridge_index := 0
+	var mound_index := 0
 	for index in STRUCTURES.size():
 		var rock := STRUCTURES[index] as Vector4
 		var width := 0.52 + float(index % 3) * 0.04
 		var depth := 0.7 + float(index % 2) * 0.08
-		var basis := Basis(Vector3.UP, rock.z).scaled(Vector3(width, rock.w, depth))
-		structure_meshes.set_instance_transform(index, Transform3D(basis, Vector3(rock.x, -2.65, rock.y)))
+		if index % 3 == 2:
+			var mound_basis := Basis(Vector3.UP, rock.z).scaled(Vector3(width * 4.2, rock.w * 2.2, depth * 2.1))
+			mound_meshes.set_instance_transform(mound_index, Transform3D(mound_basis, Vector3(rock.x, -2.65, rock.y)))
+			mound_index += 1
+		else:
+			var basis := Basis(Vector3.UP, rock.z).scaled(Vector3(width, rock.w, depth))
+			structure_meshes.set_instance_transform(ridge_index, Transform3D(basis, Vector3(rock.x, -2.65, rock.y)))
+			ridge_index += 1
 		var body := StaticBody3D.new()
 		body.name = "ReefRock%02d" % (index + 1)
 		body.position = Vector3(rock.x, -2.25, rock.y)
@@ -74,4 +89,10 @@ func _ready() -> void:
 	structures.multimesh = structure_meshes
 	structures.material_override = stone
 	add_child(structures)
+	var mounds := MultiMeshInstance3D.new()
+	mounds.name = "StructuralReefMounds"
+	mounds.multimesh = mound_meshes
+	mounds.material_override = stone
+	add_child(mounds)
 	wrapper.free()
+	mound_wrapper.free()
