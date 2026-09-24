@@ -209,8 +209,11 @@ func _run() -> void:
 	if audit_slots and not await _audit_occupied_slots(session):
 		_fail("occupied destinations have blocked targets or intersecting colliders")
 		return
-	if review_pair and not await _exercise_review_lounge(session):
+	if (review_pair or audit_slots) and not await _exercise_review_chair(session, &"row:lounges:chairs:11:000"):
 		_fail("completed lounge pocket could not remove, preview, throw-capture and restore a real chair")
+		return
+	if (review_pair or audit_slots) and not await _exercise_review_chair(session, &"row:sports:chairs:01:000"):
+		_fail("completed shore-side sports pocket could not approach, remove and restore a real chair")
 		return
 	if review_pair and not await _capture_review(main, session, "restored"):
 		_fail("restored review captures failed")
@@ -321,8 +324,7 @@ func _audit_occupied_slots(session: RunSession) -> bool:
 	return reachable == total and overlaps.is_empty()
 
 
-func _exercise_review_lounge(session: RunSession) -> bool:
-	var slot_id := &"row:lounges:chairs:11:000"
+func _exercise_review_chair(session: RunSession, slot_id: StringName) -> bool:
 	var placement := session.placement_service
 	var item_id := placement.occupant_for(slot_id)
 	if item_id.is_empty():
