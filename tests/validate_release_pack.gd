@@ -10,8 +10,8 @@ func _run() -> void:
 	root.add_child(main)
 	main.seed_input.text = "release-pack-smoke"
 	var run := main.start_run() as RunSession
-	if run == null or run.state.items.size() != 5740 or run.definitions.size() != 34:
-		push_error("P29 packed new run failed: %s" % main.error_label.text)
+	if run == null or run.state.items.size() != 5740 or run.definitions.size() != 40:
+		push_error("Packed new run failed: %s (items=%d, catalog=%d)" % [main.error_label.text, run.state.items.size() if run != null else -1, run.definitions.size() if run != null else -1])
 		quit(1)
 		return
 	var bottle := load("res://art/synty/POLYGON_Palm_City/meshes/tscn_separate/SM_Prop_Drink_Bottle_01.tscn") as PackedScene
@@ -34,6 +34,6 @@ func _run() -> void:
 		main.free()
 		quit(1)
 		return
-	print("P29_PACK new_run=5740 catalog=34 nearby_views=%d initial_progress=0 synty_bottle=loaded rolled_towel=loaded shelter=loaded stick_shaft=loaded" % run.item_view_manager.views.size())
+	print("C09_PACK new_run=5740 catalog=40 nearby_views=%d initial_progress=0 synty_bottle=loaded rolled_towel=loaded shelter=loaded stick_shaft=loaded" % run.item_view_manager.views.size())
 	main.free()
 	quit()
