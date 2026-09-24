@@ -149,6 +149,7 @@ uniform float shallows_opacity: hint_range(0.0, 1.0) = 0.661;
 uniform vec4 shallow_color: source_color = vec4(0.5, 0.5, 0.2, 1.0);
 uniform vec4 deep_color: source_color = vec4(0.4, 0.4, 0.8, 1.0);
 uniform vec4 very_deep_color: source_color = vec4(0.1, 0.1, 0.2, 1.0);
+uniform vec4 offshore_color: source_color = vec4(0.01, 0.15, 0.24, 1.0);
 uniform float deep_height = 1.16;
 uniform float very_deep_height = 4;
 uniform float maximum_depth = 15.0;
@@ -561,6 +562,9 @@ void fragment() {
 	float corrected_very_deep = pow(saturate_value(depth_fade / abs(very_deep_height)), 1.8);
 
 	ALBEDO = mix(mix(deep_color, shallow_color, corrected_deep), very_deep_color, corrected_very_deep).xyz;
+	// UV2.x is the shoreline Z at this water vertex; the flank term colours nonplayable open water.
+	float offshore_distance = max(world_pos.z - UV2.x, max(abs(world_pos.x) - 80.0, 0.0) * 0.8);
+	ALBEDO = mix(ALBEDO, offshore_color.rgb, smoothstep(25.0, 190.0, offshore_distance) * 0.8);
 	if (facet_color_strength > 0.0) {
 		float facet = texture(scrolling_texture, UV * scrolling_texture_tiling + top_scrolling_direction * TIME).r;
 		ALBEDO *= 1.0 + (facet - 0.5) * facet_color_strength;

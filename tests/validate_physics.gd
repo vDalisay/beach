@@ -113,6 +113,12 @@ func _measure_full_scale() -> void:
 		player.global_position = Vector3(-17, 2.1, 24)
 		player.camera.look_at(Vector3(-17, 1.7, -18))
 		await _physics_frames(90)
+	elif "--c06-water" in OS.get_cmdline_user_args():
+		player.set_physics_process(false)
+		session.swim_service.set_physics_process(false)
+		player.global_position = Vector3(0, 2.1, 45)
+		player.camera.look_at(Vector3(0, 0, 180))
+		await _physics_frames(90)
 	var initial_world_count := 0
 	for value in session.state.items.values():
 		if (value as ItemRecord).location == ItemRecord.Location.WORLD:
@@ -148,7 +154,7 @@ func _measure_full_scale() -> void:
 	var video_mb := float(Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED)) / (1024.0 * 1024.0)
 	print("P07_SCALE frames=%d views=%d batches=%d batch_items=%d awake=%d meshes=%d largest_pile=%d build_ms=%.1f memory_mb=%.1f video_mb=%.1f nodes=%d frame_avg_ms=%.2f frame_p95_ms=%.2f physics_avg_ms=%.2f draw_calls_max=%d active_bodies_max=%d" % [sample_frames, manager.views.size(), manager.distant_visuals.batch_count(), manager.distant_visuals.instance_count(), manager.awake_count(), manager.visual_instance_count(), largest_pile, manager.build_time_ms, memory_mb, video_mb, int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT)), frame_average, frame_p95, physics_average, max_draw_calls, max_active_bodies])
 	print("P07_DEVICE os=%s cpu=%s gpu=%s" % [OS.get_name(), OS.get_processor_name(), RenderingServer.get_video_adapter_name()])
-	if "--c04-dense" in OS.get_cmdline_user_args():
+	if "--c04-dense" in OS.get_cmdline_user_args() or "--c06-water" in OS.get_cmdline_user_args():
 		main.free()
 		quit(failures)
 		return
