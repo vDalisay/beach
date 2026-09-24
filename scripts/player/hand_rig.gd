@@ -344,10 +344,12 @@ func _replace_socket_scene(socket: Marker3D, scene: PackedScene) -> Node3D:
 	return instance
 
 
+## Frees the hand visuals under the socket's View. Other children of the socket are in-flight
+## presentations travelling into the hand, which finish and free themselves.
 func _clear_socket(socket: Marker3D) -> void:
 	var view := _views.get(socket) as Node3D
-	for child in socket.get_children() + (view.get_children() if view != null else []):
-		if child != view:
-			if child.get_parent() != null:
-				child.get_parent().remove_child(child)
-			child.queue_free()
+	if view == null:
+		return
+	for child in view.get_children():
+		view.remove_child(child)
+		child.queue_free()

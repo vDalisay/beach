@@ -62,7 +62,7 @@ func try_collect_next() -> ActionResult:
 			"distance": offset.length(), "reach": range_meters(),
 		})
 		if result.ok:
-			player.carry.present_collected(view.item_id)
+			player.carry.present_collected(view.item_id, &"vacuum")
 			return result
 	return ActionResult.rejected(ActionResult.Reason.WRONG_STATE, "No eligible litter in cone")
 

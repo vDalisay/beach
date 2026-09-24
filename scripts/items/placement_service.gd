@@ -68,6 +68,9 @@ func try_place(player_id: StringName, slot_id: StringName) -> ActionResult:
 	_commit_to_slot(item_id, slot_id)
 	clear_preview()
 	session.finalize_action(PackedStringArray([str(item_id)]), PackedStringArray([str(player_id)]))
+	if carry != null:
+		# A pickup still flying into the hand ends now; the prop leaves from the hand instead.
+		carry.cancel_presentation(item_id)
 	_animate_to_slot(item_id, slot_id, source_transform)
 	if carry != null:
 		carry.refresh_hand_visuals()
@@ -119,6 +122,8 @@ func try_remove(player_id: StringName, slot_id: StringName, target_context: Dict
 	player_record[&"held_objects"] = held
 	player_record[&"selected_held_index"] = held.size() - 1
 	var record := session.state.items[item_id] as ItemRecord
+	var slotted_root := slotted_visual_root(item_id)
+	var from := slotted_root.global_transform if slotted_root != null else slot_transform(slot_id)
 	_release_slot(slot_id)
 	record.location = ItemRecord.Location.HELD
 	record.holder_id = player_id
@@ -128,6 +133,11 @@ func try_remove(player_id: StringName, slot_id: StringName, target_context: Dict
 	clear_preview()
 	session.finalize_action(PackedStringArray([str(item_id)]), PackedStringArray([str(player_id)]))
 	if carry != null:
+		# Presentation only: a copy lifts off the slot and travels into the hands.
+		var large := definition.hand_cost == 2
+		carry.present_visual(item_id, _create_visual(definition), from, carry.hand_rig.large_prop_socket if large else carry.next_small_socket(), 0.4 if large else 0.35)
+		if player != null:
+			player.play_cue(&"hold", {"large": large})
 		carry.refresh_hand_visuals()
 	return ActionResult.accepted(PackedStringArray([str(item_id)]), {
 		"item_id": str(item_id),

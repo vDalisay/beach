@@ -3,6 +3,8 @@ extends RigidBody3D
 
 signal fell_out_of_bounds(item_id: StringName)
 signal physics_settled(item_id: StringName)
+## A thrown view hit something hard enough to show a landing (presentation only).
+signal impacted(item_id: StringName, position: Vector3, speed: float)
 
 const WATER_LEVEL := 0.08
 const WORLD_LAYER := 1
@@ -39,6 +41,8 @@ var _visual_key := ""
 var _shadow_meshes: Array[GeometryInstance3D] = []
 ## Presentation owner for puffs and sparkles around this view; set by ItemViewManager.
 var effects: ItemViewManager
+var _impact_armed_until := 0
+var _last_speed := 0.0
 
 
 func _ready() -> void:
@@ -188,7 +192,11 @@ func _animate_hover(active: bool) -> void:
 		t.chain().tween_property(visual_root, "rotation:z", 0.0, 0.08)
 
 
-func travel_to(socket: Node3D, duration: float, shrink: bool, finished: Callable, end_offset := Vector3.ZERO) -> void:
+## Presentation travel of this already-committed view into `socket`. Collision is off for the
+## whole trip and the record is already at its destination.
+## options: reduced, delay, yoink_seconds, yoink_height, yoink_scale, wiggle_degrees, arc, via,
+## via_fraction, spin_turns, spin_axis, shrink_from, end_scale, end_local, stretch, ease, drop.
+func travel_to(socket: Node3D, duration: float, shrink: bool, finished: Callable, options: Dictionary = {}) -> void:
 	freeze = true
 	sleeping = true
 	collision_layer = 0
@@ -198,12 +206,45 @@ func travel_to(socket: Node3D, duration: float, shrink: bool, finished: Callable
 	FeelMotion.replace(visual_root, &"hover", null)
 	visual_root.transform = Transform3D.IDENTITY
 	reparent(socket, true)
-	_presentation_tween = create_tween().set_parallel(true)
-	_presentation_tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
-	_presentation_tween.tween_property(self, "transform", Transform3D(Basis.IDENTITY, end_offset), duration)
-	if shrink:
-		_presentation_tween.tween_property(visual_root, "scale", Vector3.ONE * 0.12, duration)
-	_presentation_tween.chain().tween_callback(finished)
+	var reduced := bool(options.get("reduced", false))
+	_presentation_tween = FeelMotion.tween(self)
+	var delay := float(options.get("delay", 0.0))
+	if delay > 0.0:
+		_presentation_tween.tween_interval(delay)
+	var yoink := 0.0 if reduced else float(options.get("yoink_seconds", 0.0))
+	if yoink > 0.0:
+		_presentation_tween.tween_property(visual_root, "position:y", float(options.get("yoink_height", FEEL.yoink_height)), yoink).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		_presentation_tween.parallel().tween_property(visual_root, "scale", Vector3.ONE * float(options.get("yoink_scale", FEEL.yoink_scale)), yoink).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		var wiggle := deg_to_rad(float(options.get("wiggle_degrees", 0.0)))
+		if wiggle > 0.0:
+			_presentation_tween.parallel().tween_method(func(t: float) -> void: visual_root.rotation.z = sin(t * TAU) * wiggle, 0.0, 1.0, yoink)
+	var travel := options.duplicate()
+	travel["visual"] = visual_root
+	travel["shrink_to"] = float(options.get("end_scale", FEEL.bag_end_scale if shrink else 1.0))
+	if reduced:
+		for key in ["arc", "via", "spin_turns", "drop"]:
+			travel.erase(key)
+	FeelMotion.travel(self, socket, options.get("end_local", Transform3D.IDENTITY), duration, travel, finished, _presentation_tween)
+
+
+## Listens for the next hard contact for a few seconds after a throw.
+func arm_impact(seconds := 3.0) -> void:
+	_impact_armed_until = Time.get_ticks_msec() + int(seconds * 1000.0)
+	if not body_entered.is_connected(_on_feel_contact):
+		body_entered.connect(_on_feel_contact)
+
+
+func play_impact(reduced: bool) -> void:
+	if not reduced:
+		FeelMotion.squash_land(visual_root, FEEL.impact_squash, Vector3(0.98, 1.04, 0.98), FEEL.impact_seconds)
+
+
+func _on_feel_contact(_body: Node) -> void:
+	if Time.get_ticks_msec() > _impact_armed_until:
+		return
+	_impact_armed_until = 0
+	if _last_speed >= FEEL.impact_min_speed:
+		impacted.emit(item_id, global_position, _last_speed)
 
 
 func cancel_travel() -> void:
@@ -252,6 +293,7 @@ func dirt_visual_count() -> int:
 
 
 func _physics_process(_delta: float) -> void:
+	_last_speed = linear_velocity.length()
 	if not _reported_outside and outside_check.is_valid() and bool(outside_check.call(global_position)):
 		_reported_outside = true
 		freeze = true

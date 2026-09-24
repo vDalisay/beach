@@ -98,8 +98,11 @@ func try_take_last_bag(player_id: StringName) -> ActionResult:
 	if contents().is_empty():
 		return ActionResult.rejected(ActionResult.Reason.WRONG_STATE, "Container is empty")
 	var bag_id := StringName(str(contents().back()))
+	var from := opening.global_transform
 	var result := session.item_store.try_hold_bag(player_id, bag_id)
 	if result.ok:
+		player.carry.present_bag(bag_id, from)
+		player.play_cue(&"hold_bag")
 		player.carry.refresh_hand_visuals()
 		_update_visuals()
 	return result

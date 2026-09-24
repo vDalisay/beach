@@ -25,6 +25,7 @@ const VIEW_CHECKS_PER_FRAME := 48
 const VIEW_POOL_LIMIT := 96
 # Views stop casting sun shadows this far beyond their quality budget, and start again inside it.
 const SHADOW_HYSTERESIS := 2.0
+const FEEL := preload("res://data/feel/feel_tuning.tres")
 
 var session: RunSession
 var definitions: Dictionary
@@ -42,6 +43,10 @@ var _cell_of: Dictionary = {}
 var _rebucket_cursor := 0
 var _maintenance_queue: Array[StringName] = []
 var _pool: Array[WorldItem] = []
+## Presentation pools for puffs and glints around item views (created with a player).
+var sparkles: ParticlePool
+var dust: ParticlePool
+var bubbles: ParticlePool
 
 
 func configure(run_session: RunSession, item_definitions: Dictionary, recovery_anchors: Dictionary, player_node: Node3D = null) -> void:
@@ -57,6 +62,13 @@ func configure(run_session: RunSession, item_definitions: Dictionary, recovery_a
 		distant_visuals.name = "DistantItemVisuals"
 		add_child(distant_visuals)
 		distant_visuals.configure(session.state, definitions)
+		sparkles = ParticlePool.create(ParticlePool.Kind.SPARKLE, 96, true)
+		add_child(sparkles)
+		dust = ParticlePool.create(ParticlePool.Kind.DUST, 64, true)
+		dust.tint = FEEL.dust_color
+		add_child(dust)
+		bubbles = ParticlePool.create(ParticlePool.Kind.BUBBLE, 64, true)
+		add_child(bubbles)
 	if not session.items_changed.is_connected(_on_items_changed):
 		session.items_changed.connect(_on_items_changed)
 	set_process(player != null)
@@ -222,6 +234,31 @@ func activate_item(item_id: StringName) -> WorldItem:
 	return view
 
 
+func reduced_motion() -> bool:
+	return FeelMotion.reduced((player as BeachPlayer).settings_store) if player is BeachPlayer else false
+
+
+## A small dust puff and a few glints where something was taken (bubbles underwater).
+func feel_puff(at: Vector3, reduced := false) -> void:
+	if sparkles == null:
+		return
+	var amount := 0.5 if reduced else 1.0
+	if at.y < WorldItem.WATER_LEVEL - 0.05:
+		bubbles.burst(at, Vector3.UP, maxi(1, int(5 * amount)), 0.4, 0.15, Vector2(0.008, 0.02), 1.6)
+		return
+	dust.burst(at + Vector3.UP * 0.03, Vector3.UP, maxi(1, int(FEEL.pickup_dust * amount)), 0.6, 0.35, Vector2(0.04, 0.08), 0.5)
+	feel_sparkles(at + Vector3.UP * 0.08, int(FEEL.pickup_sparkles * amount))
+
+
+func feel_sparkles(at: Vector3, count: int, color := Color(0, 0, 0, 0)) -> void:
+	if sparkles == null or count <= 0:
+		return
+	var chosen := color
+	if chosen.a <= 0.0:
+		chosen = FEEL.sparkle_colors[int(FeelMotion.cosmetic_random(at.snapped(Vector3.ONE * 0.1)) * FEEL.sparkle_colors.size()) % FEEL.sparkle_colors.size()]
+	sparkles.burst(at, Vector3.UP, count, 0.5, 0.4, Vector2(0.05, 0.08), 0.45, chosen)
+
+
 func take_view_for_presentation(item_id: StringName) -> WorldItem:
 	if not views.has(item_id):
 		return null
@@ -308,12 +345,29 @@ func _spawn_view(record: ItemRecord) -> WorldItem:
 	else:
 		view = WORLD_ITEM_SCENE.instantiate() as WorldItem
 		add_child(view)
+		# Pooled views keep their connections; they are made once, when the view is created.
 		view.fell_out_of_bounds.connect(_on_item_fell_out)
+		view.impacted.connect(_on_item_impacted)
+		view.effects = self
 	view.configure(record, definitions[record.definition_id], recovery_bounds.is_outside)
 	views[record.item_id] = view
 	if player != null:
 		_update_shadow(view, _distance_to_player(record))
 	return view
+
+
+func _on_item_impacted(item_id: StringName, at: Vector3, speed: float) -> void:
+	var reduced := reduced_motion()
+	var count := clampi(int(speed * 2.0), 3, 10)
+	if reduced:
+		count = maxi(1, count / 2)
+	if dust != null:
+		if at.y < WorldItem.WATER_LEVEL - 0.05:
+			bubbles.burst(at, Vector3.UP, count, 0.5, 0.2, Vector2(0.008, 0.02), 1.6)
+		else:
+			dust.burst(at + Vector3.UP * 0.03, Vector3.UP, count, 0.7, 0.5, Vector2(0.04, 0.09), 0.55)
+	if views.has(item_id):
+		(views[item_id] as WorldItem).play_impact(reduced)
 
 
 func _remove_view(item_id: StringName, synchronize: bool) -> void:

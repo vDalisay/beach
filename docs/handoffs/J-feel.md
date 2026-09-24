@@ -10,7 +10,7 @@ Evidence record for the [game-feel plan](../plan/12-game-feel.md), packets J00�
 | J01 Hover | Done | [J01](#j01--hover) |
 | J02 Reticle and label | Done | [J02](#j02--reticle-and-label) |
 | J03 Viewmodel | Done | [J03](#j03--viewmodel) |
-| J04 Pickup and throw | Open | — |
+| J04 Pickup and throw | Done | [J04](#j04--pickup-and-throw) |
 | J05 Placement | Open | — |
 | J06 Tools | Open | — |
 | J07 Completion shine | Open | — |
@@ -136,6 +136,32 @@ Observed before any change: the can hover is a thin white hull; the placed chair
 - **Departures from the packet:** motion is composed into the View nodes and IK targets as above rather than a `Sway/LeftArm/RightArm` node tree; clips are sampled procedurally; the look sway lags the view (turning right swings the hands left) where the packet's signs would lead it; the detector sweep fades out with its activity instead of persisting at 60%; the held-prop soft rim no longer restarts the hovered target's outline-width pop.
 - **Retained tuning:** `tool_tips` for all six tools (below).
 - **Open issues:** the plan's 10-second video clips are replaced by frame sheets and numeric traces, following the earlier C07/FIN handoffs; a single recording is part of J14.
+
+## J04 — Pickup and throw
+
+- **Build:** J03 commit + J04 working tree.
+- **Scene / seed:** `scenes/main.tscn`, `first-shore`.
+- **Setup:** real `request_primary` and `request_throw` routes for the collect, chair pickup and throws; the bucket placed and removed through `try_place`/`try_remove`; a six-item PMD bag staged onto the S1 table, sorted and sealed through the station to get a rack bag; the spam case commits 15 items with `try_collect` in one frame.
+- **Observed:** [traced paths](images/J-feel/j04-paths.png) (yellow = the item's screen path, magenta = the stick tip), each drawn over a mid-flight frame:
+  - Stick collect (top left): the can pops to 1.15 for 60 ms, slides to where the stick shaft meets the sand, then flicks up into the bag mouth, spinning and shrinking only in the last half; a dust puff and glints mark where it lay. Trace: y stays 0.15–0.18 m to the stab point, then rises to 0.78 m while scaling 1.15 → 0.82 → out.
+  - Chair (top right): lifts with a wiggle for 70 ms, arcs up into both hands and arrives at 0.40, the in-hand scale, so it never pops; the carry speed (0.8) applies on the click, not on arrival.
+  - Throw (bottom left): the can leaves the hand and flies forward; on landing it hit at 2.31 m/s, squashed to 0.85 height, puffed four dust quads and returned exactly to `ONE`.
+  - Slot removal (bottom right): the bucket copy lifts 6 cm off its slot, then travels into the hand, shrinking to 0.35; the reticle already shows the brackets over the freed slot.
+  - Rack and container: a sealed bag lifted off the S1 rack and out of the PMD container each travelled into the hand (probe frames, not kept).
+  - Underwater collect: bubbles instead of dust where the item lay.
+  - Spam: 15 commits in one frame kept at most 12 flights, and after 1.2 s none were left in the air.
+  - Save during a flight, then load: the can was in the bag, with no stray view and no invariant errors.
+  - Faint (release all + cancel presentations) inside a prop pickup flight: exactly one world view afterwards.
+- **Reduced motion:** a collected item's view is freed at once (puff at half count, bag fill still updates); prop pickups travel straight over the same duration with no lift or wiggle; landings puff at half count with no squash.
+- **Checks run:** `validate_carry.gd`, `validate_interaction.gd`, `validate_placement.gd`, `validate_physics.gd`, `validate_save_physics.gd`, `validate_tool_filters.gd`, `validate_sealing.gd`, plus `validate_movement.gd`, `validate_purchases.gd` and `validate_dirt.gd` after the hand-rig change, all exit 0.
+- **Fixes found while validating:**
+  - Carried throws did not launch. The throw commit stores the launch velocity and `restore_from_record` applies it while the body is still frozen, which Jolt discards, so thrown items dropped at the player's feet (identical with the tumble off). The thrown view now re-applies the recorded velocity once active. This is the only gameplay-visible change in J04; it makes the view match the committed record.
+  - `HandRig._clear_socket` also freed the socket's direct children, which is where in-flight presentations live, so a hand refresh during a pickup (a second pickup, a slot removal) destroyed the flying view and could leave its id stuck as "presenting". It now clears only the visuals under the socket's View.
+  - `validate_carry.gd` requires the large-prop carry speed within 0.3 s of the click; it was applied only when the flight landed. `_hold_target` now refreshes the hands (skipping the flying view) right after the commit, so the speed applies at once.
+- **Departures from the packet:** the stick waypoint is the point where the shaft meets the ground when main's longer stick has its spike below the sand (looking down), so items never dive underground; `WorldItem.travel_to` takes the packet's options dictionary in place of main's `end_offset`, and landing points use main's `view_offset`/bag View so items meet the visible hand at any FOV; the vacuum travels into the tool socket with the nozzle as its end point rather than parenting to the nozzle marker, which carries the view-model scale; `try_place` now ends any pickup still flying for that prop.
+- **Profile:** the 10-second vacuum profile is recorded with J06, which adds the vacuum motes.
+- **Retained tuning:** none.
+- **Open issues:** none.
 
 ## Retained tuning
 

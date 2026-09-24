@@ -4,6 +4,7 @@ extends Node
 signal feedback_requested(message: String)
 
 const TOOL_ID := &"sand_cleaner"
+const FEEL := preload("res://data/feel/feel_tuning.tres")
 
 var session: RunSession
 var player: BeachPlayer
@@ -78,7 +79,7 @@ func try_click() -> ActionResult:
 		})
 		if result.ok:
 			changed.append(str(view.item_id))
-			player.carry.present_collected(view.item_id)
+			player.carry.present_collected(view.item_id, &"sand_cleaner", float(changed.size() - 1) * FEEL.sand_cleaner_stagger)
 	if changed.is_empty():
 		feedback_requested.emit("No exposed sand litter in patch")
 		return ActionResult.rejected(ActionResult.Reason.WRONG_STATE, "No exposed sand litter in patch")

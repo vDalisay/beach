@@ -7,6 +7,7 @@ signal tool_switch_requested
 const PLAYER_ID := &"local"
 const THROW_MASK := 1 | 4 | 8
 const DISPOSAL_BAG_SCENE := preload("res://scenes/items/disposal_bag.tscn")
+const FEEL := preload("res://data/feel/feel_tuning.tres")
 
 var session: RunSession
 var player: BeachPlayer
@@ -122,20 +123,91 @@ func refresh_hand_visuals() -> void:
 	movement.set_carry_speed_multiplier(0.8 if has_large else 1.0)
 
 
-func present_collected(item_id: StringName) -> void:
+## Presentation of an item already committed to the bag. `source` picks the path: the stick
+## stabs and flicks it in over the stick tip, the vacuum pulls it into the nozzle, and other
+## sources (hand, sand cleaner) arc it straight into the bag mouth.
+func present_collected(item_id: StringName, source: StringName = &"stick", delay := 0.0) -> void:
 	var manager := _view_manager()
 	var view := manager.take_view_for_presentation(item_id) if manager != null else null
 	if view == null:
 		return
-	if _presentation_views.size() >= 12 or (player.settings_store != null and bool(player.settings_store.get_value(&"reduced_motion"))):
+	var reduced := FeelMotion.reduced(player.settings_store)
+	manager.feel_puff(view.global_position, reduced)
+	_prune_presentations()
+	if _presentation_views.size() >= 12 or reduced:
 		view.queue_free()
 		return
 	_presentation_views[item_id] = view
-	view.travel_to(hand_rig.bag_socket, 0.22, true, func() -> void:
+	var distance := view.global_position.distance_to(hand_rig.bag_socket.global_position)
+	var seconds := FeelMotion.travel_seconds(distance, FEEL.bag_travel_base, FEEL.bag_travel_per_meter, FEEL.bag_travel_max)
+	var destination: Node3D = hand_rig.bag_socket
+	var options := {
+		"delay": delay, "end_local": Transform3D(Basis.IDENTITY, _socket_end(hand_rig.bag_socket)),
+		"spin_axis": FeelMotion.cosmetic_axis(item_id), "shrink_from": FEEL.bag_shrink_from,
+	}
+	var shrink := true
+	match source:
+		&"stick":
+			options.merge({"yoink_seconds": FEEL.yoink_seconds, "via": hand_rig.tool_tip(), "via_anchor": hand_rig.tool_socket,
+				"via_fraction": FEEL.stick_tip_fraction, "arc": FEEL.bag_arc_height, "spin_turns": FEEL.bag_spin_turns}, true)
+		&"vacuum":
+			# Into the visible nozzle; the socket is unscaled, so the tip is given in its space.
+			destination = hand_rig.tool_socket
+			seconds = FEEL.vacuum_travel_seconds
+			shrink = false
+			var nozzle := hand_rig.tool_socket.global_transform.affine_inverse() * hand_rig.tool_tip().global_position
+			options.merge({"ease": &"in", "stretch": FEEL.vacuum_stretch, "shrink_from": 0.4, "end_local": Transform3D(Basis.IDENTITY, nozzle)}, true)
+		_:
+			options.merge({"yoink_seconds": FEEL.yoink_seconds * 0.7, "arc": FEEL.bag_arc_height, "spin_turns": FEEL.bag_spin_turns * 0.5}, true)
+	view.travel_to(destination, seconds, shrink, func() -> void:
 		_presentation_views.erase(item_id)
 		if is_instance_valid(view):
 			view.queue_free()
-	, hand_rig.view_offset(hand_rig.bag_socket))
+		if source == &"vacuum":
+			hand_rig.bag_catch(0.35)
+		else:
+			player.play_cue(&"bag_catch", {"strength": 1.0})
+	, options)
+
+
+## Animates a temporary visual from `from_global` into `destination` (hand socket or bag socket).
+## `on_arrival` runs after the visual is freed (the knife uses it for the bag catch of cut
+## attachments); without it the hands refresh so the held visual appears as this one lands.
+func present_visual(item_id: StringName, visual: Node3D, from_global: Transform3D, destination: Node3D, end_scale: float, on_arrival := Callable()) -> void:
+	_prune_presentations()
+	_cancel_presentation(item_id)
+	var reduced := FeelMotion.reduced(player.settings_store)
+	destination.add_child(visual)
+	visual.global_transform = from_global
+	_presentation_views[item_id] = visual
+	var t := FeelMotion.tween(visual)
+	if not reduced:
+		var up_local := (destination.global_basis.orthonormalized().inverse() * Vector3.UP).normalized()
+		t.tween_property(visual, "position", visual.position + up_local * FEEL.remove_lift, 0.06).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	var end := Transform3D(Basis.IDENTITY, _socket_end(destination)) if destination is Marker3D else Transform3D.IDENTITY
+	var arrived := func() -> void:
+		_presentation_views.erase(item_id)
+		if is_instance_valid(visual):
+			visual.queue_free()
+		if on_arrival.is_valid():
+			on_arrival.call()
+		else:
+			refresh_hand_visuals()
+	FeelMotion.travel(visual, destination, end, FEEL.prop_travel_seconds, {"arc": 0.0 if reduced else FEEL.prop_arc_height, "shrink_to": end_scale, "shrink_from": 0.2}, arrived, t)
+
+
+## Where a presentation should land in `socket`'s space: the visible bag mouth, or the visible
+## hand for the prop sockets (they carry the view-model FOV correction and motion).
+func _socket_end(socket: Marker3D) -> Vector3:
+	if socket == hand_rig.bag_socket:
+		return hand_rig.visual_parent(socket).transform * FEEL.bag_mouth
+	return hand_rig.view_offset(socket)
+
+
+func _prune_presentations() -> void:
+	for key in _presentation_views.keys():
+		if not is_instance_valid(_presentation_views[key]):
+			_presentation_views.erase(key)
 
 
 ## Presentation only: the bag in hand swells with its fill level.
@@ -166,6 +238,7 @@ func _on_throw_requested() -> void:
 	var object_ref := session.item_store.peek_throw_ref(PLAYER_ID)
 	if object_ref.is_empty():
 		feedback_requested.emit("Nothing to throw")
+		player.play_cue(&"rejected", {"reason": "Nothing to throw"})
 		return
 	var object_id := StringName(str(object_ref.get("id", "")))
 	var is_bag := str(object_ref.get("kind", "")) == "bag"
@@ -175,29 +248,61 @@ func _on_throw_requested() -> void:
 	var spawn_transform := Transform3D(Basis.IDENTITY, spawn_origin)
 	if not _throw_spawn_is_clear(Vector3(0.46, 0.5, 0.32) if is_bag else WorldItem.profile_size(definition.collision_profile), spawn_transform):
 		feedback_requested.emit("Not enough room to throw")
+		player.play_cue(&"rejected", {"reason": "Not enough room to throw"})
 		return
+	# Which hand throws: held objects are in pickup order and slot 0 is the left hand; items
+	# thrown back out of the bag leave from the bag hand.
+	var held := _player_record()[&"held_objects"] as Array
+	var arm := &"left"
+	if not held.is_empty():
+		var last_index := held.size() - 1
+		var last_definition := _definition_for_item(StringName(str((held[last_index] as Dictionary).get("id", ""))))
+		arm = &"both" if last_definition != null and last_definition.hand_cost == 2 else (&"right" if last_index == 1 else &"left")
 	var launch_velocity := forward * (5.5 if definition != null and definition.hand_cost == 2 else 8.0) + Vector3.UP * 1.2
 	var result := session.item_store.try_throw(PLAYER_ID, spawn_transform, launch_velocity, true)
 	if not result.ok:
 		feedback_requested.emit(result.message)
+		player.play_cue(&"rejected", {"reason": result.message})
 		return
+	player.play_cue(&"throw", {"arm": arm})
 	_cancel_presentation(object_id)
 	refresh_hand_visuals()
 	if not is_bag:
 		var manager := _view_manager()
 		if manager != null:
-			manager.restore_world_view(object_id)
+			var thrown := manager.restore_world_view(object_id)
+			if thrown != null:
+				# The record already holds the launch velocity; Jolt drops a velocity set while the
+				# body is still frozen, so apply it again now that the view is active.
+				thrown.linear_velocity = (session.state.items[object_id] as ItemRecord).linear_velocity
+				thrown.arm_impact()
+				if definition.collision_profile == ItemDefinition.CollisionProfile.SMALL and FEEL.throw_spin > 0.0:
+					# A forward tumble: rotation only, the launch velocity is unchanged.
+					thrown.angular_velocity = -camera.global_basis.x * FEEL.throw_spin
 	interactor.clear_target()
 
 
 func _hold_bag_target(target: Dictionary) -> void:
 	var bag_id := StringName(str(target.id))
+	var from := (target.collider as Node3D).global_transform if target.get("collider") is Node3D else Transform3D.IDENTITY
 	var result := session.item_store.try_hold_bag(PLAYER_ID, bag_id, _target_context(target))
 	if not result.ok:
 		feedback_requested.emit(result.message)
+		player.play_cue(&"rejected", {"reason": result.message})
 		return
 	interactor.clear_target()
+	present_bag(bag_id, from)
+	player.play_cue(&"hold_bag")
 	refresh_hand_visuals()
+
+
+## A copy of the sealed bag travels from where it was taken into the next free hand.
+func present_bag(bag_id: StringName, from: Transform3D) -> void:
+	if not session.state.bag_records.has(bag_id) or from == Transform3D.IDENTITY:
+		return
+	var copy := DISPOSAL_BAG_SCENE.instantiate() as DisposalBag
+	present_visual(bag_id, copy, from, next_small_socket(), 0.55)
+	copy.configure(session.state.bag_records[bag_id] as Dictionary, Callable(), true)
 
 
 func _collect_target(target: Dictionary) -> void:
@@ -205,9 +310,12 @@ func _collect_target(target: Dictionary) -> void:
 	var result := session.item_store.try_collect(PLAYER_ID, item_id, _target_context(target))
 	if not result.ok:
 		feedback_requested.emit(result.message)
+		player.play_cue(&"rejected", {"reason": result.message})
 		return
 	interactor.clear_target()
-	present_collected(item_id)
+	var with_stick := hand_rig.active_tool_id() == &"stick"
+	player.play_cue(&"poke" if with_stick else &"hold", {"item_id": str(item_id)})
+	present_collected(item_id, &"stick" if with_stick else &"hand")
 
 
 func _hold_target(target: Dictionary) -> void:
@@ -215,24 +323,39 @@ func _hold_target(target: Dictionary) -> void:
 	var result := session.item_store.try_hold(PLAYER_ID, item_id, _target_context(target))
 	if not result.ok:
 		feedback_requested.emit(result.message)
+		player.play_cue(&"rejected", {"reason": result.message})
 		return
 	interactor.clear_target()
-	hand_rig.show_bag(false)
-	hand_rig.clear_tool()
+	if str(result.receipt.get("source", "")) == "slot":
+		# Taken off a placement slot: PlacementService presents that pickup and sends its cue.
+		return
 	var definition := _definition_for_item(item_id)
+	var large := definition.hand_cost == 2
+	player.play_cue(&"hold", {"large": large})
 	var manager := _view_manager()
 	var view := manager.take_view_for_presentation(item_id) if manager != null else null
 	if view == null:
 		refresh_hand_visuals()
 		return
-	var destination := hand_rig.large_prop_socket if definition.hand_cost == 2 else _next_small_socket()
+	var reduced := FeelMotion.reduced(player.settings_store)
+	manager.feel_puff(view.global_position, reduced)
+	var destination := hand_rig.large_prop_socket if large else next_small_socket()
 	_presentation_views[item_id] = view
-	view.travel_to(destination, 0.24, false, func() -> void:
+	# Stow the bag and tool and apply the carry speed now; the flying view is skipped until it lands.
+	refresh_hand_visuals()
+	view.travel_to(destination, FEEL.prop_travel_seconds, false, func() -> void:
 		_presentation_views.erase(item_id)
 		if is_instance_valid(view):
 			view.queue_free()
 		refresh_hand_visuals()
-	, hand_rig.view_offset(destination))
+		if hand_rig.animator != null:
+			hand_rig.animator.play(&"catch", &"both" if large else (&"left" if destination == hand_rig.left_prop_socket else &"right"), 0.8)
+	, {
+		"reduced": reduced, "yoink_seconds": FEEL.prop_yoink_seconds, "yoink_height": FEEL.prop_yoink_height,
+		"yoink_scale": 1.05, "wiggle_degrees": FEEL.prop_wiggle_degrees, "arc": FEEL.prop_arc_height,
+		"end_scale": 0.4 if large else 0.35, "shrink_from": 0.2,
+		"end_local": Transform3D(Basis.IDENTITY, _socket_end(destination)),
+	})
 
 
 func _target_context(target: Dictionary) -> Dictionary:
@@ -260,9 +383,14 @@ func _throw_spawn_is_clear(size: Vector3, spawn_transform: Transform3D) -> bool:
 	return space.intersect_shape(shape_query, 1).is_empty()
 
 
-func _next_small_socket() -> Marker3D:
+func next_small_socket() -> Marker3D:
 	var held_count := (_player_record()[&"held_objects"] as Array).size()
 	return hand_rig.left_prop_socket if held_count <= 1 else hand_rig.right_prop_socket
+
+
+## Ends an in-flight presentation at once; the committed location is what the game shows.
+func cancel_presentation(item_id: StringName) -> void:
+	_cancel_presentation(item_id)
 
 
 func _cancel_presentation(item_id: StringName) -> void:
@@ -270,8 +398,12 @@ func _cancel_presentation(item_id: StringName) -> void:
 		return
 	var view: Variant = _presentation_views[item_id]
 	_presentation_views.erase(item_id)
-	if is_instance_valid(view):
+	if not is_instance_valid(view):
+		return
+	if view is WorldItem:
 		(view as WorldItem).cancel_travel()
+	else:
+		(view as Node).queue_free()
 
 
 func _definition_for_item(item_id: StringName) -> ItemDefinition:

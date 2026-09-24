@@ -76,8 +76,11 @@ static func travel_seconds(distance: float, base: float, per_meter: float, maxim
 
 ## Moves `node` (a child of `space`) from its transform at the moment this step starts to
 ## `end_local` (in `space`), along an arc. Appends to `existing` when given (after a yoink).
-## options: arc, drop, via (Node3D), via_fraction, spin_turns, spin_axis, visual (Node3D),
-## shrink_to, shrink_from, stretch (Vector3), ease (&"in_out" | &"in" | &"out").
+## options: arc, drop, via (Node3D), via_anchor (Node3D), via_fraction, spin_turns, spin_axis,
+## visual (Node3D), shrink_to, shrink_from, stretch (Vector3), ease (&"in_out" | &"in" | &"out").
+## With `via_anchor` (e.g. the grip), a `via` point below the start height is replaced by where
+## the anchor-to-via segment crosses that height, so a tool tip buried in sand still gives a
+## visible stab point.
 ## Arcs rise along world up, expressed in `space`, so hand sockets on a pitched camera still
 ## lift items upward in the world.
 static func travel(node: Node3D, space: Node3D, end_local: Transform3D, seconds: float, options: Dictionary, finished: Callable, existing: Tween = null) -> Tween:
@@ -86,6 +89,7 @@ static func travel(node: Node3D, space: Node3D, end_local: Transform3D, seconds:
 	var arc := float(options.get("arc", 0.0))
 	var drop := float(options.get("drop", 0.0))
 	var via: Node3D = options.get("via")
+	var via_anchor: Node3D = options.get("via_anchor")
 	var via_fraction := clampf(float(options.get("via_fraction", 0.3)), 0.05, 0.9)
 	var spin_turns := float(options.get("spin_turns", 0.0))
 	var spin_axis: Vector3 = options.get("spin_axis", Vector3.UP)
@@ -102,6 +106,7 @@ static func travel(node: Node3D, space: Node3D, end_local: Transform3D, seconds:
 		state["visual_position"] = visual.position if is_instance_valid(visual) else Vector3.ZERO
 		var up := space.global_basis.orthonormalized().inverse() * Vector3.UP
 		state["up"] = up.normalized() if up.length_squared() > 0.0001 else Vector3.UP
+		state["floor"] = node.global_position.y + 0.03
 	)
 	t.tween_method(func(progress: float) -> void:
 		if not is_instance_valid(node) or not is_instance_valid(space) or not state.has("start"):
@@ -114,7 +119,12 @@ static func travel(node: Node3D, space: Node3D, end_local: Transform3D, seconds:
 		var position := Vector3.ZERO
 		if via != null:
 			if is_instance_valid(via) and via.is_inside_tree():
-				state["tip"] = space.global_transform.affine_inverse() * via.global_position
+				var tip_world := via.global_position
+				var floor_y := float(state["floor"])
+				if via_anchor != null and is_instance_valid(via_anchor) and tip_world.y < floor_y:
+					var grip := via_anchor.global_position
+					tip_world = grip.lerp(tip_world, clampf((grip.y - floor_y) / maxf(grip.y - tip_world.y, 0.001), 0.0, 1.0)) if grip.y > floor_y else Vector3(tip_world.x, floor_y, tip_world.z)
+				state["tip"] = space.global_transform.affine_inverse() * tip_world
 			var tip: Vector3 = state.get("tip", p0)
 			if progress < via_fraction:
 				position = p0.lerp(tip, ease_named(progress / via_fraction, &"out"))
