@@ -50,7 +50,7 @@ func _ready() -> void:
 	_add_modules(PLATFORM, "Platform", 72, func(index: int) -> Transform3D:
 		return Transform3D(Basis.IDENTITY, Vector3(245 + (index % 4) * 2.5, 1.25, 37 + (index / 4) * 2.5))
 	)
-	_add_modules(PLATFORM, "Platform", 77, func(index: int) -> Transform3D:
+	_add_modules(PLATFORM, "Platform", 63, func(index: int) -> Transform3D:
 		return Transform3D(Basis.IDENTITY, Vector3(241 + (index % 7) * 2.5, 1.25, 67 + (index / 7) * 2.5))
 	, "PierHeadPlatform")
 	_add_modules(POLE, "Pole", 12, func(index: int) -> Transform3D:
@@ -67,12 +67,12 @@ func _ready() -> void:
 			return Transform3D(Basis(Vector3.UP, -PI / 2.0), Vector3(245, 1.45, 37 + index * 2.5))
 		return Transform3D(Basis(Vector3.UP, PI / 2.0), Vector3(255, 1.45, 64.5 - (index - 12) * 2.5))
 	)
-	_add_modules(RAILING, "Railing", 29, func(index: int) -> Transform3D:
-		if index < 11:
+	_add_modules(RAILING, "Railing", 25, func(index: int) -> Transform3D:
+		if index < 9:
 			return Transform3D(Basis(Vector3.UP, -PI / 2.0), Vector3(241, 1.45, 67 + index * 2.5))
-		if index < 22:
-			return Transform3D(Basis(Vector3.UP, PI / 2.0), Vector3(259, 1.45, 92 - (index - 11) * 2.5))
-		return Transform3D(Basis.IDENTITY, Vector3(241 + (index - 22) * 2.5, 1.45, 94.5))
+		if index < 18:
+			return Transform3D(Basis(Vector3.UP, PI / 2.0), Vector3(259, 1.45, 87 - (index - 9) * 2.5))
+		return Transform3D(Basis.IDENTITY, Vector3(241 + (index - 18) * 2.5, 1.45, 89.5))
 	, "PierHeadRailing")
 	_add_modules(RAILING, "Railing", 20, func(index: int) -> Transform3D:
 		var z := 13.0 + float(index % 10) * 2.5
@@ -98,13 +98,34 @@ func _ready() -> void:
 	for index in 10:
 		var awning := AWNING.instantiate() as Node3D
 		awning.name = "PierAwning%02d" % index
-		awning.position = Vector3(256.25 - index * 1.25, 5.7, 78.35)
+		awning.position = Vector3(256.25 - index * 1.25, 4.8, 78.35)
 		awning.rotation.y = PI
 		awning.scale.x = 0.5
 		(awning.get_node("Visual/Awning") as MeshInstance3D).material_override = awning_red if index % 2 == 0 else awning_cream
 		add_child(awning)
+	var sign_board := MeshInstance3D.new()
+	sign_board.name = "PierCafeSignBoard"
+	var board_mesh := BoxMesh.new()
+	board_mesh.size = Vector3(5.8, 0.95, 0.12)
+	sign_board.mesh = board_mesh
+	sign_board.position = Vector3(250, 6.4, 79.55)
+	var board_finish := StandardMaterial3D.new()
+	board_finish.albedo_color = Color(0.95, 0.86, 0.68)
+	board_finish.roughness = 0.9
+	sign_board.material_override = board_finish
+	sign_board.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(sign_board)
+	var sign_text := Label3D.new()
+	sign_text.name = "PierCafeSign"
+	sign_text.position = Vector3(250, 6.4, 79.47)
+	sign_text.rotation.y = PI
+	sign_text.text = "PIER CAFÉ"
+	sign_text.font_size = 64
+	sign_text.pixel_size = 0.01
+	sign_text.modulate = Color(0.13, 0.28, 0.3)
+	add_child(sign_text)
 	for side in [-1, 1]:
-		for z in [70.0, 91.0]:
+		for z in [70.0, 87.0]:
 			var lamp := LAMP.instantiate() as Node3D
 			lamp.name = "PierLamp_%d_%d" % [side, int(z)]
 			lamp.position = Vector3(250 + side * 8.5, 1.45, z)

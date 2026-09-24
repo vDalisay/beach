@@ -6,6 +6,8 @@ const REVIEW_VIEWS := [
 	{"name": "reef", "origin": Vector3(2.5, -1.25, 101), "target": Vector3(2.5, -2.25, 107.5)},
 	{"name": "along-shore", "origin": Vector3(-65, 2.1, 32), "target": Vector3(60, 2.1, 37)},
 	{"name": "lounge-pocket", "origin": Vector3(-34, 2.1, 0), "target": Vector3(-22, 1.2, 18)},
+	{"name": "pier-head", "origin": Vector3(62.5, 3.1, 60), "target": Vector3(62.5, 3.0, 84)},
+	{"name": "pier-overhead", "origin": Vector3(44, 24, 57), "target": Vector3(62.5, 1.5, 82)},
 ]
 
 var review_lines := PackedStringArray()

@@ -31,7 +31,7 @@ func _run() -> void:
 	var head_rail := pier.get_node("SyntyPierHeadRailing") as MultiMeshInstance3D
 	var approach_rail := pier.get_node("SyntyApproachRailing") as MultiMeshInstance3D
 	var tower := pier.get_node("SyntyLighthouse") as Node3D
-	check(tower != null and platform.multimesh.mesh != null and platform.multimesh.instance_count == 72 and head_platform.multimesh.instance_count == 77 and support_poles.multimesh.instance_count == 12 and approach.multimesh.instance_count == 40 and rail.multimesh.instance_count == 24 and head_rail.multimesh.instance_count == 29 and approach_rail.multimesh.instance_count == 20, "shortened Synty pier and cafe head assemble in the playable beach")
+	check(tower != null and platform.multimesh.mesh != null and platform.multimesh.instance_count == 72 and head_platform.multimesh.instance_count == 63 and support_poles.multimesh.instance_count == 12 and approach.multimesh.instance_count == 40 and rail.multimesh.instance_count == 24 and head_rail.multimesh.instance_count == 25 and approach_rail.multimesh.instance_count == 20, "shortened Synty pier and cafe head assemble in the playable beach")
 	check(tower.find_children("RedBand*", "MeshInstance3D", false, false).size() == 3, "Synty lighthouse has reference-style painted bands")
 	check(tower.global_position.distance_to(Vector3(72.5, 1.65, 95)) < 0.01 and pier.has_node("SyntyLighthouseIsland/Visual/Ridge") and pier.has_node("SyntyIslandPalm01/Visual/Palm") and pier.has_node("LighthouseIslandCollision/Collision"), "Synty lighthouse sits on a solid planted island offshore")
 	check((pier.get_node("Deck/Collision") as CollisionShape3D).shape != null and (pier.get_node("PierHead/Collision") as CollisionShape3D).shape != null and (pier.get_node("PavilionCollision/Collision") as CollisionShape3D).shape != null and (pier.get_node("Lighthouse/Collision") as CollisionShape3D).shape != null, "pier head, pavilion and lighthouse remain solid")
@@ -46,7 +46,7 @@ func _run() -> void:
 	var water_faces := (beach.get_node("Water/SyntyWaterSurface") as MeshInstance3D).mesh.get_faces()
 	check(water_faces.size() >= 3 and (water_faces[1] - water_faces[0]).cross(water_faces[2] - water_faces[0]).y < 0.0, "water faces the playable camera rather than being back-face culled")
 	var water_material := (beach.get_node("Water/SyntyWaterSurface") as MeshInstance3D).mesh.surface_get_material(0) as ShaderMaterial
-	check(water_material != null and water_material.shader != null and water_material.shader.resource_path.ends_with("shaders/beach_water.gdshader") and is_equal_approx(float(water_material.get_shader_parameter("facet_color_strength")), 1.4), "packed beach water uses its local faceted Synty-texture shader")
+	check(water_material != null and water_material.shader != null and water_material.shader.resource_path.ends_with("shaders/beach_water.gdshader") and is_equal_approx(float(water_material.get_shader_parameter("facet_color_strength")), 0.6), "packed beach water uses its local faceted Synty-texture shader")
 	check((beach.get_node("Terrain/CurvedSandSurface") as MeshInstance3D).mesh != null and not beach.has_node("Terrain/Sand01"), "single visible sand surface replaces obsolete sand boxes")
 	check((beach.get_node("Terrain/CurvedSandSurface") as MeshInstance3D).mesh.get_aabb().size.z > 800.0 and not beach.has_node("Terrain/Seabed") and (beach.get_node("Terrain/CurvedSandCollision/Collision") as CollisionShape3D).shape != null, "rendered coast and playable seabed share one static collision surface")
 	var coast_hit := beach.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(75, 5, 50), Vector3(75, -5, 50)))
@@ -110,7 +110,7 @@ func _run() -> void:
 	check(player.global_position.z > 74.0 and player.global_position.z < 81.0 and player.global_position.y > 1.4, "player walks onto solid pier head and stops at Synty pavilion")
 	check(session.state.validate_invariants(session.definitions).is_empty(), "art-only replacement leaves run ownership valid")
 	main.free()
-	print("P25_PIER lighthouse=1 tiles=149 rails=53 collision=1 failures=%d" % failures)
+	print("P25_PIER lighthouse=1 tiles=135 rails=49 collision=1 failures=%d" % failures)
 	quit(failures)
 
 
