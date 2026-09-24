@@ -32,6 +32,8 @@ var pitch_limit := deg_to_rad(88.0)
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	movement.configure(self, collision_shape, head)
+	if hand_rig.animator != null:
+		hand_rig.animator.configure(hand_rig, self, movement, input_reader)
 	camera.current = true
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
@@ -39,6 +41,8 @@ func _ready() -> void:
 func configure(settings: SettingsStore, run_session: RunSession = null) -> void:
 	settings_store = settings
 	input_reader.settings_store = settings
+	if hand_rig.animator != null:
+		hand_rig.animator.settings = settings
 	if not settings.bindings_changed.is_connected(input_reader.reset_action_edges):
 		settings.bindings_changed.connect(input_reader.reset_action_edges)
 	if not settings.controller_disconnected.is_connected(input_reader.on_controller_disconnected):

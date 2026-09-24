@@ -35,7 +35,10 @@ func configure(
 		interactor.primary_requested.connect(_on_primary_requested)
 		interactor.interact_requested.connect(_on_interact_requested)
 		interactor.throw_requested.connect(_on_throw_requested)
+	if not session.items_changed.is_connected(_on_bag_items_changed):
+		session.items_changed.connect(_on_bag_items_changed)
 	refresh_hand_visuals()
+	_on_bag_items_changed(PackedStringArray())
 
 
 func cycle_selected(step: int = 1) -> void:
@@ -46,6 +49,7 @@ func cycle_selected(step: int = 1) -> void:
 	var selected := int(player_record.get("selected_held_index", 0))
 	player_record[&"selected_held_index"] = posmod(selected + step, held.size())
 	session.finalize_action(PackedStringArray(), PackedStringArray([str(PLAYER_ID)]))
+	hand_rig.mark_selected(int(player_record.get("selected_held_index", 0)), FeelMotion.reduced(player.settings_store))
 
 
 func selected_held_item() -> StringName:
@@ -114,6 +118,7 @@ func refresh_hand_visuals() -> void:
 		)
 		_style_hand_visual(visuals[0], left_ref)
 		_style_hand_visual(visuals[1], right_ref)
+		hand_rig.mark_selected(int(_player_record().get("selected_held_index", 0)), FeelMotion.reduced(player.settings_store))
 	movement.set_carry_speed_multiplier(0.8 if has_large else 1.0)
 
 
@@ -131,6 +136,15 @@ func present_collected(item_id: StringName) -> void:
 		if is_instance_valid(view):
 			view.queue_free()
 	, hand_rig.view_offset(hand_rig.bag_socket))
+
+
+## Presentation only: the bag in hand swells with its fill level.
+func _on_bag_items_changed(_ids: PackedStringArray) -> void:
+	if session == null or not session.state.players.has(PLAYER_ID):
+		return
+	var record := _player_record()
+	var capacity := maxi(int(record.get("bag_capacity", 20)), 1)
+	hand_rig.set_bag_fill(float((record.trash_bag as Array).size() + (record.valuable_bag as Array).size()) / float(capacity))
 
 
 func _on_primary_requested(target: Dictionary) -> void:

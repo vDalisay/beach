@@ -37,6 +37,10 @@ var _curl := {&"L": 0.2, &"R": 0.2}
 var _rest := {}
 var _finger_bones := {}
 var _applied_curl := {}
+## Smoothed palm goals, and the view-model motion (arm clips) applied on top of them each frame
+## so fast clips move the palms with the tools instead of trailing them.
+var _smoothed := {}
+var _motion := {&"L": Transform3D.IDENTITY, &"R": Transform3D.IDENTITY}
 
 
 static func available() -> bool:
@@ -83,6 +87,7 @@ func _ready() -> void:
 		ik.set_pole_node(index, ik.get_path_to(pole))
 		_targets[side] = target
 		_goals[side] = Vector3(-0.3 if side == &"L" else 0.3, -0.5, -0.6)
+		_smoothed[side] = _goals[side]
 		target.position = _goals[side]
 	for bone in skeleton.get_bone_count():
 		_rest[bone] = skeleton.get_bone_rest(bone).basis.get_rotation_quaternion()
@@ -93,9 +98,15 @@ func set_hand(side: StringName, position_value: Vector3, grip: Grip) -> void:
 	_grips[side] = grip
 
 
+## View-model motion for one side (rig space, applied after smoothing); identity at rest.
+func set_motion(side: StringName, motion: Transform3D) -> void:
+	_motion[side] = motion
+
+
 func snap() -> void:
 	for side in _targets:
-		(_targets[side] as Marker3D).position = _goals[side]
+		_smoothed[side] = _goals[side]
+		(_targets[side] as Marker3D).position = (_motion[side] as Transform3D) * (_goals[side] as Vector3)
 		_curl[side] = float((CURLS[_grips[side]] as Array)[0])
 	_apply_fingers()
 
@@ -104,8 +115,10 @@ func _process(delta: float) -> void:
 	var weight := 1.0 - exp(-FOLLOW_RATE * delta)
 	for side in _targets:
 		var target := _targets[side] as Marker3D
-		if not target.position.is_equal_approx(_goals[side]):
-			target.position = target.position.lerp(_goals[side], weight)
+		_smoothed[side] = (_smoothed[side] as Vector3).lerp(_goals[side], weight)
+		var position := (_motion[side] as Transform3D) * (_smoothed[side] as Vector3)
+		if not target.position.is_equal_approx(position):
+			target.position = position
 		_curl[side] = lerpf(float(_curl[side]), float((CURLS[_grips[side]] as Array)[0]), weight)
 	_apply_fingers()
 

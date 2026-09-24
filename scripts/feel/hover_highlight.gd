@@ -28,7 +28,8 @@ static func set_active(root: Node3D, active: bool, style: Style = Style.ACTION, 
 		if active:
 			overlay.material_override = _material(style, see_through or bool(overlay.get_meta(&"see_through", false)))
 	if active:
-		_animate_width(style, reduced_motion)
+		if style != Style.SOFT:
+			_animate_width(style, reduced_motion)
 		for chain_value in _chains.values():
 			_set_breath(chain_value as Material, reduced_motion)
 

@@ -9,7 +9,7 @@ Evidence record for the [game-feel plan](../plan/12-game-feel.md), packets J00�
 | J00 Foundations and baseline | Done | [J00](#j00--foundations-and-baseline) |
 | J01 Hover | Done | [J01](#j01--hover) |
 | J02 Reticle and label | Done | [J02](#j02--reticle-and-label) |
-| J03 Viewmodel | Open | — |
+| J03 Viewmodel | Done | [J03](#j03--viewmodel) |
 | J04 Pickup and throw | Open | — |
 | J05 Placement | Open | — |
 | J06 Tools | Open | — |
@@ -111,9 +111,41 @@ Observed before any change: the can hover is a thin white hull; the placed chair
 - **Retained tuning:** none.
 - **Open issues:** the success pop in the real collect flow appears once J04 adds the `poke` cue.
 
+## J03 — Viewmodel
+
+- **Build:** J02 commit + J03 working tree.
+- **Scene / seed:** `tests/scenes/movement_lab.tscn` for gaits; `scenes/main.tscn`, `first-shore` for clips, tool switch, bag fill, held props, a chair and swimming.
+- **Setup:** real player input through `Input.action_press` for walking, sprinting, crouching and jumping. Staged: the cloth added to owned and equipped tools for the switch; 20 real litter items collected through `try_collect` for the fill; two buckets and then a chair taken through `try_hold`; the player placed in the C08 shallows for swimming.
+- **How it fits the current rig:** `main` now keeps gameplay sockets fixed and carries its view-model FOV correction on a `View` node under each socket, with IK-driven Synty arms. J03 therefore composes its motion into those same view nodes instead of re-parenting sockets under `Sway/LeftArm/RightArm`: `ViewmodelAnimator` computes the sway (bob, breathing, look lag, landing, swim float), a clip transform per arm about the packet's elbow pivots and the tool's working motion; `HandRig.apply_motion` applies `correction × sway × arm clip` to each View, the fallback hand anchors and the IK arm targets (`FirstPersonArms.set_motion` adds the clip after its goal smoothing, so palms stay on the tools during fast clips). Clips are sampled by the animator with `Tween.interpolate_value`, not SceneTree tweens, so a cue raised during physics moves the hands in the next rendered frame. Sockets, `socket_transform`, throws and placement sources are unchanged.
+- **Observed — gaits (movement lab, sway translation in camera space):**
+
+  | Gait | Mean speed | Horizontal p-p | Vertical p-p | Horizontal sway |
+  |---|---|---|---|---|
+  | Walk | 3.39 m/s | 24 mm | 13 mm | 1.0 Hz |
+  | Sprint | 4.83 m/s | 31 mm | 20 mm | 1.25 Hz |
+  | Crouch walk | 1.72 m/s | 12 mm | 10 mm | 0.5 Hz |
+  | Idle | 0 | 0 | 8 mm (breathing) | — |
+  | Carrying a chair (main scene) | 2.66 m/s | 25 mm | 15 mm | heavier bob |
+  | Swimming, idle (main scene) | 0 | 14 mm | 24 mm | slow float |
+
+  A jump dips the hands 54 mm on landing, about 1.08 s after take-off.
+- **Observed — clips and states:** [clip sheet](images/J-feel/j03-clips.png) — each row is rest, then three moments of poke, reach (both arms), place, toss, wipe, slash, dig, sift, recoil, choke, reject (left arm), the cloth rising after a switch from the stick, the bag catch squash, the full-bag wobble and a reduced-motion poke. [Rest, held props and bag](images/J-feel/j03-rest-held-bag.png) — top: the rest view at FOV 70, 85 and 110 keeps main's framing; middle: with two buckets, the selected one lifts and gets the soft rim, and cycling moves it; bottom: the bag at 0, 10 and 20 items. Right after each switch the tool `View` held exactly one child while the old tool fell away under the rig. Across every clip frame, the closest tool tip, socket or palm stayed 220 px from the screen centre at 1080p (the two-arm reach), so nothing crosses the aim point.
+- **Tool tips:** [measured working ends](images/J-feel/j03-tool-tips.png) (magenta) on main's new tool models; retained in `feel_tuning.tres` (table below).
+- **Reduced motion:** sway, landing and breathing stay exactly at identity in every gait and at idle; clips play at 50% with no overshoot; bag fill still follows the fill level; no bag squash or roll; the tool swap has no drop animation.
+- **Checks run:** `validate_movement.gd`, `validate_carry.gd`, `validate_purchases.gd`, `validate_release_pack.gd`, `validate_dirt.gd`, `validate_tool_filters.gd`, all exit 0.
+- **Departures from the packet:** motion is composed into the View nodes and IK targets as above rather than a `Sway/LeftArm/RightArm` node tree; clips are sampled procedurally; the look sway lags the view (turning right swings the hands left) where the packet's signs would lead it; the detector sweep fades out with its activity instead of persisting at 60%; the held-prop soft rim no longer restarts the hovered target's outline-width pop.
+- **Retained tuning:** `tool_tips` for all six tools (below).
+- **Open issues:** the plan's 10-second video clips are replaced by frame sheets and numeric traces, following the earlier C07/FIN handoffs; a single recording is part of J14.
+
 ## Retained tuning
 
 Keep a running table: field, J00 default, retained value, reason.
 
 | Field | J00 default | Retained | Reason |
 |---|---|---|---|
+| `tool_tips[&"stick"]` | (0, −0.32, −0.34) | (0.13, −0.61, −0.88) | Measured spike end of main's `tool_poking_stick.glb` in the tool View (J03) |
+| `tool_tips[&"cloth"]` | (0, −0.02, −0.06) | (−0.10, 0.03, −0.05) | Leading edge of `tool_cloth.glb` |
+| `tool_tips[&"knife"]` | (0, 0.02, −0.12) | (−0.05, 0.14, 0) | Blade tip of the rescue knife as held |
+| `tool_tips[&"detector"]` | (0, −0.20, −0.62) | (0.09, −0.37, −0.82) | Coil of `tool_metal_detector.glb` |
+| `tool_tips[&"sand_cleaner"]` | (0, −0.10, −0.20) | (−0.04, −0.54, −0.95) | Scoop of `tool_sand_cleaner.glb` |
+| `tool_tips[&"vacuum"]` | (0, −0.02, −0.46) | (0.08, −0.26, −0.66) | Nozzle of `tool_vacuum.glb` |

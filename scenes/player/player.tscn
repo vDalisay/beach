@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://scripts/player/player.gd" id="1_player"]
 [ext_resource type="Script" path="res://scripts/player/input_reader.gd" id="2_input"]
@@ -8,6 +8,7 @@
 [ext_resource type="Script" path="res://scripts/player/carry.gd" id="6_carry"]
 [ext_resource type="PackedScene" path="res://art/synty/wrappers/disposal_bag.tscn" id="7_bag"]
 [ext_resource type="PackedScene" path="res://art/first_person_hand.tscn" id="8_hand"]
+[ext_resource type="Script" path="res://scripts/player/viewmodel_animator.gd" id="9_viewmodel"]
 
 [sub_resource type="CapsuleShape3D" id="Capsule_player"]
 radius = 0.35
@@ -55,7 +56,7 @@ current = true
 fov = 85.0
 near = 0.03
 
-[node name="HandRig" type="Node3D" parent="Head/Camera" node_paths=PackedStringArray("bag_socket", "tool_socket", "left_prop_socket", "right_prop_socket", "large_prop_socket", "bag_placeholder")]
+[node name="HandRig" type="Node3D" parent="Head/Camera" node_paths=PackedStringArray("bag_socket", "tool_socket", "left_prop_socket", "right_prop_socket", "large_prop_socket", "bag_placeholder", "animator")]
 unique_name_in_owner = true
 script = ExtResource("4_hands")
 bag_socket = NodePath("BagSocket")
@@ -64,6 +65,7 @@ left_prop_socket = NodePath("LeftPropSocket")
 right_prop_socket = NodePath("RightPropSocket")
 large_prop_socket = NodePath("LargePropSocket")
 bag_placeholder = NodePath("BagSocket/BagPlaceholder")
+animator = NodePath("ViewmodelAnimator")
 
 [node name="LeftHandAnchor" type="Node3D" parent="Head/Camera/HandRig"]
 position = Vector3(-0.36, -0.44, -0.72)
@@ -128,3 +130,6 @@ position = Vector3(0.31, -0.41, -0.73)
 
 [node name="LargePropSocket" type="Marker3D" parent="Head/Camera/HandRig"]
 position = Vector3(0.35, -0.48, -0.9)
+
+[node name="ViewmodelAnimator" type="Node" parent="Head/Camera/HandRig"]
+script = ExtResource("9_viewmodel")

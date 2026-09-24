@@ -4,3 +4,11 @@
 
 [resource]
 script = ExtResource("1_feel")
+tool_tips = Dictionary[StringName, Vector3]({
+&"cloth": Vector3(-0.1, 0.03, -0.05),
+&"detector": Vector3(0.09, -0.37, -0.82),
+&"knife": Vector3(-0.05, 0.14, 0),
+&"sand_cleaner": Vector3(-0.04, -0.54, -0.95),
+&"stick": Vector3(0.13, -0.61, -0.88),
+&"vacuum": Vector3(0.08, -0.26, -0.66)
+})

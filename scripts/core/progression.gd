@@ -126,6 +126,7 @@ func try_equip(player_id: StringName, tool_id: StringName, slot: int) -> ActionR
 	record.active_slot = slot
 	refresh_tool_visual()
 	session.finalize_action(PackedStringArray(), PackedStringArray([str(player_id)]))
+	player.play_cue(&"equip")
 	return ActionResult.accepted(PackedStringArray(), {"tool_id": str(tool_id), "slot": slot})
 
 
@@ -143,6 +144,7 @@ func try_switch_tool(player_id: StringName) -> ActionResult:
 	record.active_slot = 1 - int(record.active_slot)
 	refresh_tool_visual()
 	session.finalize_action(PackedStringArray(), PackedStringArray([str(player_id)]))
+	player.play_cue(&"equip")
 	return ActionResult.accepted(PackedStringArray(), {"active_tool": str(equipped[int(record.active_slot)])})
 
 
@@ -202,7 +204,7 @@ func refresh_tool_visual() -> void:
 	var tool_id := equipped[slot] if slot >= 0 and slot < equipped.size() else &"stick"
 	var definition := offers.get(tool_id) as ToolDefinition
 	var scene: PackedScene = STICK_SCENE if tool_id == &"stick" else (definition.scene() if definition != null else null)
-	var visual := player.hand_rig.set_tool_scene(scene)
+	var visual := player.hand_rig.set_tool_scene(scene, tool_id)
 	if visual != null and tool_id == &"stick":
 		# Grip in the hand, spike angled forward and down towards the sand.
 		visual.position = Vector3(0.0, 0.02, 0.0)
