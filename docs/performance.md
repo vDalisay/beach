@@ -1,6 +1,6 @@
 # Performance measurements — P28
 
-Current-status note, 23 September 2026: these are historical measurements, not a profile of C04 checkout `3c6b431` / `beach-content-6`. The [checkpoint review](plan/08-checkpoint-review.md) ran correctness checks only. C04 still needs its rendered worst-view measurement; C09 still owns exported Godot 4.6.1 target-hardware and extended-session acceptance. Do not infer current frame time from the older samples below.
+Current-status note, 24 September 2026: the content-8 C04 dense lounge view now has a current workspace sample at commit `8d13359`. Godot 4.6.1 Compatibility, 1920×1080, Ryzen 5 5600 / RTX 3070, 600 rendered frames: 7.96 ms average / 14.18 ms p95 frame time, 1.41 ms average physics monitor, 4,936 maximum draw calls, 1,209 nearby views and 3,983 batched distant items. Initial nearby-view build took 2,915 ms; Godot reported 185.5 MB static and 1,356.3 MB video memory. The command was `tests/validate_physics.gd -- --profile --c04-dense` and exited 0. This is a crowded initial player-height view, not the restored occupied worst view. C09 still owns exported Godot 4.6.1 target-hardware and extended-session acceptance. The samples below are historical and do not prove that gate.
 
 Status: development-machine optimization measured on 23 September 2026. A Windows candidate export now exists, but it has not been profiled; GTX 980-class / 8 GB system-RAM performance remains unverified.
 
