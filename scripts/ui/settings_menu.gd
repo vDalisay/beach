@@ -83,6 +83,11 @@ func _input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 			return
 		if store.is_bindable_event(event):
+			var block_reason := store.binding_block_reason(_capture_action, event)
+			if not block_reason.is_empty():
+				notice_label.text = block_reason
+				get_viewport().set_input_as_handled()
+				return
 			var conflicts := store.rebind(_capture_action, event)
 			notice_label.text = "Replaced %s." % ", ".join(conflicts) if not conflicts.is_empty() else "Binding updated."
 			_capture_action = StringName()

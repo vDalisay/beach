@@ -113,6 +113,14 @@ func load_settings() -> Error:
 				if event != null:
 					decoded_events.append(event)
 		if not decoded_events.is_empty():
+			var unsafe_pause_overlap := false
+			if REMAPPABLE_ACTIONS.has(action):
+				for event in decoded_events:
+					if not binding_block_reason(action, event).is_empty():
+						unsafe_pause_overlap = true
+						break
+			if unsafe_pause_overlap:
+				continue
 			InputMap.action_erase_events(action)
 			for event in decoded_events:
 				InputMap.action_add_event(action, event)
@@ -151,7 +159,7 @@ func reset_all() -> void:
 
 
 func rebind(action: StringName, event: InputEvent) -> PackedStringArray:
-	if not REMAPPABLE_ACTIONS.has(action) or not is_bindable_event(event):
+	if not REMAPPABLE_ACTIONS.has(action) or not is_bindable_event(event) or not binding_block_reason(action, event).is_empty():
 		return PackedStringArray()
 
 	var normalized := _normalized_event(event)
@@ -168,6 +176,21 @@ func rebind(action: StringName, event: InputEvent) -> PackedStringArray:
 	return conflicts
 
 
+func binding_block_reason(action: StringName, event: InputEvent) -> String:
+	if not REMAPPABLE_ACTIONS.has(action):
+		return "This action cannot be remapped."
+	var normalized := _normalized_event(event)
+	if _action_has_event(action, normalized):
+		return ""
+	if action == &"pause":
+		for other in REQUIRED_ACTIONS:
+			if other != &"pause" and _action_has_event(other, normalized):
+				return "Pause works in every screen. Choose an unused input."
+	elif _action_has_event(&"pause", normalized):
+		return "That input is reserved for Pause. Change Pause first."
+	return ""
+
+
 func binding_conflicts(action: StringName, event: InputEvent) -> PackedStringArray:
 	var conflicts := PackedStringArray()
 	var context := context_for_action(action)
@@ -179,6 +202,13 @@ func binding_conflicts(action: StringName, event: InputEvent) -> PackedStringArr
 				conflicts.append(str(other))
 				break
 	return conflicts
+
+
+func _action_has_event(action: StringName, event: InputEvent) -> bool:
+	for existing in InputMap.action_get_events(action):
+		if event.is_match(existing, true):
+			return true
+	return false
 
 
 func binding_text(action: StringName, device: PromptDevice = prompt_device) -> String:

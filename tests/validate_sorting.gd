@@ -48,6 +48,15 @@ func _run() -> void:
 	var blocked_world_throw := (player_record.trash_bag as Array).size()
 	player._physics_process(0.016)
 	check((player_record.trash_bag as Array).size() == blocked_world_throw, "world actions cannot consume bag contents in table context")
+	var pause_on_confirm := InputEventJoypadButton.new()
+	pause_on_confirm.button_index = JOY_BUTTON_A
+	pause_on_confirm.pressed = true
+	var confirm_on_pause := InputEventJoypadButton.new()
+	confirm_on_pause.button_index = JOY_BUTTON_START
+	confirm_on_pause.pressed = true
+	main.settings_store.rebind(&"pause", pause_on_confirm)
+	main.settings_store.rebind(&"ui_accept", confirm_on_pause)
+	check(not main.settings_store.binding_block_reason(&"pause", pause_on_confirm).is_empty() and not main.settings_store.binding_block_reason(&"ui_accept", confirm_on_pause).is_empty() and main.settings_store.binding_text(&"pause", SettingsStore.PromptDevice.CONTROLLER) == "Start" and main.settings_store.binding_text(&"ui_accept", SettingsStore.PromptDevice.CONTROLLER) == "A", "global Pause cannot take the table or menu confirm input")
 	view.focused_cell = 0
 	await _joy(JOY_BUTTON_DPAD_UP)
 	check(view.unload_button.has_focus(), "grid top edge gives native focus to Unload")
