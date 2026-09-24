@@ -1,7 +1,6 @@
 extends Node3D
 const Coastline = preload("res://scripts/world/coastline.gd")
 
-const EDGE := preload("res://art/synty/wrappers/world_sand_edge_02.tscn")
 const DUNE := preload("res://art/synty/wrappers/world_reef_ridge.tscn")
 
 @export var sand_material: Material
@@ -10,30 +9,6 @@ const DUNE := preload("res://art/synty/wrappers/world_reef_ridge.tscn")
 func _ready() -> void:
 	_build_sand_surface()
 	_build_outer_dunes()
-	var wrapper := EDGE.instantiate() as Node3D
-	var source := wrapper.get_node("Visual/Edge") as MeshInstance3D
-	var mesh := source.mesh.duplicate() as ArrayMesh
-	for surface in mesh.get_surface_count():
-		var material := source.get_surface_override_material(surface)
-		if material != null:
-			mesh.surface_set_material(surface, material)
-	var instances := MultiMesh.new()
-	instances.transform_format = MultiMesh.TRANSFORM_3D
-	instances.mesh = mesh
-	instances.instance_count = 21
-	for index in 21:
-		var x := float(index * 8 - 80)
-		var shore_z := Coastline.shore_z(x)
-		var gradient := (Coastline.shore_z(x + 1.0) - Coastline.shore_z(x - 1.0)) * 0.5
-		var edge_basis := Basis(Vector3.UP, -atan(gradient)).scaled(Vector3(1, 0.3, 0.5))
-		instances.set_instance_transform(index, Transform3D(edge_basis, Vector3(x, 0.12, shore_z)))
-	var visual := MultiMeshInstance3D.new()
-	visual.name = "SyntySandEdges"
-	visual.multimesh = instances
-	visual.material_override = source.material_override
-	visual.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	add_child(visual)
-	wrapper.free()
 
 
 func _build_outer_dunes() -> void:

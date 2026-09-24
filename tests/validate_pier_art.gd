@@ -41,8 +41,6 @@ func _run() -> void:
 	await physics_frame
 	var island_hit := beach.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(78.5, 5, 95), Vector3(78.5, -2, 95)))
 	check(island_hit.get("collider") == pier.get_node("LighthouseIslandCollision"), "Synty island mesh provides a physical shore above the water")
-	var shore := beach.get_node("Terrain/SyntySandEdges") as MultiMeshInstance3D
-	check(shore.multimesh.instance_count == 21, "compact curved shoreline uses staged sand edges")
 	var water_faces := (beach.get_node("Water/SyntyWaterSurface") as MeshInstance3D).mesh.get_faces()
 	check(water_faces.size() >= 3 and (water_faces[1] - water_faces[0]).cross(water_faces[2] - water_faces[0]).y < 0.0, "water faces the playable camera rather than being back-face culled")
 	var water_material := (beach.get_node("Water/SyntyWaterSurface") as MeshInstance3D).mesh.surface_get_material(0) as ShaderMaterial
