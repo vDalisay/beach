@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3]
+[gd_scene load_steps=14 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
 [ext_resource type="Script" path="res://scripts/ui/settings_store.gd" id="2_settings_store"]
@@ -12,6 +12,7 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/results_view.tscn" id="10_results"]
 [ext_resource type="PackedScene" path="res://scenes/ui/pause_menu.tscn" id="11_pause"]
 [ext_resource type="PackedScene" path="res://scenes/ui/scanner_overlay.tscn" id="12_scanner"]
+[ext_resource type="PackedScene" path="res://scenes/ui/reticle.tscn" id="13_reticle"]
 
 [node name="Main" type="Node"]
 script = ExtResource("1_main")
@@ -206,6 +207,8 @@ autowrap_mode = 2
 
 [node name="SettingsMenu" parent="UI" instance=ExtResource("3_settings_menu")]
 unique_name_in_owner = true
+
+[node name="Reticle" parent="UI" instance=ExtResource("13_reticle")]
 
 [node name="TargetLabel" parent="UI" instance=ExtResource("4_target_label")]
 unique_name_in_owner = true

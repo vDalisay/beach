@@ -62,12 +62,18 @@ func scan() -> Dictionary:
 
 
 func request_primary() -> void:
+	var player := get_parent() as BeachPlayer
 	if current_target.is_empty():
+		if player != null:
+			player.play_cue(&"whiff")
 		return
 	var actions := current_target.get("actions", PackedStringArray()) as PackedStringArray
 	var has_primary := actions.has("collect") or actions.has("hold") or actions.has("hold_bag") or actions.has("place") or actions.has("clean")
 	if not has_primary:
-		action_blocked.emit(str(current_target.get("reason", "Unavailable")))
+		var reason := str(current_target.get("reason", "Unavailable"))
+		action_blocked.emit(reason)
+		if player != null:
+			player.play_cue(&"rejected", {"reason": reason})
 		return
 	primary_requested.emit(current_target.duplicate())
 

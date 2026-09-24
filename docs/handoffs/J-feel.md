@@ -8,7 +8,7 @@ Evidence record for the [game-feel plan](../plan/12-game-feel.md), packets J00�
 |---|---|---|
 | J00 Foundations and baseline | Done | [J00](#j00--foundations-and-baseline) |
 | J01 Hover | Done | [J01](#j01--hover) |
-| J02 Reticle and label | Open | — |
+| J02 Reticle and label | Done | [J02](#j02--reticle-and-label) |
 | J03 Viewmodel | Open | — |
 | J04 Pickup and throw | Open | — |
 | J05 Placement | Open | — |
@@ -97,6 +97,19 @@ Observed before any change: the can hover is a thin white hull; the placed chair
   - A hovered stain grows its visual mesh and overlays, not its `Area3D`, so the target collider never scales (plan §4 rule 2).
 - **Retained tuning:** none.
 - **Open issues:** the disposal-bag-on-rack case is shown with J08, where sealed bags exist. FOV 70/110 hover stills are part of the J14 audit.
+
+## J02 — Reticle and label
+
+- **Build:** J01 commit + J02 working tree.
+- **Scene / seed:** `scenes/main.tscn`, `first-shore`.
+- **Setup:** normal start. Staged: `bag_capacity` 0 for the full-bag case; one clean bucket held through `try_hold` for the placement cases; the vacuum added to owned and equipped tools and the primary action pressed with `Input.action_press` for the spin (staged ownership).
+- **Actions:** looked at open sky; aimed at a can and sent an accepted `poke` cue; filled the bag and clicked the can (a real `request_primary`); held the bucket over the nearest compatible shelf slot and over a chair-row slot; ran the vacuum; opened pause, the booklet and the S1 table and returned; resized to 1280×720 at 100% and 1920×1080 at 150% UI scale.
+- **Observed:** [reticle and label sheet](images/J-feel/j02-reticle-label.png) — top row: idle dot, action ring on the can, amber dashes for the full bag, mint corner brackets over the valid slot, dashes over the incompatible slot. Rows 2–4 are frame strips: the ring contracts and springs back after the accepted cue; the dashed ring shakes and flashes after the rejected click; the vacuum ring spins. Bottom: the label takes an amber border for "Bag full" and "This slot does not accept bucket", and keeps the white border for "Place [Left Mouse Button]"; its text is unchanged. The blocked click sent `rejected`. The reticle hid under pause, in the booklet and at the table and came back after each. Its centre matched the viewport centre exactly at both sizes and scales.
+- **Reduced motion:** the reticle snaps between states with no pop or shake; the amber flash, dashes and brackets remain; the label appears in place without rise, scale or follow smoothing and still switches border style.
+- **Checks run:** `validate_interaction.gd` exit 0, `validate_c01_input.gd` exit 0, `validate_ui.gd` exit 0 (label text contracts and HUD unchanged).
+- **Departures from the packet:** the reticle processes while paused (`PROCESS_MODE_ALWAYS`) so it can hide itself under pause, results and settings. Placement brackets run 45% of the half edge from each corner; the listed 45% of the full edge nearly closed the square. `PlayerInteractor.request_primary` now sends `whiff` and `rejected` (J04 step 6), so a real blocked click could be shown here.
+- **Retained tuning:** none.
+- **Open issues:** the success pop in the real collect flow appears once J04 adds the `poke` cue.
 
 ## Retained tuning
 

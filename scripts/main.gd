@@ -23,6 +23,7 @@ const BEACH_DEFINITION := preload("res://data/world/beach_01.tres")
 @onready var error_panel: PanelContainer = %ErrorPanel
 @onready var error_label: Label = %ErrorLabel
 @onready var target_label: TargetLabel = %TargetLabel
+@onready var reticle: Reticle = $UI/Reticle
 @onready var sorting_view: SortingView = %SortingOverlay
 @onready var collection_receipt: CollectionReceipt = %CollectionReceipt
 @onready var progression_view: ProgressionView = %ProgressionView
@@ -132,6 +133,7 @@ func _open_run(initial_state: RunState, definitions: Dictionary, manifest_hash: 
 	player.configure(settings_store, session)
 	player.pause_changed.connect(_on_player_pause_changed.bind(player))
 	target_label.configure(player.interactor, player.camera)
+	reticle.configure(player)
 	player.carry.feedback_requested.connect(_show_gameplay_feedback)
 	var item_views := ItemViewManager.new()
 	item_views.name = "Items"
@@ -303,6 +305,7 @@ func clear_run() -> void:
 	save_service.player = null
 	save_service._autosave_pending = false
 	target_label.clear_target()
+	reticle.clear()
 	sorting_view.close()
 	collection_receipt.clear_receipt()
 	progression_view.close()
