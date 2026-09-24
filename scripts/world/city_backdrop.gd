@@ -125,16 +125,41 @@ func _ready() -> void:
 func _add_inland_ground() -> void:
 	var land := MeshInstance3D.new()
 	land.name = "InlandGround"
-	var ground_mesh := BoxMesh.new()
-	ground_mesh.size = Vector3(180, 0.2, 160)
+	var vertices := PackedVector3Array()
+	var normals := PackedVector3Array()
+	var indices := PackedInt32Array()
+	var x_positions := [-100.0, -80.0, -60.0, -30.0, 0.0, 30.0, 60.0, 80.0, 100.0]
+	var back_positions := [-92.0, -108.0, -122.0, -137.0, -145.0, -140.0, -126.0, -110.0, -92.0]
+	for column in x_positions.size():
+		var x: float = x_positions[column]
+		var back: float = back_positions[column]
+		var front := maxf(-44.0, -34.0 + (absf(x) - 80.0) * 0.9)
+		for point in [Vector2(front, 0.15), Vector2(back + 10.0, 0.15), Vector2(back, -2.6), Vector2(back - 25.0, -3.2)]:
+			vertices.append(Vector3(x, point.y, point.x))
+			normals.append(Vector3.UP)
+		if column > 0:
+			var a := (column - 1) * 4
+			for strip in 3:
+				indices.append_array(PackedInt32Array([a + strip, a + strip + 4, a + strip + 1, a + strip + 4, a + strip + 5, a + strip + 1]))
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = vertices
+	arrays[Mesh.ARRAY_NORMAL] = normals
+	arrays[Mesh.ARRAY_INDEX] = indices
+	var ground_mesh := ArrayMesh.new()
+	ground_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 	land.mesh = ground_mesh
-	land.position = Vector3(0, -0.16, -125)
+	var land_finish := StandardMaterial3D.new()
+	land_finish.albedo_color = Color(0.83, 0.73, 0.57)
+	land_finish.roughness = 0.96
+	land_finish.cull_mode = BaseMaterial3D.CULL_DISABLED
+	land_finish.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	land.material_override = land_finish
+	land.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(land)
 	var pavement := StandardMaterial3D.new()
 	pavement.albedo_color = Color(0.36, 0.3, 0.25)
 	pavement.roughness = 0.96
-	land.material_override = pavement
-	land.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	add_child(land)
 	var tile := _mesh(SIDEWALK)
 	var bounds := tile.get_aabb()
 	var tiles: Array[Transform3D] = []
