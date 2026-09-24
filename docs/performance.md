@@ -1,5 +1,26 @@
 # Performance measurements — P28
 
+## FIN-06/07 rendering pass — 24 September 2026
+
+Current source review: Godot 4.6.1 Mono Compatibility, content-8, seed `first-shore`, Windows / Ryzen 5 5600 / RTX 3070 / driver 595.79, 1920×1080. The existing crowded shore profile uses 4× MSAA, 4096 directional shadows and the retained lighting/water/environment resources from [C06](handoffs/C06.md#fin-06fin-07-rendering-implementation--24-september-2026). It runs 600 measured frames per setting after 90 warmup frames, disabling one effect at a time and restoring the original resources afterward. CPU/GPU render columns are native viewport timing medians; full-frame median/p95 are wall-clock samples. [Raw output](handoffs/images/FIN08-final/profile.txt).
+
+| Same crowded view | Frame median / p95 (ms) | Render CPU / GPU median (ms) | Max draws | Godot video MB |
+|---|---:|---:|---:|---:|
+| Retained effects | 8.96 / 17.23 | 5.90 / 4.68 | 4,686 | 1,428.4 |
+| SSAO off | 8.34 / 10.30 | 5.81 / 4.49 | 4,545 | 1,428.4 |
+| Glow off | 8.04 / 10.19 | 5.65 / 4.18 | 4,545 | 1,428.4 |
+| Grade off | 8.60 / 10.68 | 5.92 / 4.64 | 4,545 | 1,428.4 |
+| Fog off | 8.25 / 10.26 | 5.86 / 4.47 | 4,545 | 1,428.4 |
+| Caustics off | 8.45 / 10.68 | 5.79 / 4.53 | 4,545 | 1,428.4 |
+
+With all settings restored, a further 600-frame sample measured median 8.66 ms, mean 9.10 ms and p95 10.88 ms, 4,545 maximum draws, 3.34 ms mean physics monitor, 183.5 MB Godot static memory and zero awake bodies. The initial sample still has more draws while streaming settles; its p95 difference is not an isolated SSAO/effect cost. These short samples give native effect-cost observations on the development GPU, not target-hardware certification or a guaranteed added-GPU-time budget.
+
+The [pre-pass baseline](handoffs/images/FIN06-baseline/profile.txt), same dense view and 600-frame protocol before effects/MSAA changes, measured mean 8.01 ms / p95 14.34 ms, 4,967 maximum draws, 184.7 MB static and 1,350.1 MB video memory. It did not record native GPU timing or frame median, so no precise baseline GPU delta is claimed. Current static/video values are engine monitors, not process-resident/dedicated-board telemetry. The source tree was exercised directly; no new exported candidate was profiled.
+
+FIN-08 still needs final assets/presentation and restored worst-view comparison; FIN-10 needs GTX 980-class / 8 GB, exported cold-start/stress/extended-session measurements and a clean machine. Keep the reduction order if measurements require it: SSAO, 4×→2× MSAA, glow, then shadow range/resolution. The prior measurements below remain historical.
+
+## Earlier measurements
+
 Current-status note, 24 September 2026: after the final S2 bin/phone position, the content-8 C04 dense lounge view had a workspace sample with Godot 4.6.1 Compatibility at 1920×1080 on Ryzen 5 5600 / RTX 3070. Across 600 rendered frames: 7.84 ms average / 13.94 ms p95 frame time, 1.41 ms average physics monitor, 4,938 maximum draw calls, 1,209 nearby views and 3,983 batched distant items. Initial nearby-view build took 2,932 ms; Godot reported 185.6 MB static and 1,356.3 MB video memory. The command was `tests/validate_physics.gd -- --profile --c04-dense` and exited 0. Two preceding same-view samples measured 7.96/14.18 and 7.94/14.30 ms average/p95, so small differences are not attributed to the bins. This is a crowded initial player-height view, not the restored occupied worst view. C09 still owns exported Godot 4.6.1 target-hardware and extended-session acceptance. The samples below are historical and do not prove that gate.
 
 Status: development-machine optimization measured on 23 September 2026. A Windows candidate export now exists, but it has not been profiled; GTX 980-class / 8 GB system-RAM performance remains unverified.

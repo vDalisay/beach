@@ -44,7 +44,9 @@ func _run() -> void:
 	var water_faces := (beach.get_node("Water/SyntyWaterSurface") as MeshInstance3D).mesh.get_faces()
 	check(water_faces.size() >= 3 and (water_faces[1] - water_faces[0]).cross(water_faces[2] - water_faces[0]).y < 0.0, "water faces the playable camera rather than being back-face culled")
 	var water_material := (beach.get_node("Water/SyntyWaterSurface") as MeshInstance3D).mesh.surface_get_material(0) as ShaderMaterial
-	check(water_material != null and water_material.shader != null and water_material.shader.resource_path.ends_with("shaders/beach_water.gdshader") and is_equal_approx(float(water_material.get_shader_parameter("facet_color_strength")), 0.6), "packed beach water uses its local faceted Synty-texture shader")
+	check(water_material != null and water_material.shader != null and water_material.shader.resource_path.ends_with("shaders/beach_water.gdshader") and water_material.get_shader_parameter("normal_texture") is Texture2D and water_material.get_shader_parameter("noise_texture") is Texture2D, "packed beach water uses data normals and shore noise in the project shader")
+	var water_arrays := (beach.get_node("Water/SyntyWaterSurface") as MeshInstance3D).mesh.surface_get_arrays(0)
+	check((water_arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array).size() == 5614 and (water_arrays[Mesh.ARRAY_TEX_UV2] as PackedVector2Array).size() == 5614 and (water_arrays[Mesh.ARRAY_COLOR] as PackedColorArray).size() == 5614, "single subdivided water surface carries shore and bed-depth data")
 	check((beach.get_node("Terrain/CurvedSandSurface") as MeshInstance3D).mesh != null and not beach.has_node("Terrain/Sand01"), "single visible sand surface replaces obsolete sand boxes")
 	check((beach.get_node("Terrain/CurvedSandSurface") as MeshInstance3D).mesh.get_aabb().size.z > 800.0 and not beach.has_node("Terrain/Seabed") and (beach.get_node("Terrain/CurvedSandCollision/Collision") as CollisionShape3D).shape != null, "rendered coast and playable seabed share one static collision surface")
 	var coast_hit := beach.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(75, 5, 50), Vector3(75, -5, 50)))

@@ -6,6 +6,8 @@ signal faint_completed(receipt: Dictionary)
 const PLAYER_ID := &"local"
 const GOLDEN_ANGLE := 2.399963229728653
 const UNDERWATER_ENVIRONMENT := preload("res://scenes/world/underwater_environment.tres")
+const SURFACE_ENVIRONMENT := preload("res://scenes/world/beach_environment.tres")
+const VISUAL_TRANSITION_SECONDS := 0.18
 
 var session: RunSession
 var player: BeachPlayer
@@ -19,6 +21,9 @@ var _air_hint: Label
 var _above_seconds := 0.0
 var _recovering := false
 var _markers: Dictionary = {}
+var _visual_environment: Environment
+var _visual_blend := 0.0
+var _visual_submerged := false
 
 
 func configure(run_session: RunSession, player_body: BeachPlayer, water_volume: WaterVolume, oxygen_meter: Control, faint_fade: ColorRect, anchors: Dictionary) -> void:
@@ -36,6 +41,9 @@ func configure(run_session: RunSession, player_body: BeachPlayer, water_volume: 
 	meter.hide()
 	session.save_requested.connect(_on_state_saved)
 	_refresh_markers()
+	_visual_environment = SURFACE_ENVIRONMENT.duplicate() as Environment
+	var record := session.state.players[PLAYER_ID] as Dictionary
+	_reset_visual_environment(water.head_submerged(player.camera.global_position, bool(record.immersed)))
 	set_physics_process(true)
 
 
@@ -55,7 +63,7 @@ func step_environment(delta: float) -> void:
 			player.exit_swimming()
 	var submerged := water.head_submerged(player.camera.global_position, bool(record.immersed))
 	record.immersed = submerged
-	player.camera.environment = UNDERWATER_ENVIRONMENT if submerged else null
+	_update_visual_environment(submerged, delta)
 	var maximum := session.progression.max_air_seconds(PLAYER_ID)
 	if submerged and is_finite(maximum):
 		_above_seconds = 0.0
@@ -67,6 +75,37 @@ func step_environment(delta: float) -> void:
 		if _above_seconds >= 1.0:
 			record.air_remaining = 60.0 if not is_finite(maximum) else maximum
 	_update_meter(record, maximum, swimming)
+
+
+func _reset_visual_environment(submerged: bool) -> void:
+	_visual_submerged = submerged
+	_visual_blend = 1.0 if submerged else 0.0
+	_apply_visual_environment()
+
+
+func _update_visual_environment(submerged: bool, delta: float) -> void:
+	var target := 1.0 if submerged else 0.0
+	if _visual_submerged == submerged and is_equal_approx(_visual_blend, target):
+		return
+	_visual_submerged = submerged
+	_visual_blend = move_toward(_visual_blend, target, delta / VISUAL_TRANSITION_SECONDS)
+	_apply_visual_environment()
+
+
+func _apply_visual_environment() -> void:
+	if _visual_blend <= 0.0:
+		player.camera.environment = null
+		return
+	# Only the camera's private copy changes. Oxygen and movement use the real flag immediately.
+	var weight := smoothstep(0.0, 1.0, _visual_blend)
+	for property in [&"ambient_light_energy", &"fog_depth_begin", &"fog_depth_end", &"fog_depth_curve", &"fog_density", &"fog_sky_affect", &"fog_sun_scatter"]:
+		_visual_environment.set(property, lerpf(float(SURFACE_ENVIRONMENT.get(property)), float(UNDERWATER_ENVIRONMENT.get(property)), weight))
+	_visual_environment.ambient_light_color = SURFACE_ENVIRONMENT.ambient_light_color.lerp(UNDERWATER_ENVIRONMENT.ambient_light_color, weight)
+	_visual_environment.fog_light_color = SURFACE_ENVIRONMENT.fog_light_color.lerp(UNDERWATER_ENVIRONMENT.fog_light_color, weight)
+	_visual_environment.fog_enabled = true
+	_visual_environment.glow_enabled = false
+	_visual_environment.ssao_enabled = false
+	player.camera.environment = _visual_environment
 
 
 func try_faint() -> ActionResult:
@@ -249,6 +288,7 @@ func _commit_faint(player_record: Dictionary, plan: Dictionary) -> Dictionary:
 	player_record.velocity = Vector3.ZERO
 	player_record.air_remaining = 60.0 if not is_finite(session.progression.max_air_seconds(PLAYER_ID)) else session.progression.max_air_seconds(PLAYER_ID)
 	player_record.immersed = false
+	_reset_visual_environment(false)
 	player_record.fainted = false
 	_above_seconds = 0.0
 	var receipt := {"pile_id": str(pile_id) if not item_ids.is_empty() or not bag_ids.is_empty() else "", "item_ids": item_ids, "bag_ids": bag_ids, "anchor_id": str(anchor.id), "air_restored": float(player_record.air_remaining)}

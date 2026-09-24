@@ -33,6 +33,11 @@ func _run() -> void:
 	if review_pair and not await _capture_review(main, session, "initial"):
 		_fail("initial review captures failed")
 		return
+	if review_pair and "--review-initial-only" in OS.get_cmdline_user_args():
+		_write_review_log(session)
+		main.free()
+		quit(0)
+		return
 	var waste_ids: Array[StringName] = []
 	var prop_ids: Array[StringName] = []
 	for value in session.state.items.values():
@@ -559,6 +564,7 @@ func _capture_review(main: BeachMain, session: RunSession, state_name: String) -
 		return false
 	var viewport := SubViewport.new()
 	viewport.size = Vector2i(1920, 1080)
+	viewport.msaa_3d = main.get_viewport().msaa_3d
 	viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	viewport.world_3d = (session.get_node("Beach") as Node3D).get_world_3d()
 	root.add_child(viewport)
@@ -567,6 +573,8 @@ func _capture_review(main: BeachMain, session: RunSession, state_name: String) -
 	viewport.add_child(camera)
 	camera.make_current()
 	var player := session.get_node("Player") as BeachPlayer
+	camera.near = player.camera.near
+	camera.far = player.camera.far
 	var ui := main.get_node("UI") as CanvasLayer
 	var ui_was_visible := ui.visible
 	var player_was_visible := player.visible
@@ -578,6 +586,12 @@ func _capture_review(main: BeachMain, session: RunSession, state_name: String) -
 	session.swim_service.set_physics_process(false)
 	var errors := session.state.validate_invariants(session.definitions)
 	var succeeded := errors.is_empty()
+	# Identical shader phase makes successive lighting/effect reviews comparable.
+	var animated_materials: Array[ShaderMaterial] = []
+	for path in ["res://shaders/beach_water.tres", "res://shaders/beach_sand.tres", "res://shaders/seabed_caustics.tres", "res://art/synty/POLYGON_Palm_City/materials/PalmTree_01.tres"]:
+		var material := load(path) as ShaderMaterial
+		material.set_shader_parameter("debug_time", 4.0)
+		animated_materials.append(material)
 	var views := REVIEW_VIEWS.duplicate()
 	if "--mesh-views" in OS.get_cmdline_user_args():
 		views.append_array([
@@ -599,12 +613,29 @@ func _capture_review(main: BeachMain, session: RunSession, state_name: String) -
 		var file_path := disk_dir.path_join("%s-%s.png" % [view.name, state_name])
 		if image.is_empty() or image.save_png(file_path) != OK:
 			succeeded = false
-		review_lines.append("%s %s %s -> %s fov=85 size=1920x1080 populated_views=%d" % [state_name, view.name, origin, view.target, session.item_view_manager.views.size()])
+		if "--review-effects" in OS.get_cmdline_user_args() and str(view.name) in ["aerial", "along-shore", "sports-eye", "reef"]:
+			var original := camera.environment if camera.environment != null else (session.get_node("Beach/WorldEnvironment") as WorldEnvironment).environment
+			var comparison := original.duplicate() as Environment
+			camera.environment = comparison
+			for mode in ["raw", "glow", "grade", "combined", "identity", "no-ao"]:
+				comparison.glow_enabled = original.glow_enabled and mode in ["glow", "combined", "no-ao"]
+				comparison.adjustment_enabled = mode in ["grade", "combined", "identity", "no-ao"]
+				comparison.adjustment_color_correction = load("res://art/look/beach_identity.res") if mode == "identity" else original.adjustment_color_correction
+				comparison.ssao_enabled = original.ssao_enabled and mode != "no-ao"
+				for frame in 6:
+					await physics_frame
+				await RenderingServer.frame_post_draw
+				if viewport.get_texture().get_image().save_png(disk_dir.path_join("%s-%s-%s.png" % [view.name, state_name, mode])) != OK:
+					succeeded = false
+			camera.environment = original if origin.y < 0.0 else null
+		review_lines.append("%s %s %s -> %s fov=85 size=1920x1080 msaa=%d near=%s far=%s populated_views=%d" % [state_name, view.name, origin, view.target, viewport.msaa_3d, camera.near, camera.far, session.item_view_manager.views.size()])
 	player.set_physics_process(player_was_processing)
 	session.swim_service.set_physics_process(swim_was_processing)
 	player.visible = player_was_visible
 	ui.visible = ui_was_visible
 	viewport.free()
+	for material in animated_materials:
+		material.set_shader_parameter("debug_time", -1.0)
 	review_lines.append("%s waste=%d props=%d invariants=%d" % [state_name, session.progress_service.completed_waste, session.progress_service.completed_props, errors.size()])
 	return succeeded
 
@@ -617,8 +648,11 @@ func _write_review_log(session: RunSession) -> bool:
 	var file := FileAccess.open(ProjectSettings.globalize_path(output_dir).path_join("capture-log.txt"), FileAccess.WRITE)
 	if file == null:
 		return false
-	file.store_line("Godot %s; content %s; seed full-run-integration; accelerated setup; build C04" % [Engine.get_version_info().string, session.state.content_version])
-	file.store_line("Sun rotation=(-0.64,-0.75,0) colour=(1,0.88,0.74) energy=0.86; material sand=(1,0.73,0.57); culling enabled")
+	file.store_line("Godot %s; content %s; seed full-run-integration; accelerated setup; main-scene source review (not an exported candidate)" % [Engine.get_version_info().string, session.state.content_version])
+	var sun := session.get_node("Beach/Sun") as DirectionalLight3D
+	file.store_line("Sun rotation=%s colour=%s energy=%s; renderer=%s; culling enabled" % [sun.rotation_degrees, sun.light_color, sun.light_energy, RenderingServer.get_current_rendering_method()])
+	var environment := (session.get_node("Beach/WorldEnvironment") as WorldEnvironment).environment
+	file.store_line("shadow_bias=%s normal_bias=%s range=%s; ambient=%s/%s; fog=%s density=%s begin=%s end=%s; AO=%s; glow=%s/%s; LUT=%s; shader phase=4s" % [sun.shadow_bias, sun.shadow_normal_bias, sun.directional_shadow_max_distance, environment.ambient_light_color, environment.ambient_light_energy, environment.fog_enabled, environment.fog_density, environment.fog_depth_begin, environment.fog_depth_end, environment.ssao_enabled, environment.glow_enabled, environment.glow_intensity, environment.adjustment_color_correction.resource_path])
 	for line in review_lines:
 		file.store_line(line)
 	file.close()

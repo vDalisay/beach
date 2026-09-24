@@ -49,9 +49,7 @@ func _ready() -> void:
 		var point := POSITIONS[index] as Vector2
 		var basis := Basis(Vector3.UP, float(index) * 1.37).scaled(Vector3(1.1, 2.5, 1.1))
 		instances.set_instance_transform(index, Transform3D(basis, Vector3(point.x, -2.95, point.y)))
-	var stone := StandardMaterial3D.new()
-	stone.albedo_color = Color(0.2, 0.37, 0.35)
-	stone.roughness = 0.95
+	var stone := preload("res://shaders/seabed_caustics.tres")
 	var visual := MultiMeshInstance3D.new()
 	visual.name = "SyntyReefRidges"
 	visual.multimesh = instances

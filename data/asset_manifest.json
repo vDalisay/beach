@@ -1,6 +1,7 @@
 {
   "version": 1,
   "source_scene_root": "res://POLYGON_Palm_City/meshes/tscn_separate/",
+  "extra_resources": ["res://POLYGON_Palm_City/textures/caustic_height.png"],
   "assets": [
     {
       "id": "waste_can",

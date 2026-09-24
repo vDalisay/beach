@@ -154,15 +154,14 @@ func _add_inland_ground() -> void:
 	land.mesh = ground_mesh
 	var land_finish := StandardMaterial3D.new()
 	land_finish.albedo_color = Color(0.83, 0.73, 0.57)
-	land_finish.roughness = 0.96
+	land_finish.roughness = 0.95
 	land_finish.cull_mode = BaseMaterial3D.CULL_DISABLED
-	land_finish.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	land.material_override = land_finish
 	land.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(land)
 	var pavement := StandardMaterial3D.new()
 	pavement.albedo_color = Color(0.36, 0.3, 0.25)
-	pavement.roughness = 0.96
+	pavement.roughness = 0.95
 	var tile := _mesh(SIDEWALK)
 	var bounds := tile.get_aabb()
 	var tiles: Array[Transform3D] = []
@@ -198,7 +197,6 @@ func _add_headland_ridges() -> void:
 	finish.vertex_color_use_as_albedo = true
 	finish.roughness = 1.0
 	finish.cull_mode = BaseMaterial3D.CULL_DISABLED
-	finish.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	var ridge_heights := [0.0, 3.0, 6.0, 9.0, 7.0, 8.0, 3.0, 0.0]
 	for side in [-1.0, 1.0]:
 		var vertices := PackedVector3Array()
@@ -263,12 +261,12 @@ func _add_boulevard_details() -> void:
 
 
 func _add_clouds() -> void:
-	var cloud_finish := StandardMaterial3D.new()
-	cloud_finish.albedo_color = Color(0.87, 0.91, 0.94)
-	cloud_finish.cull_mode = BaseMaterial3D.CULL_DISABLED
+	var cloud_finish := preload("res://shaders/beach_clouds.tres").duplicate() as ShaderMaterial
+	var sun := get_parent().get_node("Sun") as DirectionalLight3D
+	cloud_finish.set_shader_parameter("sun_direction", sun.global_basis.z.normalized())
 	var clouds := CLOUD_RING.instantiate() as Node3D
 	clouds.name = "SyntyCloudRing"
-	clouds.scale = Vector3(2.2, 4, 2.2)
+	clouds.scale = Vector3(2.2, 2.5, 2.2)
 	for mesh in clouds.find_children("*", "MeshInstance3D", true, false):
 		(mesh as MeshInstance3D).material_override = cloud_finish
 		(mesh as MeshInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF

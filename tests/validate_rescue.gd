@@ -194,7 +194,12 @@ func _above_floor(player: BeachPlayer, position: Vector3) -> bool:
 
 func _capture(filename: String) -> void:
 	await RenderingServer.frame_post_draw
-	var path := ProjectSettings.globalize_path("res://docs/handoffs/images/%s" % filename)
+	var output := "res://docs/handoffs/images"
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--capture-output="):
+			output = arg.trim_prefix("--capture-output=")
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(output))
+	var path := ProjectSettings.globalize_path(output.path_join(filename))
 	check(root.get_texture().get_image().save_png(path) == OK, "rescue screenshot saved")
 	print("P19_CAPTURE " + path)
 

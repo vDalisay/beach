@@ -7,6 +7,10 @@ const SOURCE_PREFIXES := {
 }
 const STAGED_PREFIX := "res://art/synty/"
 const TEXT_EXTENSIONS := ["tscn", "tres", "gdshader"]
+const PROJECT_SHADERS := {
+	"res://shaders/polygon.gdshader": "res://shaders/beach_polygon.gdshader",
+	"res://shaders/foliage.gdshader": "res://shaders/beach_foliage.gdshader",
+}
 
 var _reference_regex := RegEx.new()
 var _errors: PackedStringArray = []
@@ -21,6 +25,8 @@ func _init() -> void:
 		return
 
 	var pending: Array[String] = []
+	for path in manifest.get("extra_resources", []):
+		pending.append(str(path))
 	var scene_root: String = str(manifest.get("source_scene_root", ""))
 	for asset_value in manifest.get("assets", []):
 		var asset := asset_value as Dictionary
@@ -86,6 +92,13 @@ func _stage_resource(source_path: String) -> PackedStringArray:
 			else:
 				dependencies.append(dependency)
 		content = _rewrite_resource_declarations(content)
+		# These supplied material options require project-specific normal/lighting settings.
+		content = content.replace("shader_parameter/enable_triplanar_normals = true", "shader_parameter/enable_triplanar_normals = false")
+		if source_path == "res://POLYGON_Palm_City/materials/PalmTree_01.tres":
+			for feature in ["emission", "light_wind", "strong_wind", "wind_twist"]:
+				content = content.replace("shader_parameter/enable_%s = true" % feature, "shader_parameter/enable_%s = false" % feature)
+			content = content.replace("shader_parameter/breeze_strength = 0.2", "shader_parameter/breeze_strength = 0.025")
+			content = content.replace("shader_parameter/trunk_smoothness = 0.2", "shader_parameter/trunk_smoothness = 0.05")
 		var output: FileAccess = FileAccess.open(target_path, FileAccess.WRITE)
 		if output == null:
 			_errors.append("Cannot write staged resource: %s" % target_path)
@@ -98,6 +111,15 @@ func _stage_resource(source_path: String) -> PackedStringArray:
 			_errors.append("Cannot write staged resource: %s" % target_path)
 			return dependencies
 		output.store_buffer(bytes)
+		if source_path.get_file() in ["Sand_01.png", "Noise_Small.png", "WaterNormals_01.png", "caustic_height.png", "Fan_01.tga", "Fan_01_Normals.png", "PalmBark_02.png", "PalmBark_02_Normals.png"]:
+			# Sampler mipmap hints cannot create mip levels. Preserve these import settings on clean staging too.
+			var settings := ConfigFile.new()
+			settings.load(target_path + ".import")
+			settings.set_value("remap", "importer", "texture")
+			settings.set_value("remap", "type", "CompressedTexture2D")
+			settings.set_value("params", "mipmaps/generate", true)
+			if settings.save(target_path + ".import") != OK:
+				_errors.append("Cannot configure mipmaps: %s" % target_path)
 
 	_staged_paths.append(target_path)
 	return dependencies
@@ -107,6 +129,14 @@ func _rewrite_resource_declarations(content: String) -> String:
 	var lines: PackedStringArray = content.split("\n")
 	for index in lines.size():
 		if not lines[index].begins_with("[ext_resource"):
+			continue
+		var project_shader := false
+		for source in PROJECT_SHADERS:
+			if lines[index].contains('path="%s"' % source):
+				lines[index] = lines[index].replace('path="%s"' % source, 'path="%s"' % PROJECT_SHADERS[source])
+				project_shader = true
+				break
+		if project_shader:
 			continue
 		lines[index] = lines[index].replace('path="res://POLYGON_Palm_City/', 'path="res://art/synty/POLYGON_Palm_City/')
 		lines[index] = lines[index].replace('path="res://shaders/', 'path="res://art/synty/shaders/')

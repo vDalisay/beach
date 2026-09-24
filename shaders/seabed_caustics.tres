@@ -1,9 +1,9 @@
 [gd_resource type="ShaderMaterial" load_steps=3 format=3]
 
 [ext_resource type="Shader" path="res://shaders/seabed_caustics.gdshader" id="1_shader"]
-[ext_resource type="Texture2D" path="res://art/synty/POLYGON_Palm_City/textures/Noise_Small.png" id="2_noise"]
+[ext_resource type="Texture2D" path="res://art/synty/POLYGON_Palm_City/textures/caustic_height.png" id="2_caustic"]
 
 [resource]
 shader = ExtResource("1_shader")
-shader_parameter/noise_texture = ExtResource("2_noise")
-shader_parameter/sand_color = Vector3(0.18, 0.36, 0.34)
+shader_parameter/caustic_texture = ExtResource("2_caustic")
+shader_parameter/caustic_strength = 0.12

@@ -1,0 +1,13 @@
+Godot Engine v4.6.1.stable.mono.official.14d19694e - https://godotengine.org
+OpenGL API 3.3.0 NVIDIA 595.79 - Compatibility - Using Device: NVIDIA - NVIDIA GeForce RTX 3070
+
+LOOK_PROFILE final frames=600 median_ms=8.96 p95_ms=17.23 render_cpu_ms=5.90 render_gpu_ms=4.68 draws=4686 video_mb=1428.4
+LOOK_PROFILE no-ao frames=600 median_ms=8.34 p95_ms=10.30 render_cpu_ms=5.81 render_gpu_ms=4.49 draws=4545 video_mb=1428.4
+LOOK_PROFILE no-glow frames=600 median_ms=8.04 p95_ms=10.19 render_cpu_ms=5.65 render_gpu_ms=4.18 draws=4545 video_mb=1428.4
+LOOK_PROFILE no-grade frames=600 median_ms=8.60 p95_ms=10.68 render_cpu_ms=5.92 render_gpu_ms=4.64 draws=4545 video_mb=1428.4
+LOOK_PROFILE no-fog frames=600 median_ms=8.25 p95_ms=10.26 render_cpu_ms=5.86 render_gpu_ms=4.47 draws=4545 video_mb=1428.4
+LOOK_PROFILE no-caustics frames=600 median_ms=8.45 p95_ms=10.68 render_cpu_ms=5.79 render_gpu_ms=4.53 draws=4545 video_mb=1428.4
+P07_FRAME_MEDIAN ms=8.66
+P07_SCALE frames=600 views=1209 batches=217 batch_items=3983 awake=0 meshes=2568 largest_pile=6 build_ms=3523.0 memory_mb=183.5 video_mb=1428.4 nodes=13244 frame_avg_ms=9.10 frame_p95_ms=10.88 physics_avg_ms=3.34 draw_calls_max=4545 active_bodies_max=0
+P07_DEVICE os=Windows cpu=AMD Ryzen 5 5600 6-Core Processor gpu=NVIDIA GeForce RTX 3070
+P07_PHYSICS_RECOVERY failures=0

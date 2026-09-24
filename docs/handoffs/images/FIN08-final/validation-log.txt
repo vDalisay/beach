@@ -1,0 +1,89 @@
+FIN-06/07 main-scene validation outputs. Source review, not an exported candidate.
+The first optional shore-reef run exposed queued/mutated test input; the final run flushes distinct events and passes.
+
+--- fin08-checks.log ---
+Godot Engine v4.6.1.stable.mono.official.14d19694e - https://godotengine.org
+
+PASS: boot, asset_closure, ownership, input_bindings, manifest
+
+--- fin08-final.log ---
+Godot Engine v4.6.1.stable.mono.official.14d19694e - https://godotengine.org
+OpenGL API 3.3.0 NVIDIA 595.79 - Compatibility - Using Device: NVIDIA - NVIDIA GeForce RTX 3070
+
+FULL_RUN props_staged=299 final_slot=row:sports:chairs:03:001 elapsed_ms=31651
+FULL_RUN collected=200 elapsed_ms=32423
+FULL_RUN collected=400 elapsed_ms=33037
+FULL_RUN collected=600 elapsed_ms=33780
+FULL_RUN collected=800 elapsed_ms=34596
+FULL_RUN collected=1000 elapsed_ms=35205
+FULL_RUN collected=1200 elapsed_ms=35955
+FULL_RUN collected=1400 elapsed_ms=36626
+FULL_RUN collected=1600 elapsed_ms=37431
+FULL_RUN collected=1800 elapsed_ms=38180
+FULL_RUN collected=2000 elapsed_ms=38791
+FULL_RUN collected=2200 elapsed_ms=39519
+FULL_RUN collected=2400 elapsed_ms=40126
+FULL_RUN collected=2600 elapsed_ms=40876
+FULL_RUN collected=2800 elapsed_ms=41506
+FULL_RUN collected=3000 elapsed_ms=42139
+FULL_RUN collected=3200 elapsed_ms=42841
+FULL_RUN collected=3400 elapsed_ms=43481
+FULL_RUN collected=3600 elapsed_ms=44125
+FULL_RUN collected=3800 elapsed_ms=44910
+FULL_RUN collected=4000 elapsed_ms=45502
+FULL_RUN collected=4200 elapsed_ms=46203
+FULL_RUN collected=4400 elapsed_ms=47027
+FULL_RUN collected=4600 elapsed_ms=47743
+FULL_RUN collected=4800 elapsed_ms=48410
+FULL_RUN collected=5000 elapsed_ms=49003
+FULL_RUN collected=5200 elapsed_ms=49615
+FULL_RUN collected=5400 elapsed_ms=50334
+FULL_RUN_COMPLETE mode=final-prop waste=5400 props=300 results=1 receipt=1 reloaded=2 roam_replacement=1 elapsed_ms=103137
+
+--- fin07-faint.log ---
+Godot Engine v4.6.1.stable.mono.official.14d19694e - https://godotengine.org
+
+P18_FAINT drops=3+bag piles=2 air=10/60/infinite money=0 required=5700 failures=0
+
+--- fin08-traversal.log ---
+Godot Engine v4.6.1.stable.mono.official.14d19694e - https://godotengine.org
+
+SURFACE_CROSSING swimming=true submerged=true at=(0.000002, -1.091715, 45.46588) surfaced=true dry=true at=(-0.003151, -0.125284, 33.92992) air=10.00
+P05_TRAVERSAL waypoints=13 distance=147.0m huts=3 shop=1 reefs=2 reef_items=1010 reef_overlaps=0 catalog=6/6 pier_carry=1 chair_swim=2.00m/s failures=0
+
+--- fin08-pier.log ---
+Godot Engine v4.6.1.stable.mono.official.14d19694e - https://godotengine.org
+
+P25_PIER lighthouse=1 tiles=135 rails=49 collision=1 failures=0
+
+--- fin08-rescue.log ---
+Godot Engine v4.6.1.stable.mono.official.14d19694e - https://godotengine.org
+OpenGL API 3.3.0 NVIDIA 595.79 - Compatibility - Using Device: NVIDIA - NVIDIA GeForce RTX 3070
+
+P19_CAPTURE C:/Users/Home/Documents/beach/docs/handoffs/images/FIN08-rescue/P19-rescue-before.png
+P19_CAPTURE C:/Users/Home/Documents/beach/docs/handoffs/images/FIN08-rescue/P19-rescue-after.png
+C01_RESCUE_INPUT target= tool=stick bag=2 location=BAG revision=31->32
+P19_RESCUE sites=12 attachments=24 bag=0 world=24 required=5700 failures=0
+
+--- fin08-shore-reef-input-timing.log ---
+Godot Engine v4.6.1.stable.mono.official.14d19694e - https://godotengine.org
+OpenGL API 3.3.0 NVIDIA 595.79 - Compatibility - Using Device: NVIDIA - NVIDIA GeForce RTX 3070
+
+SURFACE_CROSSING swimming=true submerged=true at=(0.000002, -1.091715, 45.46588) surfaced=true dry=true at=(-0.003151, -0.125284, 33.92992) air=10.00
+SHORE_REEF item=item:reef_west:outer:00095 reached=true aimed=true collected=false air_at_site=9.55 returned=true dry=true air_return=10.00
+ERROR: P05 TRAVERSAL FAIL: starter air reaches a reef pickup from shore and returns
+   at: push_error (core/variant/variant_utility.cpp:1024)
+   GDScript backtrace (most recent call first):
+       [0] check (res://tests/validate_world_traversal.gd:509)
+       [1] run (res://tests/validate_world_traversal.gd:108)
+       [2] _shore_reef_route (res://tests/validate_world_traversal.gd:490)
+       [3] _physics_frames (res://tests/validate_world_traversal.gd:502)
+P05_TRAVERSAL waypoints=13 distance=147.0m huts=3 shop=1 reefs=2 reef_items=1010 reef_overlaps=0 catalog=6/6 pier_carry=1 chair_swim=2.00m/s failures=1
+
+--- fin08-shore-reef.log ---
+Godot Engine v4.6.1.stable.mono.official.14d19694e - https://godotengine.org
+OpenGL API 3.3.0 NVIDIA 595.79 - Compatibility - Using Device: NVIDIA - NVIDIA GeForce RTX 3070
+
+SURFACE_CROSSING swimming=true submerged=true at=(0.000002, -1.091715, 45.46588) surfaced=true dry=true at=(-0.003151, -0.125284, 33.92992) air=10.00
+SHORE_REEF item=item:reef_west:outer:00095 reached=true aimed=true collected=true air_at_site=9.55 returned=true dry=true air_return=10.00
+P05_TRAVERSAL waypoints=13 distance=147.0m huts=3 shop=1 reefs=2 reef_items=1009 reef_overlaps=0 catalog=6/6 pier_carry=1 chair_swim=2.00m/s failures=0

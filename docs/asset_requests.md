@@ -1,6 +1,8 @@
 # Asset register — C00, 23 September 2026
 
-`data/asset_manifest.json` stages **87 Synty wrapper roles / 245 source and dependency files** from the locally licensed Palm City conversion. The wrapper scene and every source component are named there. `tools/stage_assets.gd` regenerates `art/synty/`; `tests/run_checks.gd` verifies the closure and loads every wrapper. Generated/vendor files stay out of Git.
+`data/asset_manifest.json` stages **87 Synty wrapper roles / 246 source and dependency files** from the locally licensed Palm City conversion. The wrapper scene and every source component are named there. `tools/stage_assets.gd` regenerates `art/synty/`; `tests/run_checks.gd` verifies the closure and loads every wrapper. Generated/vendor files stay out of Git.
+
+FIN-06/07 rendering update, 24 September 2026: the added dependency is the supplied `caustic_height.png`, explicitly listed in `extra_resources` and used on sand and reef rocks. Staging redirects the supplied polygon/foliage materials to attributed project shader variants and enables mipmaps for the sampled sand/water/foliage textures. This adds no asset role and does not resolve any final-art substitution below. See [C06](handoffs/C06.md#fin-06fin-07-rendering-implementation--24-september-2026).
 
 The manifest's 28 `missing_assets` rows name each open role, its current status, the actual runtime consumer, and a replacement path. **A path is not a connection:** where the consumer is a script, passive tool, or `none`, adding a model at `replacement_path` alone will not display it. C07/C08 must wire and inspect those roles. A direct scene replacement must preserve the gameplay node contract and scale. The gallery shows these requests as placeholders; it does not prove that cubes appear in gameplay.
 

@@ -1,0 +1,116 @@
+extends SceneTree
+
+const OUT := "res://docs/handoffs/images/FIN08-play"
+var main: BeachMain
+var session: RunSession
+var player: BeachPlayer
+var lines := PackedStringArray()
+
+func _init() -> void:
+	call_deferred("run")
+
+func frames(count: int) -> void:
+	for frame in count:
+		await physics_frame
+
+func key(code: Key, pressed: bool) -> void:
+	var event := InputEventKey.new()
+	event.physical_keycode = code
+	event.pressed = pressed
+	Input.parse_input_event(event)
+	Input.flush_buffered_events()
+
+func capture(label: String) -> void:
+	await RenderingServer.frame_post_draw
+	root.get_texture().get_image().save_png(OUT.path_join(label + ".png"))
+	var record := session.state.players[&"local"] as Dictionary
+	lines.append("%s feet=%s eye=%s immersed=%s air=%.2f camera_override=%s" % [label, player.global_position, player.camera.global_position, record.immersed, record.air_remaining, player.camera.environment != null])
+
+func run() -> void:
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT))
+	main = (load("res://scenes/main.tscn") as PackedScene).instantiate() as BeachMain
+	root.add_child(main)
+	main.save_service.save_root = "user://test_runs/fin08_play"
+	main.seed_input.text = "full-run-integration"
+	session = main.start_run() as RunSession
+	player = session.get_node("Player") as BeachPlayer
+	# Staged dry starting pose; all subsequent shore/swim movement uses mapped key events.
+	player.global_position = Vector3(0, 0.2, 27)
+	player.look_at(Vector3(0, 0.2, 100))
+	player.camera.rotation.x = -0.22
+	await frames(60)
+	await capture("shore-hud")
+	key(KEY_W, true)
+	await frames(540)
+	key(KEY_W, false)
+	await capture("surface-hud")
+	key(KEY_CTRL, true)
+	await frames(72)
+	key(KEY_CTRL, false)
+	await frames(16)
+	assert(bool((session.state.players[&"local"] as Dictionary).immersed))
+	await capture("submerged-hud")
+	player.camera.rotation.x = 0.25
+	await frames(45)
+	await capture("surface-underside")
+	key(KEY_SPACE, true)
+	await frames(80)
+	key(KEY_SPACE, false)
+	player.camera.rotation.x = -0.16
+	await frames(70)
+	await capture("surfaced-hud")
+	player.rotate_y(PI)
+	key(KEY_W, true)
+	await frames(590)
+	key(KEY_W, false)
+	await frames(75)
+	await capture("returned-dry")
+	# Stationary patch and fixed-object orbits: camera changes, sun/material/time do not.
+	player.set_physics_process(false)
+	session.swim_service.set_physics_process(false)
+	player.get_node("Head/Camera/HandRig").hide()
+	var water := load("res://shaders/beach_water.tres") as ShaderMaterial
+	water.set_shader_parameter("debug_time", 4.0)
+	for angle in [0.15, 0.6]:
+		player.global_position = Vector3(0, 0.2, 34)
+		player.look_at(Vector3(0, 0.2, 100))
+		player.camera.rotation.x = -angle
+		await frames(30)
+		await capture("water-tilt-%s" % angle)
+	var chair: WorldItem
+	for value in session.item_view_manager.views.values():
+		var view := value as WorldItem
+		if view != null and view.definition.definition_id == &"prop_beach_chair":
+			chair = view
+			break
+	if chair != null:
+		var center := chair.global_position + Vector3.UP * 0.5
+		for index in 4:
+			var angle := index * PI / 2.0
+			player.global_position = center + Vector3(cos(angle) * 2.5, 0, sin(angle) * 2.5)
+			player.camera.look_at(center)
+			await frames(30)
+			await capture("chair-orbit-%d" % index)
+	# Real submerged save/load, with no interpolation from the dry environment after reconfiguration.
+	player.global_position = Vector3(2.5, -2.9, 101)
+	player.camera.look_at(Vector3(2.5, -2.25, 107.5))
+	session.swim_service.step_environment(0.18)
+	await frames(25)
+	await capture("reef-save-before")
+	var run_id := session.state.run_id
+	var saved := main.save_service.save_slot(&"manual")
+	var opened := main.load_run(run_id, &"manual")
+	session = main.run_root as RunSession
+	player = session.get_node("Player") as BeachPlayer
+	player.set_physics_process(false)
+	session.swim_service.set_physics_process(false)
+	lines.append("underwater_reload save=%s load=%s override=%s fog_end=%s invariant_errors=%d" % [saved.ok, opened.ok, player.camera.environment != null, player.camera.environment.fog_depth_end if player.camera.environment != null else -1, session.state.validate_invariants(session.definitions).size()])
+	player.camera.look_at(Vector3(2.5, -2.25, 107.5))
+	await frames(30)
+	await capture("reef-save-reloaded")
+	water.set_shader_parameter("debug_time", -1.0)
+	var file := FileAccess.open(OUT.path_join("play-log.txt"), FileAccess.WRITE)
+	file.store_string("Native main scene, staged starting poses, mapped key movement, real save/load.\n" + "\n".join(lines))
+	file.close()
+	main.free()
+	quit()

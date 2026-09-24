@@ -1,13 +1,29 @@
-[gd_resource type="Environment" format=3]
+[gd_resource type="Environment" load_steps=3 format=3]
+
+[ext_resource type="Sky" path="res://scenes/world/beach_sky.tres" id="1"]
+
+[ext_resource type="Texture3D" path="res://art/look/beach_grade.res" id="2_grade"]
 
 [resource]
-background_mode = 1
-background_color = Color(0.08, 0.29, 0.42, 1)
-ambient_light_source = 3
-ambient_light_color = Color(0.32, 0.56, 0.68, 1)
-ambient_light_energy = 0.46
+background_mode = 2
+sky = ExtResource("1")
+ambient_light_source = 2
+ambient_light_color = Color(0.627, 0.753, 0.792, 1)
+ambient_light_energy = 0.38
+ambient_light_sky_contribution = 0.0
+reflected_light_source = 2
 tonemap_mode = 2
+tonemap_exposure = 1.0
 fog_enabled = true
-fog_light_color = Color(0.09, 0.32, 0.47, 1)
-fog_density = 0.075
+fog_mode = 1
+fog_depth_begin = 0.4
+fog_depth_end = 22.0
+fog_depth_curve = 0.85
+fog_density = 0.95
+fog_light_color = Color(0.224, 0.498, 0.573, 1)
 fog_sky_affect = 1.0
+adjustment_enabled = true
+adjustment_brightness = 1.0
+adjustment_contrast = 1.0
+adjustment_saturation = 1.0
+adjustment_color_correction = ExtResource("2_grade")

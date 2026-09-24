@@ -20,6 +20,7 @@ func _run() -> void:
 	var player := session.get_node("Player") as BeachPlayer
 	var record := session.state.players[&"local"] as Dictionary
 	var swim := session.swim_service
+	var underwater_fog_end := SwimService.UNDERWATER_ENVIRONMENT.fog_depth_end
 	var water := swim.water
 	var shop := session.progression.shop
 	var station := session.sorting_stations[&"sorting:S1"] as SortingStation
@@ -43,6 +44,7 @@ func _run() -> void:
 	player.global_position = Vector3(0, -2.0, 70)
 	swim.step_environment(0.1)
 	check(player.movement.is_swimming and bool(record.immersed) and float(record.air_remaining) < 10.0, "submerged player swims and consumes starter air")
+	check(player.camera.environment != null and player.camera.environment != SwimService.UNDERWATER_ENVIRONMENT and player.camera.environment != SwimService.SURFACE_ENVIRONMENT and player.camera.environment.fog_depth_end > SwimService.UNDERWATER_ENVIRONMENT.fog_depth_end, "visual entry fades a private camera environment while air is already consumed")
 	player.movement.physics_step(Vector2.ZERO, false, false, false, 0.1, true, false)
 	check(player.velocity.y > 0.0, "jump input swims upward")
 	for _index in range(3):
@@ -55,7 +57,9 @@ func _run() -> void:
 	player.global_position.y += 0.16
 	swim.step_environment(0.05)
 	check(not bool(record.immersed), "head above exit threshold resurfaces without flicker")
+	check(player.camera.environment != null, "exit keeps the camera override until its short visual fade completes")
 	swim.step_environment(0.6)
+	check(player.camera.environment == null and is_equal_approx(SwimService.UNDERWATER_ENVIRONMENT.fog_depth_end, underwater_fog_end), "completed exit restores the world environment without mutating the shared underwater resource")
 	player.global_position.y = near_surface_feet - 0.16
 	swim.step_environment(0.05)
 	player.global_position.y = near_surface_feet + 0.16

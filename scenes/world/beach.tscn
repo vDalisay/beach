@@ -1,4 +1,4 @@
-[gd_scene load_steps=53 format=3]
+[gd_scene load_steps=49 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/world/zones/arrival.tscn" id="1_arrival"]
 [ext_resource type="PackedScene" path="res://scenes/world/zones/sports.tscn" id="2_sports"]
@@ -29,38 +29,15 @@
 [ext_resource type="PackedScene" path="res://art/synty/wrappers/world_skyline_02.tscn" id="28_skyline_b"]
 [ext_resource type="PackedScene" path="res://art/synty/wrappers/world_beach_shop_02.tscn" id="29_shop_b"]
 [ext_resource type="PackedScene" path="res://art/synty/wrappers/world_beach_shop_03.tscn" id="30_shop_c"]
-[ext_resource type="Texture2D" path="res://art/synty/POLYGON_Palm_City/textures/Sand_01.png" id="31_sand_texture"]
 [ext_resource type="Script" path="res://scripts/world/water_surface.gd" id="32_water_geometry"]
 [ext_resource type="Script" path="res://scripts/world/reef_dressing.gd" id="33_reef_art"]
-[ext_resource type="Material" path="res://shaders/seabed_caustics.tres" id="34_caustics"]
 [ext_resource type="Script" path="res://scripts/world/city_backdrop.gd" id="35_city_backdrop"]
 [ext_resource type="PackedScene" path="res://scenes/world/beach_cafe_set.tscn" id="36_cafe_set"]
 [ext_resource type="PackedScene" path="res://scenes/world/beach_shelter.tscn" id="37_shelter"]
 [ext_resource type="PackedScene" path="res://art/synty/wrappers/world_windsurf.tscn" id="38_windsurf"]
 
-[sub_resource type="ProceduralSkyMaterial" id="SkyMaterial_beach"]
-sky_top_color = Color(0.09, 0.43, 0.72, 1)
-sky_horizon_color = Color(0.72, 0.88, 0.94, 1)
-ground_bottom_color = Color(0.17, 0.48, 0.57, 1)
-ground_horizon_color = Color(0.51, 0.77, 0.8, 1)
-sun_angle_max = 12.0
-
-[sub_resource type="Sky" id="Sky_beach"]
-sky_material = SubResource("SkyMaterial_beach")
-
-[sub_resource type="Environment" id="Environment_beach"]
-background_mode = 2
-sky = SubResource("Sky_beach")
-ambient_light_source = 3
-ambient_light_color = Color(0.67, 0.72, 0.75, 1)
-ambient_light_energy = 0.25
-tonemap_mode = 2
-
-[sub_resource type="StandardMaterial3D" id="Material_sand"]
-albedo_color = Color(1, 0.73, 0.57, 1)
-roughness = 0.96
-albedo_texture = ExtResource("31_sand_texture")
-uv1_scale = Vector3(12, 1, 12)
+[ext_resource type="Environment" path="res://scenes/world/beach_environment.tres" id="39_environment"]
+[ext_resource type="Material" path="res://shaders/beach_sand.tres" id="40_sand"]
 
 [sub_resource type="StandardMaterial3D" id="Material_concrete"]
 albedo_color = Color(0.48, 0.36, 0.3, 1)
@@ -92,17 +69,26 @@ size = Vector3(18, 5, 16)
 [node name="Beach" type="Node3D"]
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
-environment = SubResource("Environment_beach")
+environment = ExtResource("39_environment")
 [node name="Sun" type="DirectionalLight3D" parent="."]
-rotation = Vector3(-0.64, -0.75, 0)
-light_color = Color(1, 0.88, 0.74, 1)
-light_energy = 0.86
+rotation = Vector3(-0.7330383, -0.7504916, 0)
+light_color = Color(1, 0.941176, 0.823529, 1)
+light_energy = 0.85
 shadow_enabled = true
-directional_shadow_max_distance = 180.0
+shadow_opacity = 0.9
+shadow_bias = 0.4
+shadow_normal_bias = 2.0
+shadow_blur = 1.2
+directional_shadow_mode = 2
+directional_shadow_split_1 = 0.08
+directional_shadow_split_2 = 0.22
+directional_shadow_split_3 = 0.5
+directional_shadow_blend_splits = true
+directional_shadow_max_distance = 150.0
 
 [node name="Terrain" type="Node3D" parent="."]
 script = ExtResource("19_shore_art")
-sand_material = SubResource("Material_sand")
+sand_material = ExtResource("40_sand")
 [node name="ReefDressing" type="Node3D" parent="Terrain"]
 script = ExtResource("33_reef_art")
 

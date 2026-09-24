@@ -34,7 +34,9 @@ func _build_outer_dunes() -> void:
 	var visual := MultiMeshInstance3D.new()
 	visual.name = "OuterDunes"
 	visual.multimesh = instances
-	visual.material_override = sand_material
+	var dry_sand := sand_material.duplicate() as ShaderMaterial
+	dry_sand.set_shader_parameter("use_shore_data", false)
+	visual.material_override = dry_sand
 	add_child(visual)
 	wrapper.free()
 
@@ -62,37 +64,42 @@ func _build_outer_palms() -> void:
 func _build_sand_surface() -> void:
 	var vertices := PackedVector3Array()
 	var normals := PackedVector3Array()
-	var colors := PackedColorArray()
 	var uvs := PackedVector2Array()
+	var shore_values := PackedVector2Array()
 	var indices := PackedInt32Array()
 	for index in 401:
 		var x := float(index * 2.5 - 500)
 		var shore_z := Coastline.shore_z(x)
 		var inland_z := Coastline.inland_z(x)
-		var points := [Vector2(inland_z, 0.012), Vector2(shore_z - 2.0, 0.012), Vector2(shore_z + 28.0, -2.5), Vector2(shore_z + 55.0, -3.2), Vector2(800.0, -3.2)]
-		var tints := [Color.WHITE, Color.WHITE, Color(0.95, 0.85, 1), Color(0.65, 0.75, 0.95), Color(0.65, 0.75, 0.95)]
-		for point_index in points.size():
-			var point := points[point_index] as Vector2
-			vertices.append(Vector3(x, point.y, point.x))
-			normals.append(Vector3.UP)
-			colors.append(tints[point_index])
-			uvs.append(Vector2(x / 160.0, point.x / 70.0))
+		for z in [inland_z, shore_z - 2.0, shore_z + 28.0, shore_z + 55.0, 800.0]:
+			vertices.append(Vector3(x, Coastline.surface_y(x, z), z))
+			normals.append(Vector3.ZERO)
+			uvs.append(Vector2(x / 160.0, z / 70.0))
+			shore_values.append(Vector2(shore_z, Coastline.shore_slope(x)))
 		if index > 0:
 			var a := (index - 1) * 5
 			for strip in 4:
 				indices.append_array(PackedInt32Array([a + strip, a + strip + 5, a + strip + 1, a + strip + 5, a + strip + 6, a + strip + 1]))
+	# Godot's clockwise front faces: accumulate area-weighted triangle normals.
+	for triangle in range(0, indices.size(), 3):
+		var a := indices[triangle]
+		var b := indices[triangle + 1]
+		var c := indices[triangle + 2]
+		var normal := (vertices[c] - vertices[a]).cross(vertices[b] - vertices[a])
+		for vertex in [a, b, c]:
+			normals[vertex] += normal
+	for index in normals.size():
+		normals[index] = normals[index].normalized()
 	var arrays := []
 	arrays.resize(Mesh.ARRAY_MAX)
 	arrays[Mesh.ARRAY_VERTEX] = vertices
 	arrays[Mesh.ARRAY_NORMAL] = normals
-	arrays[Mesh.ARRAY_COLOR] = colors
 	arrays[Mesh.ARRAY_TEX_UV] = uvs
+	arrays[Mesh.ARRAY_TEX_UV2] = shore_values
 	arrays[Mesh.ARRAY_INDEX] = indices
 	var mesh := ArrayMesh.new()
 	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-	var surface_material := sand_material.duplicate() as StandardMaterial3D
-	surface_material.vertex_color_use_as_albedo = true
-	mesh.surface_set_material(0, surface_material)
+	mesh.surface_set_material(0, sand_material)
 	var surface := MeshInstance3D.new()
 	surface.name = "CurvedSandSurface"
 	surface.mesh = mesh

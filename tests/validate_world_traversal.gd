@@ -466,9 +466,12 @@ func _shore_reef_route(session: RunSession) -> bool:
 		press.button_index = MOUSE_BUTTON_LEFT
 		press.pressed = true
 		Input.parse_input_event(press)
+		Input.flush_buffered_events()
 		await _physics_frames(2)
-		press.pressed = false
-		Input.parse_input_event(press.duplicate())
+		var release := press.duplicate() as InputEventMouseButton
+		release.pressed = false
+		Input.parse_input_event(release)
+		Input.flush_buffered_events()
 		await physics_frame
 	var air_at_site := float(record.air_remaining)
 	var rise := InputEventJoypadButton.new()

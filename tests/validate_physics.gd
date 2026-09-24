@@ -143,6 +143,8 @@ func _measure_full_scale() -> void:
 	for pile_id in pile_counts:
 		largest_pile = maxi(largest_pile, int(pile_counts[pile_id]))
 	var memory_mb := float(Performance.get_monitor(Performance.MEMORY_STATIC)) / (1024.0 * 1024.0)
+	if "--look-effects" in OS.get_cmdline_user_args():
+		await _profile_look_effects(session)
 	var frame_samples: Array[float] = []
 	var physics_samples: Array[float] = []
 	var max_draw_calls := 0
@@ -162,6 +164,8 @@ func _measure_full_scale() -> void:
 	var frame_average := _average(frame_samples)
 	var physics_average := _average(physics_samples)
 	var frame_p95 := frame_samples[int(floor((frame_samples.size() - 1) * 0.95))]
+	var frame_median := frame_samples[frame_samples.size() / 2]
+	print("P07_FRAME_MEDIAN ms=%.2f" % frame_median)
 	var video_mb := float(Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED)) / (1024.0 * 1024.0)
 	print("P07_SCALE frames=%d views=%d batches=%d batch_items=%d awake=%d meshes=%d largest_pile=%d build_ms=%.1f memory_mb=%.1f video_mb=%.1f nodes=%d frame_avg_ms=%.2f frame_p95_ms=%.2f physics_avg_ms=%.2f draw_calls_max=%d active_bodies_max=%d" % [sample_frames, manager.views.size(), manager.distant_visuals.batch_count(), manager.distant_visuals.instance_count(), manager.awake_count(), manager.visual_instance_count(), largest_pile, manager.build_time_ms, memory_mb, video_mb, int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT)), frame_average, frame_p95, physics_average, max_draw_calls, max_active_bodies])
 	print("P07_DEVICE os=%s cpu=%s gpu=%s" % [OS.get_name(), OS.get_processor_name(), RenderingServer.get_video_adapter_name()])
@@ -280,3 +284,49 @@ func check(condition: bool, message: String) -> void:
 		return
 	failures += 1
 	push_error("P07 FAIL: %s" % message)
+
+
+func _profile_look_effects(session: RunSession) -> void:
+	var environment := (session.get_node("Beach/WorldEnvironment") as WorldEnvironment).environment
+	var fog := environment.fog_enabled
+	var ao := environment.ssao_enabled
+	var glow := environment.glow_enabled
+	var grade := environment.adjustment_enabled
+	var sand := load("res://shaders/beach_sand.tres") as ShaderMaterial
+	var stone := load("res://shaders/seabed_caustics.tres") as ShaderMaterial
+	var sand_caustic := float(sand.get_shader_parameter("caustic_strength"))
+	var stone_caustic := float(stone.get_shader_parameter("caustic_strength"))
+	var viewport_rid := root.get_viewport_rid()
+	RenderingServer.viewport_set_measure_render_time(viewport_rid, true)
+	for mode in ["final", "no-ao", "no-glow", "no-grade", "no-fog", "no-caustics"]:
+		environment.ssao_enabled = ao and mode != "no-ao"
+		environment.glow_enabled = glow and mode != "no-glow"
+		environment.adjustment_enabled = grade and mode != "no-grade"
+		environment.fog_enabled = fog and mode != "no-fog"
+		sand.set_shader_parameter("caustic_strength", 0.0 if mode == "no-caustics" else sand_caustic)
+		stone.set_shader_parameter("caustic_strength", 0.0 if mode == "no-caustics" else stone_caustic)
+		for frame in 90:
+			await process_frame
+		var frames: Array[float] = []
+		var gpu: Array[float] = []
+		var cpu: Array[float] = []
+		var previous := Time.get_ticks_usec()
+		var draws := 0
+		for frame in 600:
+			await process_frame
+			var now := Time.get_ticks_usec()
+			frames.append(float(now - previous) / 1000.0)
+			previous = now
+			gpu.append(RenderingServer.viewport_get_measured_render_time_gpu(viewport_rid))
+			cpu.append(RenderingServer.viewport_get_measured_render_time_cpu(viewport_rid))
+			draws = maxi(draws, int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)))
+		frames.sort()
+		gpu.sort()
+		cpu.sort()
+		print("LOOK_PROFILE %s frames=600 median_ms=%.2f p95_ms=%.2f render_cpu_ms=%.2f render_gpu_ms=%.2f draws=%d video_mb=%.1f" % [mode, frames[300], frames[569], cpu[300], gpu[300], draws, float(Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED)) / 1048576.0])
+	environment.fog_enabled = fog
+	environment.ssao_enabled = ao
+	environment.glow_enabled = glow
+	environment.adjustment_enabled = grade
+	sand.set_shader_parameter("caustic_strength", sand_caustic)
+	stone.set_shader_parameter("caustic_strength", stone_caustic)
