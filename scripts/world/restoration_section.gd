@@ -27,6 +27,7 @@ func configure(run_session: RunSession, beach: Node3D, settings_store: SettingsS
 		section.restoration_visual_root.visible = restored
 		if restored:
 			_set_section_colors(section, false)
+			_start_section_population(section_id)
 	_build_ambient(beach)
 	for zone_id in zone_roots:
 		var root := zone_roots[zone_id] as Node3D
@@ -100,6 +101,8 @@ func _build_section(section: BeachSection) -> void:
 			var starfish := STARFISH_SCENE.instantiate() as Node3D
 			section.restoration_visual_root.add_child(starfish)
 			starfish.global_position = origin + Vector3(index * 2.1 - 1.0, 0.07, 5.0)
+		if str(section.zone_id).begins_with("reef_"):
+			_spawn_school(section.restoration_visual_root, StringName("section:%s:fish" % section.section_id), origin + Vector3(0, 1.2, 3.0))
 	elif kind == "buoy":
 		var buoy := BUOY_SCENE.instantiate() as Node3D
 		section.restoration_visual_root.add_child(buoy)
@@ -220,6 +223,12 @@ func _start_zone_population(zone_id: StringName, loaded: bool) -> void:
 			turtle.start_intro()
 
 
+func _start_section_population(section_id: StringName) -> void:
+	var key := StringName("section:%s:fish" % section_id)
+	if populations.has(key):
+		(populations[key] as FishSchool).start_school()
+
+
 func _reduced_motion() -> bool:
 	return settings != null and bool(settings.get_value(&"reduced_motion"))
 
@@ -231,6 +240,7 @@ func _on_section_restored(section_id: StringName) -> void:
 			return
 		section.restoration_visual_root.show()
 		_set_section_colors(section, true)
+		_start_section_population(section_id)
 
 
 func _on_zone_restored(zone_id: StringName) -> void:

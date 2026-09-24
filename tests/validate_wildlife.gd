@@ -23,7 +23,7 @@ func _run() -> void:
 	var outer := nature.sections[&"reef_west:outer"] as BeachSection
 	var coral := nature.sections[&"reef_west:coral"] as BeachSection
 	var zone_root := nature.zone_roots[&"reef_west"] as Node3D
-	check(nature.populations.size() == 9 and (nature.populations[&"ambient:reef_west"] as FishSchool).mover.looping and (nature.populations[&"ambient:reef_east"] as FishSchool).mover.looping, "two ambient schools coexist with six locked restoration schools and one turtle route")
+	check(nature.populations.size() == 13 and (nature.populations[&"ambient:reef_west"] as FishSchool).mover.looping and (nature.populations[&"ambient:reef_east"] as FishSchool).mover.looping, "two ambient schools coexist with four local and six regional restoration schools and one turtle route")
 	var ambient := nature.populations[&"ambient:reef_west"] as FishSchool
 	var fish_start := ambient.mover.position
 	for frame in range(20):
@@ -39,8 +39,19 @@ func _run() -> void:
 	if "--capture" in OS.get_cmdline_user_args():
 		await _capture("P21-reef-before.png")
 	_complete_section(session, &"reef_west:outer")
-	check(bool((session.state.section_states[&"reef_west:outer"] as Dictionary).restored_once) and outer.restoration_visual_root.visible and not zone_root.visible, "first restored reef section reveals only its own coral and starfish")
-	check(outer.restoration_visual_root.get_child_count() == 15 and coral.restoration_visual_root.get_child_count() == 15, "each reef section has a local clarity patch, twelve coral clusters and two starfish")
+	check(bool((session.state.section_states[&"reef_west:outer"] as Dictionary).restored_once) and outer.restoration_visual_root.visible and not zone_root.visible and (nature.populations[&"section:reef_west:outer:fish"] as FishSchool).mover.looping and not (nature.populations[&"zone:reef_west:01"] as FishSchool).mover.looping, "first restored reef section reveals local habitat and fish before the whole zone completes")
+	check(outer.restoration_visual_root.get_child_count() == 16 and coral.restoration_visual_root.get_child_count() == 16, "each reef section has a clarity patch, twelve coral clusters, two starfish and one local school")
+	var partial_state := RunState.from_snapshot(session.state.to_snapshot())
+	var partial_session := RunSession.new()
+	partial_session.initialize(partial_state, session.definitions)
+	root.add_child(partial_session)
+	var partial_beach := (load("res://scenes/world/beach.tscn") as PackedScene).instantiate() as Node3D
+	partial_session.add_child(partial_beach)
+	var partial_nature := RestorationSection.new()
+	partial_session.add_child(partial_nature)
+	partial_nature.configure(partial_session, partial_beach, main.settings_store)
+	check((partial_nature.populations[&"section:reef_west:outer:fish"] as FishSchool).mover.looping and not (partial_nature.populations[&"section:reef_west:coral:fish"] as FishSchool).mover.looping and not (partial_nature.zone_roots[&"reef_west"] as Node3D).visible, "partial reef reload resumes only the restored section's fish")
+	partial_session.free()
 	for frame in range(90):
 		await process_frame
 	if "--capture" in OS.get_cmdline_user_args():
@@ -66,7 +77,7 @@ func _run() -> void:
 	var loaded_nature := RestorationSection.new()
 	loaded_session.add_child(loaded_nature)
 	loaded_nature.configure(loaded_session, loaded_beach, main.settings_store)
-	check((loaded_nature.sections[&"reef_west:outer"] as BeachSection).restoration_visual_root.visible and (loaded_nature.zone_roots[&"reef_west"] as Node3D).visible and (loaded_nature.populations[&"zone:reef_west:01"] as FishSchool).mover.looping, "reload applies terminal reef and bounded fish population without replaying reward")
+	check((loaded_nature.sections[&"reef_west:outer"] as BeachSection).restoration_visual_root.visible and (loaded_nature.zone_roots[&"reef_west"] as Node3D).visible and (loaded_nature.populations[&"section:reef_west:outer:fish"] as FishSchool).mover.looping and (loaded_nature.populations[&"zone:reef_west:01"] as FishSchool).mover.looping, "reload resumes local and regional fish without replaying reward")
 	check(loaded_nature.populations.size() == population_count and restored.validate_invariants(session.definitions).is_empty(), "snapshot preserves stable school keys and restoration latches")
 	loaded_session.free()
 	var turtle := nature.populations[&"zone:sandplay:turtle"] as PathAnimal
@@ -96,7 +107,7 @@ func _run() -> void:
 		player.camera.global_position = turtle.global_position + Vector3(-0.8, 0.45, 1.5)
 		player.camera.look_at(turtle.global_position)
 		await _capture("P21-turtle-route.png")
-	print("P21_WILDLIFE ambient=2 regional=6 turtle=1 reef_clusters=24 starfish=4 failures=%d" % failures)
+	print("P21_WILDLIFE ambient=2 local=4 regional=6 turtle=1 reef_clusters=24 starfish=4 failures=%d" % failures)
 	main.free()
 	quit(failures)
 
@@ -134,7 +145,13 @@ func _nonblocking(node: Node) -> bool:
 
 func _capture(filename: String) -> void:
 	await RenderingServer.frame_post_draw
-	var path := ProjectSettings.globalize_path("res://docs/handoffs/images/%s" % filename)
+	var output_dir := "res://docs/handoffs/images"
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--capture-output="):
+			output_dir = arg.trim_prefix("--capture-output=")
+	var disk_dir := ProjectSettings.globalize_path(output_dir)
+	DirAccess.make_dir_recursive_absolute(disk_dir)
+	var path := disk_dir.path_join(filename)
 	check(root.get_texture().get_image().save_png(path) == OK, "wildlife screenshot saved")
 	print("P21_CAPTURE " + path)
 

@@ -159,11 +159,10 @@ func _run() -> void:
 		return
 	for frame in 3:
 		await physics_frame
-	if review_pair or audit_slots:
-		var populated_ids := PackedStringArray()
-		for item_id in session.item_view_manager.views:
-			populated_ids.append(str(item_id))
-		await session.item_view_manager._reconcile_at_boundary(populated_ids)
+	var populated_ids := PackedStringArray()
+	for item_id in session.item_view_manager.views:
+		populated_ids.append(str(item_id))
+	await session.item_view_manager._reconcile_at_boundary(populated_ids)
 	if final_special_mode:
 		if not await _finish_with_special_input(session, player, station, container, final_special):
 			_fail("last buried waste did not complete through detector, stick, table and truck")
