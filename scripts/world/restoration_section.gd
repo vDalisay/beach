@@ -7,6 +7,13 @@ const FISH_SCENE := preload("res://scenes/wildlife/fish_school.tscn")
 const TURTLE_SCENE := preload("res://scenes/wildlife/turtle.tscn")
 const STARFISH_SCENE := preload("res://scenes/wildlife/starfish.tscn")
 const RECIPES := preload("res://data/world/restoration_recipes.tres")
+const REEF_DRESSING := preload("res://scripts/world/reef_dressing.gd")
+const REEF_PLANT_ROCKS := {
+	&"reef_west:outer": [0, 1, 3, 4],
+	&"reef_west:coral": [2, 5, 6, 7, 8],
+	&"reef_east:outer": [9, 12, 16],
+	&"reef_east:coral": [11, 13, 14, 17],
+}
 
 var session: RunSession
 var sections: Dictionary = {}
@@ -102,6 +109,7 @@ func _build_section(section: BeachSection) -> void:
 			section.restoration_visual_root.add_child(starfish)
 			starfish.global_position = origin + Vector3(index * 2.1 - 1.0, 0.07, 5.0)
 		if str(section.zone_id).begins_with("reef_"):
+			_build_reef_plants(section)
 			_spawn_school(section.restoration_visual_root, StringName("section:%s:fish" % section.section_id), origin + Vector3(0, 1.2, 3.0))
 	elif kind == "buoy":
 		var buoy := BUOY_SCENE.instantiate() as Node3D
@@ -175,6 +183,65 @@ func _coral_cluster(index: int) -> Node3D:
 	return cluster
 
 
+func _build_reef_plants(section: BeachSection) -> void:
+	for rock_index in REEF_PLANT_ROCKS.get(section.section_id, []):
+		var rock := REEF_DRESSING.STRUCTURES[rock_index] as Vector4
+		# The Synty ridge visual extends farther than its pickup-safe collider.
+		var clearance := 4.5 * (0.52 + float(rock_index % 3) * 0.04) + 0.5
+		var channel_x := 2.5 if str(section.zone_id) == "reef_west" else 40.0
+		var side := -1.0 if rock.x > channel_x else 1.0
+		var local_direction := Vector3(side, 0, 0)
+		# These two sides contain generated litter on the wildlife fixture seed.
+		if rock_index == 0:
+			local_direction = Vector3.BACK
+		elif rock_index == 1:
+			local_direction = Vector3.FORWARD
+		var offset := Basis(Vector3.UP, rock.z) * local_direction * clearance
+		var plant := _seagrass_bed(rock_index)
+		section.add_child(plant)
+		plant.global_position = Vector3(rock.x, -2.95, rock.y) + offset
+
+
+func _seagrass_bed(index: int) -> Node3D:
+	var bed := Node3D.new()
+	bed.name = "SeagrassBed%02d" % index
+	var material := StandardMaterial3D.new()
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	material.vertex_color_use_as_albedo = true
+	material.albedo_color = Color(0.27, 0.35, 0.36)
+	bed.set_meta(&"material", material)
+	bed.set_meta(&"target_color", Color(0.42, 0.73, 0.57))
+	var vertices := PackedVector3Array()
+	var colors := PackedColorArray()
+	var indices := PackedInt32Array()
+	for blade in 7:
+		var angle := float(blade) * TAU / 7.0 + float(index) * 0.37
+		var outward := Vector3(cos(angle), 0, sin(angle))
+		var across := Vector3(-outward.z, 0, outward.x)
+		var height := 0.55 + float((blade * 3 + index) % 5) * 0.13
+		var width := 0.065 + float(blade % 3) * 0.018
+		var base := outward * (0.08 + float(blade % 2) * 0.12)
+		var tip := base + outward * (0.17 + float(index % 2) * 0.1) + Vector3.UP * height
+		var start := vertices.size()
+		vertices.append_array(PackedVector3Array([base - across * width, base + across * width, tip + across * 0.012, tip - across * 0.012]))
+		colors.append_array(PackedColorArray([Color(0.65, 0.72, 0.67), Color(0.65, 0.72, 0.67), Color.WHITE, Color.WHITE]))
+		indices.append_array(PackedInt32Array([start, start + 1, start + 2, start, start + 2, start + 3]))
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = vertices
+	arrays[Mesh.ARRAY_COLOR] = colors
+	arrays[Mesh.ARRAY_INDEX] = indices
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	var visual := MeshInstance3D.new()
+	visual.name = "Blades"
+	visual.mesh = mesh
+	visual.material_override = material
+	bed.add_child(visual)
+	return bed
+
+
 func _build_ambient(beach: Node3D) -> void:
 	var root := Node3D.new()
 	root.name = "AmbientWildlife"
@@ -201,7 +268,7 @@ func _spawn_school(root: Node3D, key: StringName, origin: Vector3) -> FishSchool
 
 
 func _set_section_colors(section: BeachSection, animate: bool) -> void:
-	for child in section.restoration_visual_root.get_children():
+	for child in section.get_children() + section.restoration_visual_root.get_children():
 		if not child.has_meta(&"material"):
 			continue
 		var material := child.get_meta(&"material") as StandardMaterial3D

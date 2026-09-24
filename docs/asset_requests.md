@@ -8,7 +8,7 @@ The manifest's 28 `missing_assets` rows name each open role, its current status,
 |---|---|---|
 | A01 turtle | Project-owned low-poly scene | `scenes/wildlife/turtle.tscn` is loaded by restoration; direct visual replacement is possible. |
 | A02 fish, A03 starfish | Project-owned procedural meshes | `fish_school.gd` and `starfish.gd` construct their visuals; supplied models need integration there. |
-| A04C coral, A04P seaweed/seagrass | Repeated procedural coral; no plant beds | `restoration_section.gd` builds coral; C07 must add distinct plant beds. |
+| A04C coral, A04P seaweed/seagrass | Repeated procedural coral and narrow seagrass ribbons beside reef rocks | `restoration_section.gd` builds both. The seagrass is provisional project art; distinct supplied seaweed/coral models still need to be connected and checked in the playable reef. |
 | A05 shore bird | None | No runtime consumer yet; C07 adds one if art is supplied. |
 | A06 stick | Scaled Synty sign pole, an explicit substitute | `progression.gd` loads the generated wrapper; a new model needs a scene-path edit. |
 | A07V vacuum, A07S sand cleaner, A08 detector, A10 cloth | Project-owned primitive visual scenes | Each `data/tools/*.tres` points to its named `scenes/tools/*.tscn`; those scenes can be replaced in place. |

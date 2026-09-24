@@ -23,6 +23,8 @@ func _run() -> void:
 	var outer := nature.sections[&"reef_west:outer"] as BeachSection
 	var coral := nature.sections[&"reef_west:coral"] as BeachSection
 	var zone_root := nature.zone_roots[&"reef_west"] as Node3D
+	var outer_plant := outer.get_node_or_null("SeagrassBed01") as Node3D
+	check(outer_plant != null and (outer_plant.get_meta(&"material") as StandardMaterial3D).albedo_color.g < 0.4 and _nonblocking(outer_plant), "subdued nonblocking seagrass is present before reef restoration")
 	check(nature.populations.size() == 13 and (nature.populations[&"ambient:reef_west"] as FishSchool).mover.looping and (nature.populations[&"ambient:reef_east"] as FishSchool).mover.looping, "two ambient schools coexist with four local and six regional restoration schools and one turtle route")
 	var ambient := nature.populations[&"ambient:reef_west"] as FishSchool
 	var fish_start := ambient.mover.position
@@ -51,14 +53,16 @@ func _run() -> void:
 	partial_session.add_child(partial_nature)
 	partial_nature.configure(partial_session, partial_beach, main.settings_store)
 	check((partial_nature.populations[&"section:reef_west:outer:fish"] as FishSchool).mover.looping and not (partial_nature.populations[&"section:reef_west:coral:fish"] as FishSchool).mover.looping and not (partial_nature.zone_roots[&"reef_west"] as Node3D).visible, "partial reef reload resumes only the restored section's fish")
+	check(((partial_nature.sections[&"reef_west:outer"] as BeachSection).get_node("SeagrassBed01").get_meta(&"material") as StandardMaterial3D).albedo_color.g > 0.65 and ((partial_nature.sections[&"reef_west:coral"] as BeachSection).get_node("SeagrassBed05").get_meta(&"material") as StandardMaterial3D).albedo_color.g < 0.4, "partial reef reload restores only the completed section's plant colour")
 	partial_session.free()
-	for frame in range(90):
-		await process_frame
-	if "--capture" in OS.get_cmdline_user_args():
-		await create_timer(1.3).timeout
+	await create_timer(1.3).timeout
+	check((outer_plant.get_meta(&"material") as StandardMaterial3D).albedo_color.g > 0.65 and (coral.get_node("SeagrassBed05").get_meta(&"material") as StandardMaterial3D).albedo_color.g < 0.4, "only the restored section brightens its existing seagrass")
 	check(player.camera.global_transform.is_equal_approx(camera_pose), "before/after reef viewpoints stay identical")
 	if "--capture" in OS.get_cmdline_user_args():
 		await _capture("P21-reef-after.png")
+	player.set_input_enabled(true)
+	check(await _collect_unrestored_neighbor(session, player), "normal aimed pickup remains possible in the dirty neighboring reef section")
+	player.set_input_enabled(false)
 	_complete_section(session, &"reef_west:coral")
 	check(bool((session.state.zone_states[&"reef_west"] as Dictionary).restored_once) and zone_root.visible and (nature.populations[&"zone:reef_west:01"] as FishSchool).mover.looping, "second section unlocks regional fish schools once")
 	var population_count := nature.populations.size()
@@ -141,6 +145,41 @@ func _nonblocking(node: Node) -> bool:
 		if not _nonblocking(child):
 			return false
 	return true
+
+
+func _collect_unrestored_neighbor(session: RunSession, player: BeachPlayer) -> bool:
+	for item_value in session.state.items.values():
+		var item := item_value as ItemRecord
+		if item.home_section_id != &"reef_west:coral" or item.location != ItemRecord.Location.WORLD:
+			continue
+		var definition := session.definitions[item.definition_id] as ItemDefinition
+		if definition.kind != ItemDefinition.Kind.WASTE or not ItemStore.collection_tool_for(item, definition).is_empty():
+			continue
+		var view := session.item_view_manager.view_for(item.item_id)
+		if view == null:
+			continue
+		for offset in [Vector3(0, 0, 1.2), Vector3(1.2, 0, 0), Vector3(0, 0, -1.2), Vector3(-1.2, 0, 0)]:
+			player.global_position = view.global_position + offset
+			player.velocity = Vector3.ZERO
+			player.camera.look_at(view.global_position + Vector3.UP * 0.08)
+			await physics_frame
+			if str(player.interactor.update_target().get("id", "")) != str(item.item_id):
+				continue
+			var original := item.last_world_transform
+			var press := InputEventMouseButton.new()
+			press.button_index = MOUSE_BUTTON_LEFT
+			press.pressed = true
+			Input.parse_input_event(press)
+			for frame in 3:
+				await physics_frame
+			var release := press.duplicate() as InputEventMouseButton
+			release.pressed = false
+			Input.parse_input_event(release)
+			await physics_frame
+			if item.location != ItemRecord.Location.BAG:
+				continue
+			return session.item_store.try_throw(&"local", original, Vector3.ZERO).ok and session.state.validate_invariants(session.definitions).is_empty()
+	return false
 
 
 func _capture(filename: String) -> void:
