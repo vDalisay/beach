@@ -94,7 +94,10 @@ func _run() -> void:
 	session.zone_restored.emit(&"reef_west")
 	check(nature.populations.size() == population_count and outer.restoration_visual_root.get_child_count() == visual_count and zone_root.get_child_count() == 3, "replayed restoration signals never duplicate coral, fish or reef turtle")
 	check(_nonblocking(zone_root) and _nonblocking(outer.restoration_visual_root), "restoration wildlife and plants have no interaction or physics colliders")
-	check(session.state.validate_invariants(session.definitions).is_empty(), "staged completed reef preserves logical ownership and progress")
+	var audit_errors := session.state.validate_invariants(session.definitions)
+	if not audit_errors.is_empty():
+		print("P21_INVARIANTS " + str(audit_errors))
+	check(audit_errors.is_empty(), "staged completed reef preserves logical ownership and progress")
 	var restored := RunState.from_snapshot(session.state.to_snapshot())
 	var loaded_session := RunSession.new()
 	loaded_session.initialize(restored, session.definitions)
@@ -106,7 +109,10 @@ func _run() -> void:
 	loaded_nature.configure(loaded_session, loaded_beach, main.settings_store)
 	check((loaded_nature.sections[&"reef_west:outer"] as BeachSection).restoration_visual_root.visible and (loaded_nature.zone_roots[&"reef_west"] as Node3D).visible and (loaded_nature.populations[&"section:reef_west:outer:fish"] as FishSchool).mover.looping and (loaded_nature.populations[&"zone:reef_west:01"] as FishSchool).mover.looping, "reload resumes local and regional fish without replaying reward")
 	check((loaded_nature.populations[&"zone:reef_west:turtle"] as PathAnimal).looping and not (loaded_nature.populations[&"zone:reef_east:turtle"] as PathAnimal).looping, "reload resumes only the completed reef's turtle loop")
-	check(loaded_nature.populations.size() == population_count and restored.validate_invariants(session.definitions).is_empty(), "snapshot preserves stable school keys and restoration latches")
+	var restored_errors := restored.validate_invariants(session.definitions)
+	if not restored_errors.is_empty():
+		print("P21_RESTORED_INVARIANTS " + str(restored_errors))
+	check(loaded_nature.populations.size() == population_count and restored_errors.is_empty(), "snapshot preserves stable school keys and restoration latches")
 	loaded_session.free()
 	var turtle := nature.populations[&"zone:lounges:turtle"] as PathAnimal
 	check((turtle.get_child(0) as Node3D).basis.z.dot(Vector3.FORWARD) > 0.99, "turtle head is aligned with the route component's forward direction")
@@ -202,6 +208,10 @@ func _collect_unrestored_neighbor(session: RunSession, player: BeachPlayer) -> b
 			await physics_frame
 			if item.location != ItemRecord.Location.BAG:
 				continue
+			var bag_order := (session.state.players[&"local"] as Dictionary)[&"bag_order"] as Array[StringName]
+			check(bag_order.size() == 1 and bag_order[0] == item.item_id, "one primary press collects only the aimed reef item")
+			if bag_order.size() != 1 or bag_order[0] != item.item_id:
+				return false
 			return session.item_store.try_throw(&"local", original, Vector3.ZERO).ok and session.state.validate_invariants(session.definitions).is_empty()
 	return false
 

@@ -25,6 +25,8 @@ var _mouse_delta := Vector2.ZERO
 var _sprint_toggled := false
 var _crouch_toggled := false
 var _blocked_actions: Dictionary = {}
+# One rendered frame can contain multiple physics ticks with the same just-pressed flag.
+var _one_shot_held: Dictionary = {}
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -81,7 +83,10 @@ func pressed(action: StringName) -> bool:
 
 
 func just_pressed(action: StringName) -> bool:
-	return _context_allows(action) and not _blocked_actions.has(action) and Input.is_action_just_pressed(action)
+	if not _context_allows(action) or _blocked_actions.has(action) or _one_shot_held.has(action) or not Input.is_action_just_pressed(action):
+		return false
+	_one_shot_held[action] = true
+	return true
 
 
 func _toggle_value(action: StringName, setting: StringName, current: bool) -> bool:
@@ -105,3 +110,6 @@ func _release_unblocked_actions() -> void:
 	for action in _blocked_actions.keys():
 		if not Input.is_action_pressed(action):
 			_blocked_actions.erase(action)
+	for action in _one_shot_held.keys():
+		if not Input.is_action_pressed(action):
+			_one_shot_held.erase(action)
