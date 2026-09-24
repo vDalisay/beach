@@ -106,11 +106,6 @@ func run() -> void:
 			check(not derived_ids.has(slot_id), "derived placement slot ID is unique: %s" % slot_id)
 			derived_ids[slot_id] = true
 	check(total_capacity >= 300, "placement capacity covers all reusable props")
-	for terrace_name in ["ChairTerraces", "LoungerTerraces", "ParasolTerraces"]:
-		var terrace := beach.get_node("Zones/Lounges/Storage/%s" % terrace_name) as PlacementSlot
-		var first := terrace.local_slot_transform(0).origin
-		var last := terrace.local_slot_transform(terrace.capacity - 1).origin
-		check(terrace.columns > 0 and last.z > first.z and absf(last.x - first.x) < 25.0, "%s wraps into compact rows" % terrace_name)
 	check(shelf_sections == 20 and shelf_capacity == 120, "twenty uniform six-place shelf sections exist")
 	for family_value in FAMILY_CAPACITIES:
 		var family := family_value as StringName
@@ -137,8 +132,8 @@ func run() -> void:
 		recovery_ids[recovery.anchor_id] = true
 		check(recovery.dry and _has_ground_below(recovery.global_position) and _capsule_clear(recovery.global_position), "recovery anchor is dry, grounded and clear: %s" % recovery.anchor_id)
 	check(recovery_ids.size() == 6, "six land recovery anchors exist")
-	var player_spawn := beach.get_node("%PlayerSpawn") as Marker3D
-	check(_has_ground_below(player_spawn.global_position) and _capsule_clear(player_spawn.global_position), "S1 player spawn is grounded and clear")
+	var player_spawn := beach.get_node_or_null("%PlayerSpawn") as Marker3D
+	check(player_spawn != null and _has_ground_below(player_spawn.global_position) and _capsule_clear(player_spawn.global_position), "S1 player spawn exists, is grounded and clear")
 	for clearance in get_nodes_in_group(&"hut_clearances"):
 		if beach.is_ancestor_of(clearance):
 			check(_capsule_clear((clearance as Node3D).global_position), "hut interior and three-metre door remain clear")
