@@ -48,6 +48,13 @@ func _run() -> void:
 	controller_input.pressed = true
 	settings.note_input(controller_input)
 	check(target_label.text_label.text.contains(settings.binding_text(&"primary")), "same target prompt switches to the active controller binding")
+	check(settings.binding_text(&"primary") == "RT" and target_label.text_label.text.contains("Collect [RT]"), "controller trigger has a short pickup label")
+	var remapped_button := InputEventJoypadButton.new()
+	remapped_button.button_index = JOY_BUTTON_X
+	remapped_button.pressed = true
+	settings.rebind(&"primary", remapped_button)
+	check(settings.binding_text(&"primary") == "X" and target_label.text_label.text.contains("Collect [X]"), "controller button remap keeps the short live prompt")
+	settings.reset_all()
 	settings.note_input(rebound)
 
 	var net := manager.view_for(&"thin:net")

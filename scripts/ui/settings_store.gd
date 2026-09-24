@@ -186,8 +186,41 @@ func binding_text(action: StringName, device: PromptDevice = prompt_device) -> S
 	var wants_controller := device == PromptDevice.CONTROLLER
 	for event in InputMap.action_get_events(action):
 		if is_controller_event(event) == wants_controller:
-			labels.append(event.as_text())
+			labels.append(_binding_label(event))
 	return " / ".join(labels) if not labels.is_empty() else "Unbound"
+
+
+static func _binding_label(event: InputEvent) -> String:
+	if event is InputEventJoypadMotion:
+		var motion := event as InputEventJoypadMotion
+		var negative := motion.axis_value < 0.0
+		match motion.axis:
+			JOY_AXIS_LEFT_X: return "Left stick ←" if negative else "Left stick →"
+			JOY_AXIS_LEFT_Y: return "Left stick ↑" if negative else "Left stick ↓"
+			JOY_AXIS_RIGHT_X: return "Right stick ←" if negative else "Right stick →"
+			JOY_AXIS_RIGHT_Y: return "Right stick ↑" if negative else "Right stick ↓"
+			JOY_AXIS_TRIGGER_LEFT: return "LT"
+			JOY_AXIS_TRIGGER_RIGHT: return "RT"
+		return "Axis %d" % motion.axis
+	if event is InputEventJoypadButton:
+		match (event as InputEventJoypadButton).button_index:
+			JOY_BUTTON_A: return "A"
+			JOY_BUTTON_B: return "B"
+			JOY_BUTTON_X: return "X"
+			JOY_BUTTON_Y: return "Y"
+			JOY_BUTTON_BACK: return "Back"
+			JOY_BUTTON_GUIDE: return "Guide"
+			JOY_BUTTON_START: return "Start"
+			JOY_BUTTON_LEFT_STICK: return "L3"
+			JOY_BUTTON_RIGHT_STICK: return "R3"
+			JOY_BUTTON_LEFT_SHOULDER: return "LB"
+			JOY_BUTTON_RIGHT_SHOULDER: return "RB"
+			JOY_BUTTON_DPAD_UP: return "D-pad ↑"
+			JOY_BUTTON_DPAD_DOWN: return "D-pad ↓"
+			JOY_BUTTON_DPAD_LEFT: return "D-pad ←"
+			JOY_BUTTON_DPAD_RIGHT: return "D-pad →"
+		return "Button %d" % (event as InputEventJoypadButton).button_index
+	return event.as_text()
 
 
 func note_input(event: InputEvent) -> void:
