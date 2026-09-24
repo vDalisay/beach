@@ -1,0 +1,95 @@
+extends SceneTree
+# Local first-person FOV probe (builds/ is ignored): the hand states at several FOV settings,
+# composed into one comparison sheet (rows = FOV, columns = state).
+var main: BeachMain
+var session: RunSession
+var player: BeachPlayer
+var out := "res://builds/fp_fov"
+var fovs: Array[float] = [70.0, 85.0, 110.0]
+var shots := {}
+
+func _init() -> void:
+	call_deferred("_run")
+
+func frames(count: int) -> void:
+	for frame in count:
+		await physics_frame
+
+func capture(label: String) -> void:
+	await frames(24)
+	await RenderingServer.frame_post_draw
+	var image := root.get_texture().get_image()
+	shots[label] = image
+	image.save_png(ProjectSettings.globalize_path(out).path_join(label + ".png"))
+	print("CAPTURED ", label)
+
+func equip(tool_id: StringName) -> void:
+	var owner := session.state.players[&"local"] as Dictionary
+	if not (owner.owned_tools as Array[StringName]).has(tool_id):
+		(owner.owned_tools as Array[StringName]).append(tool_id)
+	owner.equipped_handheld_ids = [&"stick", tool_id] as Array[StringName]
+	owner.active_slot = 1
+	session.progression.refresh_tool_visual()
+
+func _run() -> void:
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--out="):
+			out = arg.trim_prefix("--out=")
+		elif arg.begins_with("--fovs="):
+			fovs.clear()
+			for value in arg.trim_prefix("--fovs=").split(","):
+				fovs.append(float(value))
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(out))
+	main = (load("res://scenes/main.tscn") as PackedScene).instantiate() as BeachMain
+	root.add_child(main)
+	main.save_service.save_root = "user://test_runs/fp_fov"
+	main.seed_input.text = "full-run-integration"
+	session = main.start_run() as RunSession
+	player = session.get_node("Player") as BeachPlayer
+	player.global_position = Vector3(0, 0.2, 27)
+	player.look_at(Vector3(0, 0.2, 100))
+	player.camera.rotation.x = -0.12
+	await frames(60)
+	var states := ["idle", "stick", "vacuum", "sand_cleaner", "props", "large"]
+	for fov in fovs:
+		main.settings_store.set_value(&"fov", fov)
+		var tag := "fov%d" % int(fov)
+		player.hand_rig.clear_carry_visuals()
+		player.hand_rig.show_bag(true)
+		(session.state.players[&"local"] as Dictionary).active_slot = 0
+		session.progression.refresh_tool_visual()
+		player.hand_rig.clear_tool()
+		await capture("%s-idle" % tag)
+		(session.state.players[&"local"] as Dictionary).active_slot = 0
+		(session.state.players[&"local"] as Dictionary).equipped_handheld_ids = [&"stick"] as Array[StringName]
+		session.progression.refresh_tool_visual()
+		await capture("%s-stick" % tag)
+		for tool_id in [&"vacuum", &"sand_cleaner"]:
+			equip(tool_id)
+			await capture("%s-%s" % [tag, tool_id])
+		player.hand_rig.show_bag(false)
+		player.hand_rig.clear_tool()
+		var props := player.hand_rig.set_small_prop_scenes(load("res://art/synty/wrappers/prop_bucket.tscn"), load("res://art/synty/wrappers/prop_beach_ball.tscn"))
+		for visual in props:
+			if visual != null:
+				visual.scale = Vector3.ONE * 0.35
+		await capture("%s-props" % tag)
+		player.hand_rig.clear_carry_visuals()
+		var large := player.hand_rig.set_large_prop_scene(load("res://art/synty/wrappers/prop_beach_chair.tscn"))
+		large.scale = Vector3.ONE * 0.4
+		await capture("%s-large" % tag)
+	var cell := Vector2i(640, 360)
+	var sheet := Image.create(cell.x * states.size(), cell.y * fovs.size(), false, Image.FORMAT_RGBA8)
+	for row in fovs.size():
+		for column in states.size():
+			var label := "fov%d-%s" % [int(fovs[row]), states[column]]
+			if not shots.has(label):
+				continue
+			var shot := (shots[label] as Image).duplicate() as Image
+			shot.convert(Image.FORMAT_RGBA8)
+			shot.resize(cell.x, cell.y, Image.INTERPOLATE_LANCZOS)
+			sheet.blit_rect(shot, Rect2i(Vector2i.ZERO, cell), Vector2i(column * cell.x, row * cell.y))
+	sheet.save_png(ProjectSettings.globalize_path(out).path_join("sheet.png"))
+	print("SHEET rows=", fovs, " columns=", states)
+	main.free()
+	quit()

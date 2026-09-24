@@ -18,11 +18,11 @@ func _run() -> void:
 	var rolled_towel := load("res://art/synty/POLYGON_Palm_City/meshes/tscn_separate/SM_Prop_Towel_02.tscn") as PackedScene
 	var tent_scene := load("res://art/replacements/world/portable_tent.tscn") as PackedScene
 	var tent := tent_scene.instantiate() as Node3D if tent_scene != null else null
-	var tent_ok := tent != null and tent.has_node("SyntyShelter/Visual/Shelter") and (tent.get_node("SyntyShelter/Visual/Shelter") as MeshInstance3D).mesh != null
+	var tent_ok := tent != null and tent.has_node("Visual/beach_tent") and (tent.get_node("Visual/beach_tent") as MeshInstance3D).mesh != null
 	if tent != null:
 		tent.free()
 	var player := run.get_node("Player") as BeachPlayer
-	if bottle == null or rolled_towel == null or not tent_ok or run.item_view_manager.views.is_empty() or player.hand_rig.tool_socket.get_child_count() != 1 or not player.hand_rig.tool_socket.get_child(0).has_node("Visual/Shaft"):
+	if bottle == null or rolled_towel == null or not tent_ok or run.item_view_manager.views.is_empty() or player.hand_rig.tool_socket.get_node("View").get_child_count() != 1 or not player.hand_rig.tool_socket.get_node("View").get_child(0).has_node("Visual/Shaft"):
 		push_error("P29 packed visuals or nearby world items failed")
 		main.free()
 		quit(1)

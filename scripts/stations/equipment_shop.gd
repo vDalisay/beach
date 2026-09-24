@@ -46,7 +46,7 @@ func refresh_rack() -> void:
 		if tool_id == &"stick" or not service.offers.has(tool_id):
 			continue
 		var definition := service.offers[tool_id] as ToolDefinition
-		if definition == null or not definition.handheld:
+		if definition == null or (not definition.handheld and definition.scene_path.is_empty()):
 			continue
 		var anchor := Node3D.new()
 		anchor.position = Vector3(-0.7 + float(display_index % 3) * 0.7, 0.0, -0.12 - float(display_index / 3) * 0.28)
@@ -55,8 +55,14 @@ func refresh_rack() -> void:
 			var visual := (load(definition.scene_path) as PackedScene).instantiate() as Node3D
 			visual.scale = Vector3.ONE * 0.6
 			anchor.add_child(visual)
+			var size := _bounds_in(anchor, visual).size
+			if definition.handheld and size.y > maxf(size.x, size.z):
+				# Long tools hang from their grip in the hand; stand them on it like a tool rack.
+				visual.rotation = Vector3(PI, float(display_index) * 0.4, 0.0)
+			# Rest every model on the counter top, whatever its pivot.
+			visual.position.y -= _bounds_in(anchor, visual).position.y
 		var label := Label3D.new()
-		label.position = Vector3(0, 0.38, 0)
+		label.position = Vector3(0, 0.78 + float(display_index / 3) * 0.14, 0)
 		label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 		label.text = definition.display_name
 		label.font_size = 32
@@ -64,6 +70,19 @@ func refresh_rack() -> void:
 		label.outline_size = 7
 		anchor.add_child(label)
 		display_index += 1
+
+
+func _bounds_in(space: Node3D, node: Node3D) -> AABB:
+	var bounds := AABB()
+	var first := true
+	for mesh in node.find_children("*", "MeshInstance3D", true, false):
+		var instance := mesh as MeshInstance3D
+		if instance.mesh == null:
+			continue
+		var box := space.global_transform.affine_inverse() * instance.global_transform * instance.mesh.get_aabb()
+		bounds = box if first else bounds.merge(box)
+		first = false
+	return bounds
 
 
 func _on_interact_requested(target: Dictionary) -> void:

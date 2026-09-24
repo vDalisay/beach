@@ -1,6 +1,7 @@
 extends Node3D
 
 const Coastline = preload("res://scripts/world/coastline.gd")
+const CITY_BLOCKS := preload("res://scripts/world/city_blocks.gd")
 
 const CITY_WINDOW := preload("res://art/synty/wrappers/world_city_window.tscn")
 const LOWRISE_WINDOW := preload("res://art/synty/wrappers/world_lowrise_window.tscn")
@@ -12,11 +13,10 @@ const TOWER_ROOF := preload("res://art/synty/wrappers/world_roof_tower.tscn")
 const CITY_ROOF_CAP := preload("res://art/synty/wrappers/world_city_roof_cap.tscn")
 const DECO_BALCONY := preload("res://art/synty/wrappers/world_deco_balcony.tscn")
 const MOUNTAIN := preload("res://art/synty/wrappers/world_mountain_range.tscn")
-const PALM := preload("res://art/synty/wrappers/foliage_palm.tscn")
 const SIDEWALK := preload("res://art/synty/wrappers/world_sidewalk.tscn")
 const PLANTER := preload("res://art/synty/wrappers/world_planter_bench.tscn")
 const ROAD_TRIM := preload("res://art/synty/wrappers/world_road_trim.tscn")
-const CLOUD_RING := preload("res://art/synty/wrappers/world_cloud_ring.tscn")
+const CLOUD_MODELS := ["res://art/models/cloud_cumulus_a.glb", "res://art/models/cloud_cumulus_b.glb", "res://art/models/cloud_cumulus_c.glb"]
 const DECO_AWNING := preload("res://art/synty/wrappers/world_pier_awning.tscn")
 
 const BUILDINGS := [
@@ -29,9 +29,13 @@ const BUILDINGS := [
 	[65.0, -75.0, 4, 4, 3],
 ]
 
+var _villa_spots: Array[Vector2] = []
+
 
 func _ready() -> void:
 	_add_inland_ground()
+	# Street grid of low-poly blocks, parks and avenues behind the beachfront row.
+	var city := CITY_BLOCKS.build(self)
 	var city_walls: Array[Transform3D] = []
 	var lowrise_walls: Array[Transform3D] = []
 	var deco_walls: Array[Transform3D] = []
@@ -111,14 +115,15 @@ func _ready() -> void:
 			var mountain_mesh := mesh as MeshInstance3D
 			mountain_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	for index in 10:
-		var palm := PALM.instantiate() as Node3D
+		var palm := FoliageVariants.instance_palm(index + 3, 0.75 + float(index % 4) * 0.1)
 		palm.position = Vector3(-72.0 + index * 16.0, 0, -31.0 - float(index % 3) * 3.5)
 		palm.rotation.y = float(index % 5) * 0.7
-		var size := 0.75 + float(index % 4) * 0.1
-		palm.scale = Vector3.ONE * size
 		add_child(palm)
 	_add_boulevard_details()
+	_add_coast_villas()
 	_add_mainland_groves()
+	_add_foliage_multimeshes("CityPalms", city.palms, false)
+	_add_foliage_multimeshes("CityBushes", city.bushes, true)
 	_add_clouds()
 
 
@@ -131,20 +136,23 @@ func _add_inland_ground() -> void:
 	var normals := PackedVector3Array()
 	var colors := PackedColorArray()
 	var indices := PackedInt32Array()
-	var depths := [0.0, 12.0, 32.0, 65.0, 110.0, 190.0, 320.0, 550.0, 950.0, 1600.0]
-	for column in 81:
-		var x := -800.0 + float(column) * 20.0
+	var depths := [0.0, 6.0, 12.0, 20.0, 30.0, 42.0, 56.0, 72.0, 90.0, 110.0, 135.0, 165.0, 200.0, 245.0, 300.0, 380.0, 480.0, 620.0, 800.0, 1100.0, 1600.0]
+	for column in 161:
+		var x := -800.0 + float(column) * 10.0
 		var front := Coastline.inland_z(x) + 0.6
 		for depth_value in depths:
 			var distance := float(depth_value)
 			var z := front - distance
-			var flank := smoothstep(85.0, 150.0, absf(x))
-			var inland := smoothstep(220.0, 530.0, -z)
 			vertices.append(Vector3(x, _mainland_height(x, z), z))
 			normals.append(Vector3.ZERO)
-			var vegetation := smoothstep(25.0, 140.0, distance) * (0.55 * flank + 0.45 * inland)
+			# Sand only on the dune strip behind the beach; lawns, parkland and green hills inland.
+			var green := smoothstep(8.0, 22.0, distance)
+			var tone := 0.5 + 0.5 * sin(x * 0.043 + z * 0.029) * cos(x * 0.017 - z * 0.037)
+			var grass := Color(0.62, 0.9, 0.5).lerp(Color(0.46, 0.74, 0.42), tone)
+			var hill := smoothstep(240.0, 460.0, -z)
+			var ground := grass.lerp(Color(0.38, 0.6, 0.36), hill * (0.5 + 0.5 * tone))
 			var shade := 0.96 + 0.04 * sin(x * 0.04 + z * 0.025)
-			colors.append(Color.WHITE.lerp(Color(0.45, 0.63, 0.38), vegetation) * shade)
+			colors.append(Color.WHITE.lerp(ground, green) * shade)
 		if column > 0:
 			var a := (column - 1) * depths.size()
 			for strip in depths.size() - 1:
@@ -211,13 +219,34 @@ func _mainland_height(x: float, z: float) -> float:
 	var distance := Coastline.inland_z(x) + 0.6 - z
 	var flank := smoothstep(85.0, 150.0, absf(x))
 	var dune := flank * (3.0 + 2.5 * sin(x * 0.029) + 2.0 * cos(x * 0.063)) * sin(clampf(distance / 145.0, 0.0, 1.0) * PI)
-	var inland := smoothstep(220.0, 530.0, -z)
-	var hills := inland * (17.0 + 8.0 * sin(x * 0.015 + z * 0.009) + 6.0 * cos(x * 0.028 - z * 0.006))
-	return -0.06 + maxf(dune, 0.0) + hills
+	# Green hills rise right behind the city grid, which stays level.
+	var inland := smoothstep(245.0, 470.0, -z)
+	var hills := inland * (28.0 + 10.0 * sin(x * 0.012 + z * 0.008) + 7.0 * cos(x * 0.031 - z * 0.011))
+	return -0.06 + (maxf(dune, 0.0) + hills) * (1.0 - CITY_BLOCKS.mask(x, z))
+
+
+func _add_coast_villas() -> void:
+	# Small houses with tiled roofs between the flank palm groves, facing the sea.
+	var entries: Array = []
+	for side in [-1.0, 1.0]:
+		for column in [150.0, 166.0, 222.0, 238.0, 291.0, 307.0, 323.0]:
+			for row in 2:
+				var villa_key := int(column) * 7 + row * 3 + (1 if float(side) > 0.0 else 0)
+				if CITY_BLOCKS.unit_hash(villa_key) < 0.22:
+					continue
+				var x := float(side) * (float(column) + (CITY_BLOCKS.unit_hash(villa_key + 5) - 0.5) * 4.0)
+				var z := Coastline.inland_z(x) + 0.6 - (26.0 + float(row) * 17.0 + (CITY_BLOCKS.unit_hash(villa_key + 9) - 0.5) * 4.0)
+				var slope := (Coastline.inland_z(x + 1.0) - Coastline.inland_z(x - 1.0)) * 0.5
+				var yaw := atan2(-slope, 1.0)
+				var paint := CITY_BLOCKS.PAINTS[int(CITY_BLOCKS.unit_hash(villa_key + 13) * 8.0) % CITY_BLOCKS.PAINTS.size()] as Color
+				entries.append([Transform3D(Basis(Vector3.UP, yaw), Vector3(x, _mainland_height(x, z) - 0.3, z)), paint])
+				_villa_spots.append(Vector2(x, z))
+	CITY_BLOCKS.add_buildings(self, "CoastVillas", CITY_BLOCKS.HOUSE, entries)
 
 
 func _add_mainland_groves() -> void:
 	var palms: Array[Transform3D] = []
+	var understorey: Array[Transform3D] = []
 	# Small irregular groups sit on the nonplayable inland slopes, outside objective routes.
 	for center in [-265.0, -195.0, -128.0, 128.0, 193.0, 265.0]:
 		for offset in [Vector2(-9, 14), Vector2(-3, 22), Vector2(7, 32), Vector2(12, 18), Vector2(-12, 35), Vector2(4, 45)]:
@@ -225,12 +254,51 @@ func _add_mainland_groves() -> void:
 			var z: float = Coastline.inland_z(x) - offset.y
 			var size := 0.60 + float(palms.size() % 4) * 0.07
 			palms.append(Transform3D(Basis(Vector3.UP, float(palms.size()) * 1.17).scaled(Vector3.ONE * size), Vector3(x, _mainland_height(x, z) - 0.45, z)))
-	for index in 15:
-		var x := -98.0 + float(index) * 14.0
-		var z := -127.0 - float(index % 4) * 7.0
-		var size := 0.38 + float(index % 3) * 0.07
-		palms.append(Transform3D(Basis(Vector3.UP, float(index) * 1.31).scaled(Vector3.ONE * size), Vector3(x, _mainland_height(x, z), z)))
-	_add_multimesh("MainlandPalmGroves", PALM, palms)
+	# Low understorey breaks up the open inland slopes between groves and the city.
+	for index in 140:
+		var x := -300.0 + fmod(float(index) * 37.7, 600.0)
+		if absf(x) < 90.0 and index % 3 != 0:
+			continue
+		var z := Coastline.inland_z(x) - 18.0 - fmod(float(index) * 23.3, 150.0)
+		if CITY_BLOCKS.mask(x, z, 4.0) > 0.0 or _near_villa(Vector2(x, z)):
+			continue
+		var size := 1.1 + float(index % 5) * 0.35
+		understorey.append(Transform3D(Basis(Vector3.UP, float(index) * 2.03).scaled(Vector3.ONE * size), Vector3(x, _mainland_height(x, z) - 0.1, z)))
+	_add_foliage_multimeshes("MainlandPalmGroves", palms, false)
+	_add_foliage_multimeshes("MainlandUnderstorey", understorey, true)
+
+
+func _near_villa(spot: Vector2) -> bool:
+	for villa in _villa_spots:
+		if spot.distance_to(villa) < 9.0:
+			return true
+	return false
+
+
+func _add_foliage_multimeshes(label: String, transforms: Array[Transform3D], use_understorey: bool) -> void:
+	# One batch per variant; each keeps its wrapper's grounding offset.
+	var groups := {}
+	for index in transforms.size():
+		var scene := FoliageVariants.understorey(index) if use_understorey else FoliageVariants.palm(index)
+		var scale := 1.0 if use_understorey else FoliageVariants.palm_scale(index)
+		if not groups.has(scene):
+			groups[scene] = [] as Array[Transform3D]
+		(groups[scene] as Array[Transform3D]).append(transforms[index] * Transform3D(Basis.IDENTITY.scaled(Vector3.ONE * scale), Vector3.ZERO))
+	var batch := 0
+	for scene in groups:
+		var wrapper := (scene as PackedScene).instantiate() as Node3D
+		var source := wrapper.find_children("*", "MeshInstance3D", true, false)[0] as MeshInstance3D
+		var offset := Transform3D.IDENTITY
+		var cursor: Node = source
+		while cursor != wrapper:
+			offset = (cursor as Node3D).transform * offset
+			cursor = cursor.get_parent()
+		wrapper.free()
+		var placed: Array[Transform3D] = []
+		for transform in groups[scene] as Array[Transform3D]:
+			placed.append(transform * offset)
+		_add_multimesh("%s%02d" % [label, batch], scene as PackedScene, placed)
+		batch += 1
 
 
 func _add_boulevard_details() -> void:
@@ -251,11 +319,10 @@ func _add_boulevard_details() -> void:
 		var x := -75.0 + index * 15.0
 		var z := -52.0 - float(index % 3) * 4.5
 		var size := 0.68 + float(index % 5) * 0.08
-		var palm := PALM.instantiate() as Node3D
+		var palm := FoliageVariants.instance_palm(index * 2, size)
 		palm.name = "SyntyBoulevardPalm%02d" % index
 		palm.position = Vector3(x, 0.15, z)
 		palm.rotation.y = float(index % 7) * 0.48
-		palm.scale = Vector3.ONE * size
 		add_child(palm)
 
 
@@ -263,13 +330,36 @@ func _add_clouds() -> void:
 	var cloud_finish := preload("res://shaders/beach_clouds.tres").duplicate() as ShaderMaterial
 	var sun := get_parent().get_node("Sun") as DirectionalLight3D
 	cloud_finish.set_shader_parameter("sun_direction", sun.global_basis.z.normalized())
-	var clouds := CLOUD_RING.instantiate() as Node3D
-	clouds.name = "SyntyCloudRing"
-	clouds.scale = Vector3(2.2, 2.5, 2.2)
-	for mesh in clouds.find_children("*", "MeshInstance3D", true, false):
-		(mesh as MeshInstance3D).material_override = cloud_finish
-		(mesh as MeshInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	add_child(clouds)
+	# Flat-bottomed cumulus in a horizon band leaves the sky overhead open, like the references.
+	var groups := {}
+	for index in 38:
+		var upper := index >= 28
+		var angle := float(index) * 2.39996 + 0.35
+		var distance := (560.0 + fmod(float(index) * 97.0, 260.0)) if upper else (850.0 + fmod(float(index) * 173.0, 600.0))
+		var elevation := deg_to_rad((20.0 + fmod(float(index) * 7.0, 9.0)) if upper else (4.5 + fmod(float(index) * 3.7, 7.5)))
+		var size := (46.0 + fmod(float(index) * 23.0, 30.0)) if upper else (50.0 + fmod(float(index) * 29.0, 45.0))
+		var squash := Vector3(size * 1.3, size * 0.78, size)
+		# Face each cloud towards the beach so its long side reads from the shore.
+		var basis := Basis(Vector3.UP, -angle + PI * 0.5).scaled(squash)
+		var origin := Vector3(cos(angle) * distance, tan(elevation) * distance + 20.0, sin(angle) * distance)
+		var model := CLOUD_MODELS[index % CLOUD_MODELS.size()] as String
+		if not groups.has(model):
+			groups[model] = [] as Array[Transform3D]
+		(groups[model] as Array[Transform3D]).append(Transform3D(basis, origin))
+	for model in groups:
+		var instances := MultiMesh.new()
+		instances.transform_format = MultiMesh.TRANSFORM_3D
+		instances.mesh = ModelLibrary.mesh(model)
+		var transforms := groups[model] as Array[Transform3D]
+		instances.instance_count = transforms.size()
+		for index in transforms.size():
+			instances.set_instance_transform(index, transforms[index])
+		var visual := MultiMeshInstance3D.new()
+		visual.name = "Clouds_%s" % model.get_file().get_basename()
+		visual.multimesh = instances
+		visual.material_override = cloud_finish
+		visual.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		add_child(visual)
 
 
 func _add_building(walls: Array[Transform3D], roofs: Array[Transform3D], center_x: float, center_z: float, columns: int, floors: int, depth: int) -> void:

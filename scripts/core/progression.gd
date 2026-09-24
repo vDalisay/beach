@@ -1,7 +1,7 @@
 class_name ProgressionService
 extends Node
 
-const STICK_SCENE := preload("res://art/synty/wrappers/tool_poking_stick.tscn")
+const STICK_SCENE := preload("res://art/replacements/tools/poking_stick.tscn")
 const TOOL_PATHS := [
 	"res://data/tools/cloth.tres", "res://data/tools/knife.tres", "res://data/tools/flippers.tres",
 	"res://data/tools/detector.tres", "res://data/tools/oxygen_tank.tres",
@@ -204,17 +204,22 @@ func refresh_tool_visual() -> void:
 	var scene: PackedScene = STICK_SCENE if tool_id == &"stick" else (load(definition.scene_path) as PackedScene if definition != null and not definition.scene_path.is_empty() else null)
 	var visual := player.hand_rig.set_tool_scene(scene)
 	if visual != null and tool_id == &"stick":
-		visual.position = Vector3(0.02, -0.16, 0.05)
-		visual.rotation = Vector3(-0.9, 0.0, -0.15)
-		visual.scale = Vector3.ONE * 0.48
+		# Grip in the hand, spike angled forward and down towards the sand.
+		visual.position = Vector3(0.0, 0.02, 0.0)
+		visual.rotation = Vector3(0.95, 0.0, 0.12)
 	elif visual != null and tool_id == &"cloth":
-		visual.position = Vector3(-0.03, -0.03, 0.0)
-		visual.scale = Vector3.ONE * 0.65
+		visual.position = Vector3(-0.02, 0.015, 0.0)
+		visual.rotation = Vector3(0.35, 0.0, 0.0)
 	elif visual != null and tool_id == &"knife":
 		visual.position = Vector3(-0.05, -0.06, 0.0)
 		visual.scale = Vector3.ONE * 0.75
-	elif visual != null and tool_id in [&"sand_cleaner", &"vacuum", &"detector"]:
-		visual.scale = Vector3.ONE * 0.5
+	elif visual != null and tool_id in [&"sand_cleaner", &"detector"]:
+		# Long tools: grip in the hand, working end reaching forward and down to the sand.
+		visual.rotation = Vector3(1.0, 0.0, 0.1)
+		visual.scale = Vector3.ONE * 0.9
+	elif visual != null and tool_id == &"vacuum":
+		visual.rotation = Vector3(0.25, 0.0, 0.05)
+		visual.scale = Vector3.ONE * 0.9
 
 
 func _on_tool_switch_requested() -> void:

@@ -16,6 +16,22 @@ enum Layout {
 @export var layout := Layout.ROW
 @export_range(0, 32, 1) var columns := 0
 
+const SHELF_MODULE := preload("res://art/replacements/world/storage_shelf.tscn")
+# The shelf module's top surface height; shelf pools are authored at this height above their ground.
+const SHELF_HEIGHT := 0.8
+
+
+func _ready() -> void:
+	if layout != Layout.SHELF:
+		return
+	# Presentation only: no collision, so slot capture volumes and pickup rays are unchanged.
+	for index in capacity:
+		var module := SHELF_MODULE.instantiate() as Node3D
+		module.name = "ShelfModule%02d" % index
+		add_child(module)
+		module.position = local_slot_transform(index).origin + Vector3(0.0, -SHELF_HEIGHT, 0.0)
+		module.scale = Vector3(spacing, 1.0, 1.0)
+
 
 func derived_slot_id(index: int) -> StringName:
 	return StringName("%s:%03d" % [pool_id, index])

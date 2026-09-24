@@ -1,0 +1,101 @@
+FIN-05 look review and low-poly model pass
+Base commit: 4006dda368639ccb9b412500b4bbf0520027a936 plus the uncommitted working tree of this pass
+Godot 4.6.1-stable Mono Compatibility; beach-content-8 / beach version 8 / manifest-1 / save schema 1
+Windows / Ryzen 5 5600 / RTX 3070 / NVIDIA 595.79. Checks ran one at a time; tests use their isolated save roots.
+Date: 2026-09-24
+
+=== Native checks (headless unless noted) ===
+=== run_checks
+PASS: boot, asset_closure, ownership, input_bindings, manifest
+exit=0
+=== validate_pier_art
+P25_PIER lighthouse=1 tiles=135 rails=49 collision=1 failures=0
+exit=0
+=== validate_wildlife
+P21_PLANT_CLEARANCE nearest=1.41m embedded=0
+P21_WILDLIFE ambient=2 local=4 regional=6 turtle=3 reef_clusters=24 starfish=4 failures=0
+exit=0
+=== validate_purchases
+P15_PURCHASE earned=40 cloth=30 bag=80 walk=4.9 reach=4.0 clean=true offers=19 failures=0
+exit=0
+=== validate_dirt
+P11_DIRT patches=3->2->0 residue=world/full->bag required=2 failures=0
+exit=0
+=== validate_rescue
+C01_RESCUE_INPUT target= tool=stick bag=2 location=BAG revision=31->32
+P19_RESCUE sites=12 attachments=24 bag=0 world=24 required=5700 failures=0
+exit=0
+=== validate_placement
+P10_SLOTS claims=bucket/beach_ball variants=shared group_events=4 captures=valid+dirty_reject failures=0
+exit=0
+=== validate_carry
+P09_CARRY_LIFO bag=A/B/C throws=C/B hands=2 large_cost=2 failures=0
+exit=0
+=== validate_sorting
+P12_TABLE cells=20->200->240 unload=atomic sort=wrong/correct controller=sort/correct mouse=drag catch=physical bin=50->sealed tray=valuable failures=0
+exit=0
+=== validate_faint
+P18_FAINT drops=3+bag piles=2 air=10/60/infinite money=0 required=5700 failures=0
+exit=0
+=== validate_interaction
+P08_INTERACTION target_format=id/kind/hit_point/distance/actions/reason reach=2.5m failures=0
+exit=0
+=== validate_movement
+P04_VALIDATION straight=3.235 diagonal=3.273 sprint=4.580 toggle=4.580 jump_peak=1.424 ramp_peak=0.766 stair_peak=0.770 failures=0
+exit=0
+=== validate_ui
+P22_UI hud=1 booklet=4 pause=1 guidance=1 failures=0
+exit=0
+=== validate_save
+       [1] _run (res://tests/validate_save.gd:51)
+P24_STAGE backend
+P24_STAGE rack
+P24_SAVE initial=1 recovery=1 rack=1 pose=1 table=1 quit=1 failures=0
+exit=0
+=== validate_buried
+P17_BURIED waste=item:arrival:dunes:00007 valuable=valuable:arrival:dunes:00001 sold=1 required=5700 failures=0
+exit=0
+=== validate_tool_filters
+P16_TOOL_FILTERS sand=s1+s2+s3+s4 vacuum=v1+v2+v3 blocked=wall/behind capacity=held upgrades=12/16 failures=0
+exit=0
+=== validate_scanner
+P23_SCANNER purchase=1 filters=3 buried=1 owners=3 chair=1 zero=1 markers=8 failures=0
+exit=0
+=== validate_completion
+       [1] _full_beach_restoration (res://tests/validate_completion.gd:173)
+       [2] _run (res://tests/validate_completion.gd:94)
+P26_REEF waste=500 bags=10 sections=2 zone=reef_west fish=1 failures=1
+P20_COMPLETION waste=1 props=1 reward=15 transitions=2 restored=1 receipt=1 failures=1
+exit=1
+=== traversal (rendered)
+exit=0
+SURFACE_CROSSING swimming=true submerged=true at=(0.000002, -1.091715, 45.46588) surfaced=true dry=true at=(-0.003151, -0.125284, 33.92992) air=10.00
+SHORE_REEF item=item:reef_west:outer:00095 reached=true aimed=true collected=true air_at_site=9.55 returned=true dry=true air_return=10.00
+P05_TRAVERSAL waypoints=13 distance=147.0m huts=3 shop=1 reefs=2 reef_items=1009 reef_overlaps=0 catalog=6/6 pier_carry=1 chair_swim=2.00m/s failures=0
+
+validate_completion first run failed one assertion: the restored section's palm node was named after its
+palm variant instead of the FoliagePalm contract. Restoration palms are now named FoliagePalm; rerun:
+P26_REEF waste=500 bags=10 sections=2 zone=reef_west fish=1 failures=0
+P20_COMPLETION waste=1 props=1 reward=15 transitions=2 restored=1 receipt=1 failures=0
+exit=0
+
+=== Final paired review, wildlife recheck and profile (final tree) ===
+=== review pair
+exit=0
+FULL_RUN_COMPLETE mode=final-prop waste=5400 props=300 results=1 receipt=1 reloaded=2 roam_replacement=1 elapsed_ms=98114
+=== wildlife
+exit=0
+P21_PLANT_CLEARANCE nearest=1.41m embedded=0
+P21_WILDLIFE ambient=2 local=4 regional=6 turtle=3 reef_clusters=24 starfish=4 failures=0
+=== profile
+exit=0
+Godot Engine v4.6.1.stable.mono.official.14d19694e - https://godotengine.org
+OpenGL API 3.3.0 NVIDIA 595.79 - Compatibility - Using Device: NVIDIA - NVIDIA GeForce RTX 3070
+P07_FRAME_MEDIAN ms=6.94
+P07_SCALE frames=600 views=608 batches=322 batch_items=5027 awake=0 meshes=1366 largest_pile=6 build_ms=2988.8 memory_mb=172.1 video_mb=1608.4 nodes=9468 frame_avg_ms=7.87 frame_p95_ms=16.67 physics_avg_ms=1.55 draw_calls_max=3640 active_bodies_max=0
+P07_DEVICE os=Windows cpu=AMD Ryzen 5 5600 6-Core Processor gpu=NVIDIA GeForce RTX 3070
+P07_PHYSICS_RECOVERY failures=0
+exit=0
+
+An earlier paired run, executed concurrently with another Godot capture, reported that the completed lounge
+approach did not move. A diagnostic copy and two solo runs passed; run the paired check alone.

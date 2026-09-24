@@ -31,7 +31,7 @@ func _run() -> void:
 	var head_rail := pier.get_node("SyntyPierHeadRailing") as MultiMeshInstance3D
 	var approach_rail := pier.get_node("SyntyApproachRailing") as MultiMeshInstance3D
 	var tower := pier.get_node("SyntyLighthouse") as Node3D
-	check(tower != null and platform.multimesh.mesh != null and platform.multimesh.instance_count == 72 and head_platform.multimesh.instance_count == 63 and support_poles.multimesh.instance_count == 12 and approach.multimesh.instance_count == 40 and rail.multimesh.instance_count == 24 and head_rail.multimesh.instance_count == 25 and approach_rail.multimesh.instance_count == 20, "shortened Synty pier and cafe head assemble in the playable beach")
+	check(tower != null and platform.multimesh.mesh != null and platform.multimesh.instance_count == 72 and head_platform.multimesh.instance_count == 63 and support_poles.multimesh.instance_count == 12 and approach.multimesh.instance_count == 40 and rail.multimesh.instance_count == 24 and head_rail.multimesh.instance_count == 29 and approach_rail.multimesh.instance_count == 20, "shortened Synty pier and cafe head assemble in the playable beach")
 	check(tower.find_children("RedBand*", "MeshInstance3D", false, false).size() == 3, "Synty lighthouse has reference-style painted bands")
 	check(tower.global_position.distance_to(Vector3(72.5, 1.65, 95)) < 0.01 and pier.has_node("SyntyLighthouseIsland/Visual/Ridge") and pier.has_node("SyntyIslandPalm01/Visual/Palm") and pier.has_node("LighthouseIslandCollision/Collision"), "Synty lighthouse sits on a solid planted island offshore")
 	check((pier.get_node("Deck/Collision") as CollisionShape3D).shape != null and (pier.get_node("PierHead/Collision") as CollisionShape3D).shape != null and (pier.get_node("PavilionCollision/Collision") as CollisionShape3D).shape != null and (pier.get_node("Lighthouse/Collision") as CollisionShape3D).shape != null, "pier head, pavilion and lighthouse remain solid")
@@ -51,7 +51,7 @@ func _run() -> void:
 	check((beach.get_node("Terrain/CurvedSandSurface") as MeshInstance3D).mesh.get_aabb().size.z > 800.0 and not beach.has_node("Terrain/Seabed") and (beach.get_node("Terrain/CurvedSandCollision/Collision") as CollisionShape3D).shape != null, "rendered coast and playable seabed share one static collision surface")
 	var coast_hit := beach.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(75, 5, 50), Vector3(75, -5, 50)))
 	check(coast_hit.get("collider") == beach.get_node("Terrain/CurvedSandCollision") and not (beach.get_node("Water/SwimVolume") as WaterVolume).contains_horizontal(Vector3(75, 0, 50)) and (beach.get_node("Water/SwimVolume") as WaterVolume).contains_horizontal(Vector3(75, 0, 60)), "outer cove has solid dry sand and water begins at its visible edge")
-	check(beach.get_node("ActivityAreas/VolleyballNet") != null and beach.get_node("ActivityAreas/LifeguardWest/Deck") != null and beach.get_node("Skyline/CityWest") != null, "Synty beach structures replace primitive landmarks")
+	check(beach.get_node("ActivityAreas/VolleyballNet") != null and beach.get_node_or_null("ActivityAreas/LifeguardWest/Visual") != null and beach.get_node("Skyline/CityWest") != null, "modelled beach structures replace primitive landmarks")
 	check(beach.has_node("ActivityAreas/Windsurf/Visual/Board") and beach.has_node("ActivityAreas/Windsurf/Visual/Sail"), "Synty windsurf board and sail dress the playable waterline")
 	check(beach.has_node("ActivityAreas/SportsCafeSet/ChairNorth/Visual/Chair") and beach.has_node("ActivityAreas/LoungesCafeSetEast/Umbrella/Visual/Umbrella") and beach.has_node("ActivityAreas/SandplayCafeSet/Collision/ChairSouthShape"), "fixed beach cafe seating uses Synty table, chair and umbrella meshes with collision")
 	check(beach.has_node("ActivityAreas/SportsShelter/SyntyShelter/Visual/Shelter") and beach.has_node("ActivityAreas/LoungesShelter/PostSW") and beach.has_node("ActivityAreas/SandplayShelter/PostNE"), "Synty beach shelters frame the cafes with post collision")
@@ -60,7 +60,7 @@ func _run() -> void:
 	var inland_faces := (backdrop.get_node("InlandGround") as MeshInstance3D).mesh.get_faces()
 	check((inland_faces[1] - inland_faces[0]).cross(inland_faces[2] - inland_faces[0]).y < 0.0, "inland terrain has upward front faces rather than a dark back-facing sheet")
 	check((backdrop.get_node("SyntyCityFacades") as MultiMeshInstance3D).multimesh.instance_count > 20 and (backdrop.get_node("SyntyLowriseWindows") as MultiMeshInstance3D).multimesh.instance_count > 20 and (backdrop.get_node("SyntyDecoFacades") as MultiMeshInstance3D).multimesh.instance_count > 20 and (backdrop.get_node("SyntyVillaFacades") as MultiMeshInstance3D).multimesh.instance_count > 20 and backdrop.find_children("*", "CollisionObject3D", true, false).is_empty(), "varied Synty city glass/facades render as collision-free scenery")
-	check(backdrop.has_node("SyntyCloudRing") and not backdrop.has_node("SyntyCloudRingUpper"), "one Synty cloud layer leaves clear sky above the beach")
+	check(backdrop.has_node("Clouds_cloud_cumulus_a") and not backdrop.has_node("SyntyCloudRing"), "one cumulus band near the horizon leaves clear sky above the beach")
 	check((backdrop.get_node("SyntyCityAwningsRed") as MultiMeshInstance3D).multimesh.instance_count > 8 and (backdrop.get_node("SyntyCityAwningsCream") as MultiMeshInstance3D).multimesh.instance_count > 8, "staged Synty art-deco awnings dress the city storefronts")
 	check((backdrop.get_node("SyntyDecoBalconies") as MultiMeshInstance3D).multimesh.instance_count == 12 and backdrop.has_node("SyntyCityRoofCap"), "staged Synty balconies and roof cap break the decorative skyline")
 	check((backdrop.get_node("SyntyRoadCurbs") as MultiMeshInstance3D).multimesh.instance_count == 128 and backdrop.has_node("SyntyPlanter05") and backdrop.has_node("SyntyBoulevardPalm10"), "compact Synty boulevard trim, planters and palms dress the inland edge")
@@ -112,7 +112,7 @@ func _run() -> void:
 	check(player.global_position.z > 74.0 and player.global_position.z < 81.0 and player.global_position.y > 1.4, "player walks onto solid pier head and stops at Synty pavilion")
 	check(session.state.validate_invariants(session.definitions).is_empty(), "art-only replacement leaves run ownership valid")
 	main.free()
-	print("P25_PIER lighthouse=1 tiles=135 rails=49 collision=1 failures=%d" % failures)
+	print("P25_PIER lighthouse=1 tiles=135 rails=53 collision=1 failures=%d" % failures)
 	quit(failures)
 
 

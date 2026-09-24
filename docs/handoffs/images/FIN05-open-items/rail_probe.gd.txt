@@ -1,0 +1,85 @@
+extends SceneTree
+# Local probe (builds/ is ignored): pier and lookout railing views in a real run.
+#   godot --path . --script res://builds/rail_probe.gd -- --out=res://builds/rail_before
+var main: BeachMain
+var session: RunSession
+var player: BeachPlayer
+var viewport: SubViewport
+var camera: Camera3D
+var out := "res://builds/rail_probe"
+
+const VIEWS := {
+	"pier-head": [Vector3(62.5, 3.1, 60), Vector3(62.5, 3.0, 84)],
+	"pier-overhead": [Vector3(44, 24, 57), Vector3(62.5, 1.5, 82)],
+	"pier-overhead-right": [Vector3(84, 22, 50), Vector3(64, 1.5, 76)],
+	"pier-approach": [Vector3(73, 3.5, 5), Vector3(62.5, 0.9, 24)],
+	"pier-approach-join": [Vector3(71, 4.0, 29), Vector3(66, 1.6, 38)],
+	"pier-junction-right": [Vector3(77, 5.0, 57), Vector3(68, 1.8, 67)],
+	"pier-junction-left": [Vector3(48, 5.0, 57), Vector3(57, 1.8, 67)],
+	"pier-head-far": [Vector3(62.5, 7.0, 72), Vector3(68.5, 1.6, 89.5)],
+	"lookout": [Vector3(-33.5, 2.2, 9.5), Vector3(-37.5, 2.3, 0)],
+	"lookout-ramp": [Vector3(-34.2, 1.4, 6.8), Vector3(-37.3, 1.2, 1.2)],
+	"lookout-side": [Vector3(-30.5, 2.6, 2.6), Vector3(-37.5, 1.8, 1.6)],
+	"lookout-head": [Vector3(-35.3, 3.7, 4.2), Vector3(-37.5, 2.3, 1.0)],
+	"lookout-front": [Vector3(-37.5, 2.6, 9.8), Vector3(-37.5, 2.0, 0.5)],
+	"lookout-back": [Vector3(-42.8, 4.0, -5.8), Vector3(-37.5, 2.4, 0)],
+}
+
+
+func _init() -> void:
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--out="):
+			out = arg.trim_prefix("--out=")
+	call_deferred("_run")
+
+
+func frames(count: int) -> void:
+	for frame in count:
+		await physics_frame
+
+
+func capture_free(label: String, origin: Vector3, target: Vector3) -> void:
+	camera.global_position = origin
+	camera.look_at(target)
+	camera.environment = SwimService.UNDERWATER_ENVIRONMENT if origin.y < session.swim_service.water.surface_y else null
+	player.global_position = origin
+	await frames(40)
+	await RenderingServer.frame_post_draw
+	viewport.get_texture().get_image().save_png(ProjectSettings.globalize_path(out).path_join(label + ".png"))
+	print("CAPTURED ", label)
+
+
+func _run() -> void:
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(out))
+	main = (load("res://scenes/main.tscn") as PackedScene).instantiate() as BeachMain
+	root.add_child(main)
+	main.save_service.save_root = "user://test_runs/rail_probe"
+	main.seed_input.text = "full-run-integration"
+	session = main.start_run() as RunSession
+	player = session.get_node("Player") as BeachPlayer
+	for path in ["res://shaders/beach_water.tres", "res://shaders/beach_sand.tres", "res://shaders/seabed_caustics.tres"]:
+		(load(path) as ShaderMaterial).set_shader_parameter("debug_time", 4.0)
+	await frames(60)
+	(main.get_node("UI") as CanvasLayer).visible = false
+	viewport = SubViewport.new()
+	viewport.size = Vector2i(1920, 1080)
+	viewport.msaa_3d = main.get_viewport().msaa_3d
+	viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	viewport.world_3d = (session.get_node("Beach") as Node3D).get_world_3d()
+	root.add_child(viewport)
+	camera = Camera3D.new()
+	camera.fov = 70.0
+	viewport.add_child(camera)
+	camera.make_current()
+	camera.near = player.camera.near
+	camera.far = player.camera.far
+	player.visible = false
+	player.set_physics_process(false)
+	session.swim_service.set_physics_process(false)
+	var only := OS.get_environment("RAIL_VIEWS")
+	for label in VIEWS:
+		if not only.is_empty() and not (label in only.split(",")):
+			continue
+		var pose: Array = VIEWS[label]
+		await capture_free(label, pose[0], pose[1])
+	quit(0)

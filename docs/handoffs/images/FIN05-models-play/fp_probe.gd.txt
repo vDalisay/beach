@@ -1,0 +1,66 @@
+extends SceneTree
+# Local first-person hands probe (builds/ is ignored): stages hand states in a real run.
+var main: BeachMain
+var session: RunSession
+var player: BeachPlayer
+var out := "res://builds/fp"
+
+func _init() -> void:
+	call_deferred("_run")
+
+func frames(count: int) -> void:
+	for frame in count:
+		await physics_frame
+
+func capture(label: String) -> void:
+	await frames(20)
+	await RenderingServer.frame_post_draw
+	root.get_texture().get_image().save_png(ProjectSettings.globalize_path(out).path_join(label + ".png"))
+	print("CAPTURED ", label)
+
+func equip(tool_id: StringName) -> void:
+	var owner := session.state.players[&"local"] as Dictionary
+	if not (owner.owned_tools as Array[StringName]).has(tool_id):
+		(owner.owned_tools as Array[StringName]).append(tool_id)
+	owner.equipped_handheld_ids = [&"stick", tool_id] as Array[StringName]
+	owner.active_slot = 1
+	session.progression.refresh_tool_visual()
+
+func _run() -> void:
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--out="):
+			out = arg.trim_prefix("--out=")
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(out))
+	main = (load("res://scenes/main.tscn") as PackedScene).instantiate() as BeachMain
+	root.add_child(main)
+	main.save_service.save_root = "user://test_runs/fp_probe"
+	main.seed_input.text = "full-run-integration"
+	session = main.start_run() as RunSession
+	player = session.get_node("Player") as BeachPlayer
+	player.global_position = Vector3(0, 0.2, 27)
+	player.look_at(Vector3(0, 0.2, 100))
+	player.camera.rotation.x = -0.12
+	await frames(60)
+	await capture("idle-stick-bag")
+	for tool_id in [&"cloth", &"knife", &"detector", &"vacuum", &"sand_cleaner"]:
+		equip(tool_id)
+		await capture("tool-%s" % tool_id)
+	player.hand_rig.show_bag(false)
+	player.hand_rig.clear_tool()
+	var props := player.hand_rig.set_small_prop_scenes(load("res://art/synty/wrappers/prop_bucket.tscn"), load("res://art/synty/wrappers/prop_beach_ball.tscn"))
+	for visual in props:
+		if visual != null:
+			visual.scale = Vector3.ONE * 0.35
+	await capture("props-small")
+	player.hand_rig.clear_carry_visuals()
+	var large := player.hand_rig.set_large_prop_scene(load("res://art/synty/wrappers/prop_beach_chair.tscn"))
+	large.scale = Vector3.ONE * 0.4
+	await capture("prop-large")
+	player.hand_rig.clear_carry_visuals()
+	player.hand_rig.show_bag(true)
+	(session.state.players[&"local"] as Dictionary).active_slot = 0
+	session.progression.refresh_tool_visual()
+	player.camera.rotation.x = -0.75
+	await capture("look-down")
+	main.free()
+	quit()

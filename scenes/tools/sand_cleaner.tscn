@@ -1,30 +1,7 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=2 format=3]
 
-[sub_resource type="StandardMaterial3D" id="BodyMaterial"]
-albedo_color = Color(0.95, 0.62, 0.13, 1)
-roughness = 0.8
+[ext_resource type="PackedScene" path="res://art/models/tool_sand_cleaner.glb" id="1_model"]
 
-[sub_resource type="CylinderMesh" id="Drum"]
-material = SubResource("BodyMaterial")
-top_radius = 0.17
-bottom_radius = 0.17
-height = 0.38
-radial_segments = 10
+[node name="SandCleaner" type="Node3D"]
 
-[sub_resource type="CylinderMesh" id="Handle"]
-material = SubResource("BodyMaterial")
-top_radius = 0.025
-bottom_radius = 0.025
-height = 0.63
-radial_segments = 8
-
-[node name="SandCleanerPlaceholder" type="Node3D"]
-
-[node name="Drum" type="MeshInstance3D" parent="."]
-rotation = Vector3(1.5708, 0, 0)
-mesh = SubResource("Drum")
-
-[node name="Handle" type="MeshInstance3D" parent="."]
-position = Vector3(0, 0.3, -0.1)
-rotation = Vector3(0.45, 0, 0)
-mesh = SubResource("Handle")
+[node name="Visual" parent="." instance=ExtResource("1_model")]

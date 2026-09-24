@@ -1,0 +1,62 @@
+extends SceneTree
+# Local reef cost probe: frame time, draws and primitives in reef views, gardens on and off.
+const VIEWS := {
+	"city-eye": [Vector3(5, 2.1, -33), Vector3(0, 12, -83)],
+	"along-shore": [Vector3(-65, 2.1, 32), Vector3(60, 2.1, 37)],
+	"inland-look": [Vector3(0, 2.1, 10), Vector3(0, 8, -120)],
+	"aerial": [Vector3(-15, 65, 135), Vector3(0, 0, 0)],
+}
+func _init() -> void:
+	call_deferred("_run")
+func _measure(label: String) -> void:
+	var times: Array[float] = []
+	var gpu: Array[float] = []
+	var cpu: Array[float] = []
+	var draws := 0
+	var prims := 0
+	var viewport := root.get_viewport_rid()
+	for frame in 60:
+		await process_frame
+	for frame in 300:
+		var start := Time.get_ticks_usec()
+		await process_frame
+		times.append(float(Time.get_ticks_usec() - start) / 1000.0)
+		gpu.append(RenderingServer.viewport_get_measured_render_time_gpu(viewport))
+		cpu.append(RenderingServer.viewport_get_measured_render_time_cpu(viewport))
+		draws = maxi(draws, RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME))
+		prims = maxi(prims, RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_PRIMITIVES_IN_FRAME))
+	times.sort()
+	gpu.sort()
+	cpu.sort()
+	print("%s frame_median=%.2f p95=%.2f gpu_median=%.2f cpu_median=%.2f draws=%d prims=%d" % [label, times[times.size() / 2], times[int(times.size() * 0.95)], gpu[gpu.size() / 2], cpu[cpu.size() / 2], draws, prims])
+func _run() -> void:
+	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
+	Engine.max_fps = 0
+	RenderingServer.viewport_set_measure_render_time(root.get_viewport_rid(), true)
+	var main := (load("res://scenes/main.tscn") as PackedScene).instantiate() as BeachMain
+	root.add_child(main)
+	main.save_service.save_root = "user://test_runs/reef_profile"
+	main.seed_input.text = "full-run-integration"
+	var session := main.start_run() as RunSession
+	var player := session.get_node("Player") as BeachPlayer
+	(main.get_node("UI") as CanvasLayer).visible = false
+	var gardens: Array[Node] = []
+	for pattern in ["City*", "CoastVillas"]:
+		gardens.append_array(session.find_children(pattern, "MultiMeshInstance3D", true, false))
+	var pieces := 0
+	for garden in gardens:
+		pieces += (garden as MultiMeshInstance3D).multimesh.instance_count
+	print("CITY nodes=%d instances=%d" % [gardens.size(), pieces])
+	for name in VIEWS:
+		var view := VIEWS[name] as Array
+		player.global_position = view[0]
+		player.camera.look_at(view[1])
+		player.set_physics_process(false)
+		for garden in gardens:
+			(garden as Node3D).visible = true
+		await _measure(name + " city")
+		for garden in gardens:
+			(garden as Node3D).visible = false
+		await _measure(name + " bare")
+	main.free()
+	quit()

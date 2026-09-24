@@ -1,4 +1,4 @@
-[gd_scene load_steps=49 format=3]
+[gd_scene load_steps=53 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/world/zones/arrival.tscn" id="1_arrival"]
 [ext_resource type="PackedScene" path="res://scenes/world/zones/sports.tscn" id="2_sports"]
@@ -11,6 +11,10 @@
 [ext_resource type="PackedScene" path="res://scenes/world/service_hut.tscn" id="9_hut"]
 [ext_resource type="PackedScene" path="res://art/synty/wrappers/building_beach_shop.tscn" id="10_shop"]
 [ext_resource type="PackedScene" path="res://art/synty/wrappers/foliage_palm.tscn" id="11_palm"]
+[ext_resource type="PackedScene" path="res://art/synty/wrappers/foliage_palm_03.tscn" id="41_palm_coconut"]
+[ext_resource type="PackedScene" path="res://art/synty/wrappers/foliage_palm_05.tscn" id="42_palm_date"]
+[ext_resource type="PackedScene" path="res://art/synty/wrappers/foliage_palm_02.tscn" id="43_palm_fan"]
+[ext_resource type="PackedScene" path="res://art/synty/wrappers/foliage_palm_04.tscn" id="44_palm_tall"]
 [ext_resource type="PackedScene" path="res://scenes/stations/sorting_station.tscn" id="12_sorting"]
 [ext_resource type="PackedScene" path="res://scenes/stations/waste_container.tscn" id="13_container"]
 [ext_resource type="PackedScene" path="res://scenes/stations/collection_call_point.tscn" id="14_call"]
@@ -349,95 +353,118 @@ rotation = Vector3(0, 0.12, 0)
 scale = Vector3(2.2, 2.2, 2.2)
 
 [node name="Foliage" type="Node3D" parent="."]
-[node name="Palm01" parent="Foliage" instance=ExtResource("11_palm")]
+[node name="Palm01" parent="Foliage" instance=ExtResource("41_palm_coconut")]
 position = Vector3(-61.25, 0, -22)
+scale = Vector3(0.84, 0.84, 0.84)
 [node name="Palm02" parent="Foliage" instance=ExtResource("11_palm")]
 position = Vector3(-48.75, 0, -25)
-[node name="Palm03" parent="Foliage" instance=ExtResource("11_palm")]
+[node name="Palm03" parent="Foliage" instance=ExtResource("42_palm_date")]
 position = Vector3(-30, 0, -24)
-[node name="Palm04" parent="Foliage" instance=ExtResource("11_palm")]
+scale = Vector3(0.8, 0.8, 0.8)
+[node name="Palm04" parent="Foliage" instance=ExtResource("41_palm_coconut")]
 position = Vector3(-11.25, 0, -25)
-[node name="Palm05" parent="Foliage" instance=ExtResource("11_palm")]
+scale = Vector3(0.9, 0.9, 0.9)
+[node name="Palm05" parent="Foliage" instance=ExtResource("43_palm_fan")]
 position = Vector3(8.75, 0, -24)
-[node name="Palm06" parent="Foliage" instance=ExtResource("11_palm")]
+scale = Vector3(0.9, 0.9, 0.9)
+[node name="Palm06" parent="Foliage" instance=ExtResource("44_palm_tall")]
 position = Vector3(26.25, 0, -22)
-[node name="Palm07" parent="Foliage" instance=ExtResource("11_palm")]
+scale = Vector3(0.92, 0.92, 0.92)
+[node name="Palm07" parent="Foliage" instance=ExtResource("41_palm_coconut")]
 position = Vector3(45, 0, -20)
+scale = Vector3(0.84, 0.84, 0.84)
 [node name="Palm08" parent="Foliage" instance=ExtResource("11_palm")]
 position = Vector3(67.5, 0, -18)
-[node name="Palm09" parent="Foliage" instance=ExtResource("11_palm")]
+[node name="Palm09" parent="Foliage" instance=ExtResource("42_palm_date")]
 position = Vector3(-71.25, 0, -30)
-[node name="Palm10" parent="Foliage" instance=ExtResource("11_palm")]
+scale = Vector3(0.8, 0.8, 0.8)
+[node name="Palm10" parent="Foliage" instance=ExtResource("41_palm_coconut")]
 position = Vector3(-56.25, 0, -34)
-[node name="Palm11" parent="Foliage" instance=ExtResource("11_palm")]
+scale = Vector3(0.9, 0.9, 0.9)
+[node name="Palm11" parent="Foliage" instance=ExtResource("43_palm_fan")]
 position = Vector3(-39, 0, -32)
-[node name="Palm12" parent="Foliage" instance=ExtResource("11_palm")]
+scale = Vector3(0.9, 0.9, 0.9)
+[node name="Palm12" parent="Foliage" instance=ExtResource("44_palm_tall")]
 position = Vector3(-21.25, 0, -33)
-[node name="Palm13" parent="Foliage" instance=ExtResource("11_palm")]
+scale = Vector3(0.92, 0.92, 0.92)
+[node name="Palm13" parent="Foliage" instance=ExtResource("41_palm_coconut")]
 position = Vector3(-3.75, 0, -29)
+scale = Vector3(0.84, 0.84, 0.84)
 [node name="Palm14" parent="Foliage" instance=ExtResource("11_palm")]
 position = Vector3(17.5, 0, -31)
-[node name="Palm15" parent="Foliage" instance=ExtResource("11_palm")]
+[node name="Palm15" parent="Foliage" instance=ExtResource("42_palm_date")]
 position = Vector3(36.25, 0, -33)
-[node name="Palm16" parent="Foliage" instance=ExtResource("11_palm")]
+scale = Vector3(0.8, 0.8, 0.8)
+[node name="Palm16" parent="Foliage" instance=ExtResource("41_palm_coconut")]
 position = Vector3(55, 0, -32)
-[node name="Palm17" parent="Foliage" instance=ExtResource("11_palm")]
+scale = Vector3(0.9, 0.9, 0.9)
+[node name="Palm17" parent="Foliage" instance=ExtResource("43_palm_fan")]
 position = Vector3(75, 0, -30)
-[node name="Palm18" parent="Foliage" instance=ExtResource("11_palm")]
+scale = Vector3(0.9, 0.9, 0.9)
+[node name="Palm18" parent="Foliage" instance=ExtResource("44_palm_tall")]
 position = Vector3(-64.25, 0, 7)
 rotation = Vector3(0, 0.8, 0)
-scale = Vector3(0.74, 0.74, 0.74)
-[node name="Palm19" parent="Foliage" instance=ExtResource("11_palm")]
+scale = Vector3(0.681, 0.681, 0.681)
+[node name="Palm19" parent="Foliage" instance=ExtResource("41_palm_coconut")]
 position = Vector3(-55, 0, 1)
 rotation = Vector3(0, 1.5, 0)
+scale = Vector3(0.84, 0.84, 0.84)
 [node name="Palm20" parent="Foliage" instance=ExtResource("11_palm")]
 position = Vector3(-46.25, 0, -5)
 scale = Vector3(0.82, 0.82, 0.82)
-[node name="Palm21" parent="Foliage" instance=ExtResource("11_palm")]
+[node name="Palm21" parent="Foliage" instance=ExtResource("42_palm_date")]
 position = Vector3(-33.75, 0, -3)
 rotation = Vector3(0, 2.1, 0)
-[node name="Palm22" parent="Foliage" instance=ExtResource("11_palm")]
-position = Vector3(-23.75, 0, -2)
 scale = Vector3(0.8, 0.8, 0.8)
-[node name="Palm23" parent="Foliage" instance=ExtResource("11_palm")]
+[node name="Palm22" parent="Foliage" instance=ExtResource("41_palm_coconut")]
+position = Vector3(-23.75, 0, -2)
+scale = Vector3(0.72, 0.72, 0.72)
+[node name="Palm23" parent="Foliage" instance=ExtResource("43_palm_fan")]
 position = Vector3(-6.75, 0, 4)
 rotation = Vector3(0, 1.2, 0)
-[node name="Palm24" parent="Foliage" instance=ExtResource("11_palm")]
+scale = Vector3(0.9, 0.9, 0.9)
+[node name="Palm24" parent="Foliage" instance=ExtResource("44_palm_tall")]
 position = Vector3(5.25, 0, 4)
-scale = Vector3(0.72, 0.72, 0.72)
-[node name="Palm25" parent="Foliage" instance=ExtResource("11_palm")]
+scale = Vector3(0.662, 0.662, 0.662)
+[node name="Palm25" parent="Foliage" instance=ExtResource("41_palm_coconut")]
 position = Vector3(15.5, 0, -1)
 rotation = Vector3(0, 0.7, 0)
+scale = Vector3(0.84, 0.84, 0.84)
 [node name="Palm26" parent="Foliage" instance=ExtResource("11_palm")]
 position = Vector3(31.25, 0, -4)
 scale = Vector3(0.86, 0.86, 0.86)
-[node name="Palm27" parent="Foliage" instance=ExtResource("11_palm")]
+[node name="Palm27" parent="Foliage" instance=ExtResource("42_palm_date")]
 position = Vector3(41.25, 0, 4)
 rotation = Vector3(0, 2.5, 0)
-[node name="Palm28" parent="Foliage" instance=ExtResource("11_palm")]
+scale = Vector3(0.8, 0.8, 0.8)
+[node name="Palm28" parent="Foliage" instance=ExtResource("41_palm_coconut")]
 position = Vector3(53.75, 0, -3)
-scale = Vector3(0.78, 0.78, 0.78)
-[node name="Palm29" parent="Foliage" instance=ExtResource("11_palm")]
+scale = Vector3(0.702, 0.702, 0.702)
+[node name="Palm29" parent="Foliage" instance=ExtResource("43_palm_fan")]
 position = Vector3(70, 0, -8)
 rotation = Vector3(0, 1.8, 0)
-[node name="WestHeadlandPalm01" parent="Foliage" instance=ExtResource("11_palm")]
+scale = Vector3(0.9, 0.9, 0.9)
+[node name="WestHeadlandPalm01" parent="Foliage" instance=ExtResource("44_palm_tall")]
 position = Vector3(-92, 0, 4)
 rotation = Vector3(0, 0.4, 0)
-[node name="WestHeadlandPalm02" parent="Foliage" instance=ExtResource("11_palm")]
+scale = Vector3(0.92, 0.92, 0.92)
+[node name="WestHeadlandPalm02" parent="Foliage" instance=ExtResource("41_palm_coconut")]
 position = Vector3(-103, 0, 18)
-scale = Vector3(0.85, 0.85, 0.85)
+scale = Vector3(0.714, 0.714, 0.714)
 [node name="WestHeadlandPalm03" parent="Foliage" instance=ExtResource("11_palm")]
 position = Vector3(-116, 0, 8)
 rotation = Vector3(0, 1.4, 0)
-[node name="EastHeadlandPalm01" parent="Foliage" instance=ExtResource("11_palm")]
+[node name="EastHeadlandPalm01" parent="Foliage" instance=ExtResource("42_palm_date")]
 position = Vector3(91, 0, 5)
 rotation = Vector3(0, 2.1, 0)
-[node name="EastHeadlandPalm02" parent="Foliage" instance=ExtResource("11_palm")]
-position = Vector3(103, 0, 19)
 scale = Vector3(0.8, 0.8, 0.8)
-[node name="EastHeadlandPalm03" parent="Foliage" instance=ExtResource("11_palm")]
+[node name="EastHeadlandPalm02" parent="Foliage" instance=ExtResource("41_palm_coconut")]
+position = Vector3(103, 0, 19)
+scale = Vector3(0.72, 0.72, 0.72)
+[node name="EastHeadlandPalm03" parent="Foliage" instance=ExtResource("43_palm_fan")]
 position = Vector3(115, 0, 9)
 rotation = Vector3(0, 0.9, 0)
+scale = Vector3(0.9, 0.9, 0.9)
 
 [node name="Skyline" type="Node3D" parent="."]
 [node name="CityBackdrop" type="Node3D" parent="."]

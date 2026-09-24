@@ -1,0 +1,118 @@
+extends SceneTree
+# Local inspection: renders a row of scenes under the beach light rig and prints mesh bounds.
+var paths: PackedStringArray = []
+var out := "res://builds/gallery.png"
+var spacing := 5.0
+var cam_dist := 14.0
+var cam_height := 3.0
+var look_height := 2.0
+var measure_only := false
+var lift := 0.0
+var yaw := 0.0
+
+func _init() -> void:
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--paths="):
+			paths = arg.trim_prefix("--paths=").split(",")
+		elif arg.begins_with("--out="):
+			out = arg.trim_prefix("--out=")
+		elif arg.begins_with("--spacing="):
+			spacing = float(arg.trim_prefix("--spacing="))
+		elif arg.begins_with("--dist="):
+			cam_dist = float(arg.trim_prefix("--dist="))
+		elif arg.begins_with("--height="):
+			cam_height = float(arg.trim_prefix("--height="))
+		elif arg.begins_with("--look="):
+			look_height = float(arg.trim_prefix("--look="))
+		elif arg.begins_with("--lift="):
+			lift = float(arg.trim_prefix("--lift="))
+		elif arg.begins_with("--yaw="):
+			yaw = float(arg.trim_prefix("--yaw="))
+		elif arg == "--measure":
+			measure_only = true
+	call_deferred("_run")
+
+func _mesh_points(node: Node, xf: Transform3D, out_points: PackedVector3Array) -> void:
+	var here := xf
+	if node is Node3D:
+		here = xf * (node as Node3D).transform
+	if node is MeshInstance3D and (node as MeshInstance3D).mesh != null:
+		var mesh := (node as MeshInstance3D).mesh
+		for surface in mesh.get_surface_count():
+			var arrays := mesh.surface_get_arrays(surface)
+			for v in arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array:
+				out_points.append(here * v)
+	for child in node.get_children():
+		_mesh_points(child, here, out_points)
+
+func _run() -> void:
+	var world := Node3D.new()
+	root.add_child(world)
+	var env := WorldEnvironment.new()
+	var studio := Environment.new()
+	studio.background_mode = Environment.BG_COLOR
+	studio.background_color = Color(0.1, 0.12, 0.17)
+	studio.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	studio.ambient_light_color = Color(0.722, 0.741, 0.812)
+	studio.ambient_light_energy = 0.45
+	studio.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	env.environment = studio
+	world.add_child(env)
+	var sun := DirectionalLight3D.new()
+	sun.rotation_degrees = Vector3(-42, -43, 0)
+	sun.light_color = Color(1.0, 0.9412, 0.8235)
+	sun.light_energy = 0.85
+	sun.shadow_enabled = true
+	world.add_child(sun)
+	var ground := MeshInstance3D.new()
+	var plane := PlaneMesh.new()
+	plane.size = Vector2(400, 400)
+	ground.mesh = plane
+	var ground_material := StandardMaterial3D.new()
+	ground_material.albedo_color = Color(0.2, 0.23, 0.3)
+	ground_material.roughness = 0.95
+	ground.material_override = ground_material
+	world.add_child(ground)
+	var x := -float(paths.size() - 1) * spacing * 0.5
+	for path in paths:
+		var scene := load(path) as PackedScene
+		if scene == null:
+			print("MISSING ", path)
+			continue
+		var node := scene.instantiate() as Node3D
+		world.add_child(node)
+		node.position = Vector3(x, lift, 0)
+		node.rotation_degrees.y = yaw
+		var points := PackedVector3Array()
+		_mesh_points(node, Transform3D.IDENTITY, points)
+		var aabb := AABB(points[0], Vector3.ZERO) if not points.is_empty() else AABB()
+		var min_y := INF
+		for p in points:
+			aabb = aabb.expand(p)
+			min_y = minf(min_y, p.y)
+		var base := Vector3.ZERO
+		var count := 0
+		for p in points:
+			if p.y < min_y + 0.15:
+				base += p
+				count += 1
+		base /= maxf(count, 1)
+		print("BOUNDS %s size=%s min=%s base=(%.3f, %.3f, %.3f) verts=%d" % [path.get_file(), aabb.size, aabb.position, base.x, min_y, base.z, points.size()])
+		x += spacing
+	if measure_only:
+		quit()
+		return
+	var camera := Camera3D.new()
+	camera.fov = 30
+	world.add_child(camera)
+	if cam_dist <= 0.0:
+		cam_dist = spacing * paths.size() * 0.5 / (tan(deg_to_rad(15.0)) * 16.0 / 9.0) * 1.05
+	camera.position = Vector3(0, cam_height, cam_dist)
+	camera.look_at(Vector3(0, look_height, 0))
+	camera.make_current()
+	for i in 30:
+		await process_frame
+	await RenderingServer.frame_post_draw
+	root.get_texture().get_image().save_png(ProjectSettings.globalize_path(out))
+	print("SAVED ", out)
+	quit()

@@ -23,7 +23,7 @@ func _run() -> void:
 	var container := session.waste_containers[&"container:S1:pmd"] as WasteContainer
 	var player := session.get_node("Player") as BeachPlayer
 	var record := session.state.players[&"local"] as Dictionary
-	check(player.hand_rig.tool_socket.get_child_count() == 1 and player.hand_rig.tool_socket.get_child(0).has_node("Visual/Shaft"), "starter stick displays its staged Synty shaft in the hand")
+	check(player.hand_rig.tool_socket.get_node("View").get_child_count() == 1 and player.hand_rig.tool_socket.get_node("View").get_child(0).has_node("Visual/Shaft"), "starter stick displays its shaft model in the hand")
 	var total_prices := 0
 	for definition in progression.offers.values():
 		total_prices += (definition as ToolDefinition).shop_price if definition is ToolDefinition else (definition as UpgradeDefinition).price
@@ -90,7 +90,7 @@ func _run() -> void:
 	check(main.progression_view.visible and main.progression_view.mode == ProgressionView.Mode.RACK, "physical rack opens equipment screen")
 	var cloth_row := main.progression_view.list.get_child(1) as HBoxContainer
 	(cloth_row.get_child(2) as Button).pressed.emit()
-	check((record.equipped_handheld_ids as Array[StringName]) == [&"stick", &"cloth"] and int(record.active_slot) == 1 and player.hand_rig.tool_socket.get_child_count() > 0, "cloth equips into empty second slot and is shown in hand")
+	check((record.equipped_handheld_ids as Array[StringName]) == [&"stick", &"cloth"] and int(record.active_slot) == 1 and player.hand_rig.tool_socket.get_node("View").get_child_count() > 0, "cloth equips into empty second slot and is shown in hand")
 	main.progression_view.close()
 	check(progression.try_switch_tool(&"local").ok and int(record.active_slot) == 0 and progression.try_switch_tool(&"local").ok and int(record.active_slot) == 1, "world switch alternates two equipped tools")
 
