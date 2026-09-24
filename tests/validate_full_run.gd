@@ -208,6 +208,9 @@ func _run() -> void:
 	if audit_slots and not await _audit_occupied_slots(session):
 		_fail("occupied destinations have blocked targets or intersecting colliders")
 		return
+	if "--audit-family-walk" in OS.get_cmdline_user_args() and not await _audit_family_walk(session):
+		_fail("an occupied prop family lacks a normal walking approach")
+		return
 	if "--audit-mesh" in OS.get_cmdline_user_args() and not _audit_occupied_meshes(session):
 		_fail("occupied visual bounds intersect outside the shaded lounge groups")
 		return
@@ -361,6 +364,68 @@ func _audit_occupied_meshes(session: RunSession) -> bool:
 					overlaps.append("%s / %s" % [keys[i], keys[j]])
 	print("C04_MESH_AABB occupied=%d nonshade=%d shade_candidates=%d shade_contacts=%d first=%s" % [keys.size(), overlaps.size(), shade_candidates, shade_contacts.size(), ", ".join((overlaps + shade_contacts).slice(0, 10))])
 	return overlaps.is_empty() and shade_contacts.is_empty()
+
+
+func _audit_family_walk(session: RunSession) -> bool:
+	var player := session.get_node("Player") as BeachPlayer
+	var previous_position := player.global_position
+	var families := {}
+	for item_value in session.state.items.values():
+		var item := item_value as ItemRecord
+		if item.location != ItemRecord.Location.SLOTTED:
+			continue
+		var family := str((session.definitions[item.definition_id] as ItemDefinition).sorting_family)
+		if not families.has(family):
+			families[family] = []
+		(families[family] as Array).append(item)
+	var passed := 0
+	for family in families:
+		var reached := false
+		for item in (families[family] as Array).slice(0, 12):
+			var record := item as ItemRecord
+			var body := session.placement_service.slotted_views.get(record.item_id) as StaticBody3D
+			if body == null:
+				continue
+			var target := (body.get_child(1) as CollisionShape3D).global_position
+			var origin := session.placement_service.slot_transform(record.slot_id).origin
+			for direction in [Vector3.FORWARD, Vector3.RIGHT, Vector3.BACK, Vector3.LEFT]:
+				var start: Vector3 = origin + direction * 5.0
+				var stop_distance := 1.15 if family == "surfboard" else 1.8
+				var stop: Vector3 = origin + direction * stop_distance
+				var ray := PhysicsRayQueryParameters3D.create(start + Vector3.UP * 8.0, start + Vector3.DOWN * 12.0, 1)
+				var ground := player.get_world_3d().direct_space_state.intersect_ray(ray)
+				if ground.is_empty():
+					continue
+				player.global_position = Vector3(start.x, (ground.position as Vector3).y + 0.05, start.z)
+				player.velocity = Vector3.ZERO
+				player.look_at(Vector3(stop.x, player.global_position.y, stop.z), Vector3.UP)
+				_stick(-1.0)
+				for frame in 140:
+					await physics_frame
+					if Vector2(player.global_position.x - stop.x, player.global_position.z - stop.z).length() < 0.35:
+						break
+				_stick(0.0)
+				player.velocity = Vector3.ZERO
+				if Vector2(player.global_position.x - stop.x, player.global_position.z - stop.z).length() >= 0.35:
+					continue
+				player.camera.look_at(target)
+				await physics_frame
+				var aimed := player.interactor.update_target()
+				if str(aimed.get("id", "")) == str(record.item_id):
+					reached = true
+					print("C04_FAMILY_WALK family=%s slot=%s start=%s end=%s" % [family, record.slot_id, start, player.global_position])
+					break
+			if reached:
+				break
+		if reached:
+			passed += 1
+		else:
+			print("C04_FAMILY_WALK_BLOCKED family=%s" % family)
+	_stick(0.0)
+	player.global_position = previous_position
+	player.velocity = Vector3.ZERO
+	print("C04_FAMILY_WALK reachable=%d/%d" % [passed, families.size()])
+	return passed == families.size()
 
 
 func _shade_clears_occupied(parasol_visual: Node, other: AABB) -> bool:
