@@ -40,7 +40,7 @@ func configure(run_session: RunSession, beach: Node3D, settings_store: SettingsS
 		section.restoration_visual_root.visible = restored
 		if restored:
 			_set_section_colors(section, false)
-			_start_section_population(section_id)
+			_start_section_population(section_id, true)
 	_build_ambient(beach)
 	for zone_id in zone_roots:
 		var root := zone_roots[zone_id] as Node3D
@@ -178,8 +178,8 @@ func _build_zone(zone_id: StringName, root: Node3D) -> void:
 			var turtle_visual := TURTLE_SCENE.instantiate() as Node3D
 			turtle_visual.rotation.y = PI
 			route.add_child(turtle_visual)
-			route.configure(StringName("zone:%s:turtle" % zone_id), [Vector3(0, -0.85, 0), Vector3(2, -0.75, 3)], [Vector3(2, -0.75, 3), Vector3(4, -0.7, 6), Vector3(1, -0.8, 10), Vector3(-2, -0.75, 7)], 1.5, _reduced_motion())
-			_add_turtle_companion(route)
+			route.configure(StringName("zone:%s:turtle" % zone_id), [Vector3(0, -0.85, 0), Vector3(2, -0.75, 3)], [Vector3(2, -0.75, 3), Vector3(4, -0.7, 6), Vector3(1, -0.8, 10), Vector3(-2, -0.75, 7)], 1.0, _reduced_motion())
+			_add_turtle_behavior(route, turtle_visual)
 			populations[route.route_id] = route
 	elif kind == "buoy":
 		var buoy := BUOY_SCENE.instantiate() as Node3D
@@ -201,16 +201,18 @@ func _build_zone(zone_id: StringName, root: Node3D) -> void:
 		var turtle_visual := TURTLE_SCENE.instantiate() as Node3D
 		turtle_visual.rotation.y = PI
 		route.add_child(turtle_visual)
-		route.configure(&"zone:lounges:turtle", [Vector3.ZERO, Vector3(0, 0, 8), Vector3(0, 0, 16), Vector3(0, -0.8, 28)], [Vector3(0, -0.8, 28), Vector3(2, -0.9, 30), Vector3(-2, -0.95, 32)], 2.0, _reduced_motion())
-		_add_turtle_companion(route)
+		route.configure(&"zone:lounges:turtle", [Vector3.ZERO, Vector3(0, 0, 8), Vector3(0, 0, 16), Vector3(0, -0.8, 28)], [Vector3(0, -0.8, 28), Vector3(2, -0.9, 30), Vector3(-2, -0.95, 32)], 1.1, _reduced_motion())
+		_add_turtle_behavior(route, turtle_visual)
 		populations[route.route_id] = route
 
 
-func _add_turtle_companion(route: PathAnimal) -> void:
-	var companion := TurtleCompanion.new()
-	companion.name = "Companion"
-	companion.configure(session)
-	route.add_child(companion)
+func _add_turtle_behavior(route: PathAnimal, turtle_visual: Node3D) -> void:
+	var animator := turtle_visual.get_node("Animator") as TurtleAnimator
+	animator.reduced_motion = _reduced_motion()
+	var behavior := TurtleBehavior.new()
+	behavior.name = "Behavior"
+	behavior.configure(session, animator)
+	route.add_child(behavior)
 
 
 func _coral_cluster(index: int) -> Node3D:
@@ -352,7 +354,8 @@ func _spawn_school(root: Node3D, key: StringName, origin: Vector3) -> FishSchool
 	root.add_child(school)
 	school.global_position = origin
 	school.session = session
-	school.configure(key, [Vector3.ZERO, Vector3(2.4, 0.12, 1.2), Vector3(-1.0, -0.08, 1.8)], _reduced_motion())
+	# A wide, gently rising and falling loop the school roams around rather than a tight circuit.
+	school.configure(key, [Vector3.ZERO, Vector3(2.6, 0.15, 1.3), Vector3(0.4, -0.1, 3.0), Vector3(-2.2, 0.1, 1.5)], _reduced_motion())
 	populations[key] = school
 	return school
 
@@ -372,7 +375,7 @@ func _set_section_colors(section: BeachSection, animate: bool) -> void:
 func _start_zone_population(zone_id: StringName, loaded: bool) -> void:
 	for key in populations:
 		if str(key).begins_with("zone:%s:" % zone_id) and populations[key] is FishSchool:
-			(populations[key] as FishSchool).start_school()
+			(populations[key] as FishSchool).start_school(not loaded)
 	var turtle_key := StringName("zone:%s:turtle" % zone_id)
 	if populations.has(turtle_key):
 		var turtle := populations[turtle_key] as PathAnimal
@@ -382,10 +385,10 @@ func _start_zone_population(zone_id: StringName, loaded: bool) -> void:
 			turtle.start_intro()
 
 
-func _start_section_population(section_id: StringName) -> void:
+func _start_section_population(section_id: StringName, loaded: bool) -> void:
 	var key := StringName("section:%s:fish" % section_id)
 	if populations.has(key):
-		(populations[key] as FishSchool).start_school()
+		(populations[key] as FishSchool).start_school(not loaded)
 
 
 func _reduced_motion() -> bool:
@@ -399,7 +402,7 @@ func _on_section_restored(section_id: StringName) -> void:
 			return
 		section.restoration_visual_root.show()
 		_set_section_colors(section, true)
-		_start_section_population(section_id)
+		_start_section_population(section_id, false)
 
 
 func _on_zone_restored(zone_id: StringName) -> void:

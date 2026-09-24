@@ -43,6 +43,10 @@ func remove_attachment(item_id: StringName) -> void:
 
 func refresh() -> void:
 	var rescue := session.state.rescue_states[site_id] as Dictionary
+	var animator := animal.get_node_or_null("Animator") as TurtleAnimator
+	if animator != null:
+		# Tangled animals struggle in fits until both attachments are cut.
+		animator.entangled = not bool(rescue.released)
 	if bool(rescue.released):
 		status_label.text = "FREED"
 		status_label.modulate = Color("94e7a8")
@@ -82,7 +86,12 @@ func _start_route() -> void:
 	if _route_tween != null and _route_tween.is_running():
 		return
 	status_label.hide()
-	_route_tween = create_tween().set_loops()
-	_route_tween.tween_property(animal, "position", Vector3(1.6, 0.2, 0.8), 3.0)
-	_route_tween.tween_property(animal, "position", Vector3(-1.2, 0.1, 1.6), 4.0)
-	_route_tween.tween_property(animal, "position", Vector3.ZERO, 3.0)
+	var animator := animal.get_node_or_null("Animator") as TurtleAnimator
+	if animator != null:
+		animator.face_motion = true
+	# A slow, level circuit around the site: easing in and out of each leg reads as the
+	# turtle choosing its way rather than sliding between corners.
+	_route_tween = create_tween().set_loops().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_route_tween.tween_property(animal, "position", Vector3(1.6, 0.0, 0.8), 4.0)
+	_route_tween.tween_property(animal, "position", Vector3(-1.2, 0.0, 1.6), 5.0)
+	_route_tween.tween_property(animal, "position", Vector3.ZERO, 4.0)

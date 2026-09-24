@@ -1,0 +1,32 @@
+C07 wildlife motion — 24 September 2026
+Godot 4.6.1 mono, Compatibility renderer, 1280x720, playable scenes/main.tscn, seed wildlife-probe,
+isolated save root user://test_runs/wildlife_probe. Probe: wildlife_play.gd.txt in this folder
+(copy to the ignored builds/ folder and run with --script res://builds/probes/wildlife_play.gd -- --out=<dir>).
+The probe hides the HUD, refills air every frame and places the player camera for captures; the startle
+and calm cases move the player body directly with a set velocity, the companion/follow case uses real input.
+
+Fish (run after the habituation fix):
+PROBE fish school y=-1.80 surface=0.08 seabed=-3.20 species=fish_blue_tang
+PROBE fish release peak_bursting=9/9 peak_bubbles=83
+PROBE fish pitch mean=5.6deg max=25.8deg species=fish_blue_tang
+PROBE fish startle after=0.61s distance=3.82m peak_bursting=9/9 peak_bubbles=85
+PROBE fish calm 0.00->0.90 nearest_first3s=1.45m nearest_last3s=3.00m max_bursting=0
+
+Turtles (current turtle.glb, rebuilt by the model pass at 21:39) and rescue sites:
+PROBE reef cruise gaits=[0] speed=0.89
+PROBE reef breath surfaced_after=4.1s hold=3.3s bubble_peak=31 back_on_route=true total=10.5s
+PROBE reef graze fed=10.1s back_on_route=true total=16.5s
+PROBE reef companion engaged_after=5.2s look_weight=1.00 head=(-0.90, 0.45) camera_distance=1.87m
+PROBE reef follow boosted_frames=184/420 mean_separation=2.33m mode=4
+      (the companion bout ended during the follow; the same run on the earlier turtle build: 364/420, 1.03 m)
+PROBE lounges looping=true intro_seconds=33.7 rests=2 sand_peak=10 gaits=swim=13.6,crawl=17.3,rest=2.8,hover=0.0
+PROBE rescue sites: 6 float at the surface (y=0.08 over 2.1-2.9 m of water), 6 rest 0.4 m above the seabed (y=-2.8);
+      all 12 start ENTANGLED (gait=4). In the probe's per-site lines "water=false" only means "not below the surface".
+PROBE rescue freed gait=0 entangled=false
+
+Gait ids: 0 swim, 1 hover, 2 crawl, 3 rest, 4 entangled. Behaviour mode 4 = returning to the route.
+
+Process-time comparison (both reefs and their sections restored, camera between the reefs, 10 schools
+in simulation range, 30 animated nodes; 300 frames each): 17.92 ms with wildlife processing on,
+18.07 ms with it off. Other Godot runs were active on the machine at the time, so the absolute values
+are inflated; the on/off difference is within noise.

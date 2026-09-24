@@ -58,7 +58,7 @@ func _run() -> void:
 	var flock_spread := 0.0
 	for member in ambient.fish:
 		flock_spread = maxf(flock_spread, member.position.distance_to(ambient.mover.position))
-	check(fish_motion.length() > 0.01 and lead_fish.basis.x.normalized().dot(ambient.velocities[0].normalized()) > 0.8 and flock_spread < 4.0, "boid fish swim head-first and stay schooled around their live route")
+	check(fish_motion.length() > 0.01 and (-lead_fish.basis.z).normalized().dot(ambient.velocities[0].normalized()) > 0.8 and flock_spread < 4.0, "boid fish swim head-first and stay schooled around their live route")
 	check(not outer.restoration_visual_root.visible and not coral.restoration_visual_root.visible and not zone_root.visible, "unrestored local and regional reef rewards remain hidden")
 	var origin := (nature.anchors[&"reef_west:outer"] as Array)[0] as Vector3
 	player.global_position = origin + Vector3(0, 0.2, -4.0)
@@ -142,8 +142,9 @@ func _run() -> void:
 	check(not turtle.looping and not (nature.zone_roots[&"lounges"] as Node3D).visible, "shoreline return turtle waits for lounges restoration")
 	(session.state.zone_states[&"lounges"] as Dictionary).restored_once = true
 	session.zone_restored.emit(&"lounges")
+	# The crawl down the beach pauses to rest, so allow about 48 s of game time.
 	Engine.time_scale = 12.0
-	for frame in range(120):
+	for frame in range(240):
 		await physics_frame
 	Engine.time_scale = 1.0
 	check(turtle.looping and session.swim_service.water.contains_horizontal(turtle.global_position), "turtle completes beach walk into bounded water loop")

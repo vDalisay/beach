@@ -1,0 +1,467 @@
+extends SceneTree
+
+var out := ""
+var session: RunSession
+var nature: RestorationSection
+var player: BeachPlayer
+var main: BeachMain
+var camera_rest: Transform3D
+
+
+func _init() -> void:
+	call_deferred("_run")
+
+
+func _run() -> void:
+	var scenario := "all"
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--out="):
+			out = arg.trim_prefix("--out=")
+		if arg.begins_with("--scenario="):
+			scenario = arg.trim_prefix("--scenario=")
+	DirAccess.make_dir_recursive_absolute(out)
+	main = (load("res://scenes/main.tscn") as PackedScene).instantiate() as BeachMain
+	root.add_child(main)
+	main.save_service.save_root = "user://test_runs/wildlife_probe"
+	main.seed_input.text = "wildlife-probe"
+	session = main.start_run() as RunSession
+	nature = session.get_node("RestorationSection") as RestorationSection
+	player = session.get_node("Player") as BeachPlayer
+	for layer in main.find_children("*", "CanvasLayer", true, false):
+		(layer as CanvasLayer).visible = false
+	player.hand_rig.hide()
+	camera_rest = player.camera.transform
+	# Unlimited air so long underwater scenarios never faint.
+	process_frame.connect(func() -> void: (session.state.players[&"local"] as Dictionary).air_remaining = 999.0)
+	if scenario in ["all", "fish"]:
+		await _fish()
+	if scenario in ["all", "reef"]:
+		await _reef_turtle()
+	if scenario in ["all", "lounges"]:
+		await _lounges_intro()
+	if scenario in ["all", "rescue"]:
+		await _rescue()
+	print("PROBE done")
+	quit(0)
+
+
+# --- fish ---------------------------------------------------------------------------------
+
+func _fish() -> void:
+	var school := nature.populations[&"zone:reef_west:01"] as FishSchool
+	var water := session.swim_service.water
+	player.set_input_enabled(false)
+	player.global_position = Vector3(0.0, 0.2, 10.0)
+	var centre := school.global_position + school.mover.position
+	var vantage := centre + Vector3(-2.6, 0.1, -1.6)
+	_look(vantage, centre)
+	print("PROBE fish school y=%.2f surface=%.2f seabed=%.2f species=%s" % [school.global_position.y, water.surface_y, Coastline.surface_y(centre.x, centre.z), school.species])
+	nature._on_zone_restored(&"reef_west")
+	var release: Array[Image] = []
+	var peak_burst := 0
+	var peak_bubbles := 0
+	for index in range(8):
+		_look(vantage, school.global_position + _centre(school))
+		release.append(await _grab())
+		for wait in range(4):
+			await process_frame
+			peak_burst = maxi(peak_burst, school.bursting_count())
+			peak_bubbles = maxi(peak_bubbles, school.bubbles.live_count())
+	_sheet(release, 4, "fish-release-sheet.png")
+	print("PROBE fish release peak_bursting=%d/%d peak_bubbles=%d" % [peak_burst, school.fish.size(), peak_bubbles])
+	# Swim for a while and measure how level the school swims.
+	var ambient := nature.populations[&"ambient:reef_west"] as FishSchool
+	var max_pitch := 0.0
+	var mean_pitch := 0.0
+	var samples := 0
+	for frame in range(360):
+		await process_frame
+		if frame % 6 != 0:
+			continue
+		_look(ambient.global_position + _centre(ambient) + Vector3(-3.0, 0.3, -2.0), ambient.global_position + _centre(ambient))
+		for index in range(ambient.fish.size()):
+			var v := ambient.velocities[index]
+			var pitch := absf(atan2(v.y, Vector2(v.x, v.z).length()))
+			max_pitch = maxf(max_pitch, pitch)
+			mean_pitch += pitch
+			samples += 1
+	print("PROBE fish pitch mean=%.1fdeg max=%.1fdeg species=%s" % [rad_to_deg(mean_pitch / samples), rad_to_deg(max_pitch), ambient.species])
+	_save(await _grab(), "fish-school.png")
+	# Close-ups tracking one fish: side and top.
+	var side_sheet: Array[Image] = []
+	var top_sheet: Array[Image] = []
+	for index in range(8):
+		var fish := ambient.fish[3]
+		var at := ambient.global_position + fish.position
+		_look(at + fish.global_basis.x * 0.75 + Vector3.UP * 0.05, at)
+		side_sheet.append(await _grab())
+		await process_frame
+	for index in range(8):
+		var fish := ambient.fish[3]
+		var at := ambient.global_position + fish.position
+		_look(at + Vector3.UP * 0.8 + fish.global_basis.z * 0.01, at)
+		top_sheet.append(await _grab())
+		await process_frame
+	_sheet(side_sheet, 4, "fish-side-sheet.png")
+	_sheet(top_sheet, 4, "fish-top-sheet.png")
+	_sheet(_crop(top_sheet, 0.35), 4, "fish-top-zoom.png")
+	_sheet(_crop(side_sheet, 0.35), 4, "fish-side-zoom.png")
+	# Startle: a diver looms in at swimming speed; the camera watches from the side.
+	await _settle(ambient, 120)
+	var target := ambient.global_position + _centre(ambient)
+	var diver := target + Vector3(-5.5, 0.0, 0.0)
+	var camera_at := target + Vector3(0.5, 0.6, -3.4)
+	var startle: Array[Image] = []
+	var first := -1.0
+	var distance := 0.0
+	var t := 0.0
+	peak_burst = 0
+	peak_bubbles = 0
+	var captured_at := 0.0
+	while t < 3.0:
+		await process_frame
+		var delta := root.get_process_delta_time()
+		t += delta
+		diver += Vector3(2.5, 0.0, 0.0) * delta
+		player.global_position = diver - Vector3.UP * 0.9
+		player.velocity = Vector3(2.5, 0.0, 0.0)
+		# The camera rides on the player, so place it again every frame.
+		_look(camera_at, ambient.global_position + _centre(ambient))
+		var bursting := ambient.bursting_count()
+		if int(t * 4.0) != int((t - delta) * 4.0):
+			var nearest := 99.0
+			for fish in ambient.fish:
+				nearest = minf(nearest, (ambient.global_position + fish.position).distance_to(diver))
+			var cam := root.get_viewport().get_camera_3d()
+			print("PROBE   t=%.2f diver=%s nearest=%.2f sim_time=%.2f paused=%s cam=%s cam_dist=%.1f visible=%s processing=%s" % [t, diver, nearest, ambient._time, paused, cam.name if cam != null else "none", cam.global_position.distance_to(ambient.global_position + ambient.mover.position) if cam != null else -1.0, ambient.is_visible_in_tree(), ambient.is_processing()])
+		if bursting > 0 and first < 0.0:
+			first = t
+			distance = diver.distance_to(ambient.global_position + _centre(ambient))
+		peak_burst = maxi(peak_burst, bursting)
+		peak_bubbles = maxi(peak_bubbles, ambient.bubbles.live_count())
+		if first >= 0.0 and startle.size() < 8 and t - captured_at > 0.07:
+			captured_at = t
+			_look(camera_at, ambient.global_position + _centre(ambient))
+			startle.append(await _grab())
+	player.velocity = Vector3.ZERO
+	_sheet(startle, 4, "fish-startle-sheet.png")
+	print("PROBE fish startle after=%.2fs distance=%.2fm peak_bursting=%d/%d peak_bubbles=%d" % [first, distance, peak_burst, ambient.fish.size(), peak_bubbles])
+	# Calm diver: hover beside the school and let it get used to them.
+	await _settle(ambient, 240)
+	player.global_position = ambient.global_position + _centre(ambient) + Vector3(-2.2, -0.9, 0.0)
+	var calm_start := ambient._calm
+	var early := 99.0
+	var late := 99.0
+	var startles := 0
+	t = 0.0
+	while t < 16.0:
+		await process_frame
+		var delta := root.get_process_delta_time()
+		t += delta
+		var now := ambient.global_position + _centre(ambient)
+		var chest := player.global_position + Vector3.UP * 0.9
+		var wanted := now + (chest - now).normalized() * 2.0
+		var drift := (wanted - chest).limit_length(0.35)
+		player.global_position += drift * delta
+		player.velocity = drift
+		_look(now + Vector3(0.0, 0.8, -3.0), now)
+		startles = maxi(startles, ambient.bursting_count())
+		var nearest := 99.0
+		for fish in ambient.fish:
+			nearest = minf(nearest, (ambient.global_position + fish.position).distance_to(chest))
+		if t < 3.0:
+			early = minf(early, nearest)
+		elif t > 13.0:
+			late = minf(late, nearest)
+	print("PROBE fish calm %.2f->%.2f nearest_first3s=%.2fm nearest_last3s=%.2fm max_bursting=%d" % [calm_start, ambient._calm, early, late, startles])
+
+
+func _settle(school: FishSchool, frames: int) -> void:
+	player.global_position = Vector3(0.0, 0.2, 10.0)
+	player.velocity = Vector3.ZERO
+	for frame in range(frames):
+		await process_frame
+		# Keep the camera near so the school keeps simulating.
+		_look(school.global_position + _centre(school) + Vector3(-3.0, 0.3, -2.0), school.global_position + _centre(school))
+
+
+# --- reef turtle ------------------------------------------------------------------------
+
+func _reef_turtle() -> void:
+	var route := nature.populations[&"zone:reef_west:turtle"] as PathAnimal
+	var turtle := route.get_child(0) as Node3D
+	var animator := turtle.get_node("Animator") as TurtleAnimator
+	var behavior := route.get_node("Behavior") as TurtleBehavior
+	if not (nature.zone_roots[&"reef_west"] as Node3D).visible:
+		nature._on_zone_restored(&"reef_west")
+	player.set_input_enabled(false)
+	player.global_position = Vector3(0.0, 0.2, 10.0)
+	var t := 0.0
+	while not route.looping and t < 30.0:
+		await process_frame
+		t += root.get_process_delta_time()
+	for frame in range(90):
+		await process_frame
+	var side_sheet: Array[Image] = []
+	var top_sheet: Array[Image] = []
+	var front_sheet: Array[Image] = []
+	var gaits := {}
+	for index in range(8):
+		_look(turtle.global_position - turtle.global_basis.x * 1.15 + Vector3.UP * 0.12, turtle.global_position + Vector3.UP * 0.08)
+		side_sheet.append(await _grab())
+		gaits[animator.gait] = true
+		for wait in range(10):
+			await process_frame
+	for index in range(8):
+		_look(turtle.global_position + Vector3.UP * 1.5 + turtle.global_basis.z * 0.01, turtle.global_position)
+		top_sheet.append(await _grab())
+		for wait in range(10):
+			await process_frame
+	for index in range(8):
+		_look(turtle.global_position - turtle.global_basis.z * 1.4 + Vector3.UP * 0.1, turtle.global_position + Vector3.UP * 0.08)
+		front_sheet.append(await _grab())
+		for wait in range(10):
+			await process_frame
+	_sheet(side_sheet, 4, "turtle-side-sheet.png")
+	_sheet(_crop(side_sheet, 0.55), 4, "turtle-side-zoom.png")
+	_sheet(top_sheet, 4, "turtle-top-sheet.png")
+	_sheet(front_sheet, 4, "turtle-front-sheet.png")
+	print("PROBE reef cruise gaits=%s speed=%.2f" % [gaits.keys(), animator.velocity.length()])
+	# Breathing.
+	behavior._breath_timer = 0.0
+	var surfaced := -1.0
+	var hold := 0.0
+	var bubble_peak := 0
+	var breath_sheet: Array[Image] = []
+	t = 0.0
+	var captured_at := -1.0
+	while t < 40.0:
+		await process_frame
+		var delta := root.get_process_delta_time()
+		t += delta
+		bubble_peak = maxi(bubble_peak, animator.bubbles.live_count())
+		var breathing := behavior.mode == TurtleBehavior.Mode.BREATHE
+		if breathing and behavior.breath_phase == TurtleBehavior.Breath.SURFACE:
+			hold += delta
+			if surfaced < 0.0:
+				surfaced = t
+		if breathing and breath_sheet.size() < 8 and t - captured_at > 0.9:
+			captured_at = t
+			_look(turtle.global_position - turtle.global_basis.x * 1.4 + Vector3(0.0, -0.25, 0.0), turtle.global_position + Vector3.UP * 0.1)
+			breath_sheet.append(await _grab())
+		if behavior.mode == TurtleBehavior.Mode.ROUTE and surfaced > 0.0:
+			break
+	_sheet(breath_sheet, 4, "turtle-breath-sheet.png")
+	print("PROBE reef breath surfaced_after=%.1fs hold=%.1fs bubble_peak=%d back_on_route=%s total=%.1fs" % [surfaced, hold, bubble_peak, behavior.mode == TurtleBehavior.Mode.ROUTE, t])
+	# Grazing on the bottom.
+	behavior._graze_timer = 0.0
+	behavior._breath_timer = 999.0
+	var graze_sheet: Array[Image] = []
+	var fed := 0.0
+	t = 0.0
+	captured_at = -1.0
+	while t < 40.0:
+		await process_frame
+		var delta := root.get_process_delta_time()
+		t += delta
+		if animator.grazing:
+			fed += delta
+			if graze_sheet.size() < 8 and t - captured_at > 0.3:
+				captured_at = t
+				_look(turtle.global_position - turtle.global_basis.x * 1.1 - turtle.global_basis.z * 0.5 + Vector3.UP * 0.25, turtle.global_position + Vector3.UP * 0.05)
+				graze_sheet.append(await _grab())
+		if behavior.mode == TurtleBehavior.Mode.ROUTE and fed > 0.0:
+			break
+	var ground_hit := turtle.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(turtle.global_position + Vector3.UP, turtle.global_position + Vector3.DOWN * 8.0, 1))
+	_sheet(graze_sheet, 4, "turtle-graze-sheet.png")
+	print("PROBE reef graze fed=%.1fs back_on_route=%s total=%.1fs" % [fed, behavior.mode == TurtleBehavior.Mode.ROUTE, t])
+	behavior._breath_timer = 999.0
+	# Companion: a swimmer nearby; the turtle comes over and watches them.
+	player.global_position = turtle.global_position + Vector3(-3.5, -1.0, 0.0)
+	player.rotation.y = PI * 0.5
+	player.velocity = Vector3.ZERO
+	player.camera.transform = camera_rest
+	player.set_input_enabled(true)
+	var engaged := -1.0
+	t = 0.0
+	while t < 20.0:
+		await physics_frame
+		t += 1.0 / 60.0
+		if behavior.mode == TurtleBehavior.Mode.COMPANION:
+			engaged = t
+			break
+	for frame in range(240):
+		await physics_frame
+	var watch_distance := turtle.global_position.distance_to(player.camera.global_position)
+	var weight := animator.look_weight
+	var head := animator._head
+	# Look from the swimmer's own eyes at the turtle without leaving the water.
+	player.camera.look_at(turtle.global_position + Vector3.UP * 0.1)
+	_save(await _grab(), "turtle-watching.png")
+	print("PROBE reef companion engaged_after=%.1fs look_weight=%.2f head=(%.2f, %.2f) camera_distance=%.2fm" % [engaged, weight, head.x, head.y, watch_distance])
+	player.camera.transform = camera_rest
+	Input.action_press(&"move_forward")
+	var boosted := 0
+	var separation := 0.0
+	for frame in range(420):
+		await physics_frame
+		if player.movement.is_swim_boosted():
+			boosted += 1
+		separation += turtle.global_position.distance_to(player.global_position + Vector3.UP * 0.9)
+	Input.action_release(&"move_forward")
+	player.set_input_enabled(false)
+	_look(turtle.global_position + turtle.global_basis.z * 2.6 + Vector3(0.0, 0.5, 0.0) + turtle.global_basis.x * 0.8, turtle.global_position)
+	_save(await _grab(), "turtle-trail.png")
+	print("PROBE reef follow boosted_frames=%d/420 mean_separation=%.2fm mode=%d" % [boosted, separation / 420.0, behavior.mode])
+
+
+# --- lounges turtle: beach crawl into the bay -------------------------------------------
+
+func _lounges_intro() -> void:
+	var route := nature.populations[&"zone:lounges:turtle"] as PathAnimal
+	var turtle := route.get_child(0) as Node3D
+	var animator := turtle.get_node("Animator") as TurtleAnimator
+	player.set_input_enabled(false)
+	player.global_position = Vector3(3.0, 0.2, 14.0)
+	(session.state.zone_states[&"lounges"] as Dictionary).restored_once = true
+	session.zone_restored.emit(&"lounges")
+	var elapsed := 0.0
+	var gait_time := {}
+	var rests := 0
+	var last_gait := -1
+	var sand_peak := 0
+	var side_sheet: Array[Image] = []
+	var top_sheet: Array[Image] = []
+	var surf_taken := false
+	while not route.looping and elapsed < 120.0:
+		await process_frame
+		var delta := root.get_process_delta_time()
+		elapsed += delta
+		gait_time[animator.gait] = float(gait_time.get(animator.gait, 0.0)) + delta
+		if animator.gait == TurtleAnimator.Gait.REST and last_gait != TurtleAnimator.Gait.REST:
+			rests += 1
+		last_gait = animator.gait
+		sand_peak = maxi(sand_peak, animator.sand.live_count())
+		if elapsed > 3.0 and side_sheet.size() < 8:
+			_look(turtle.global_position - turtle.global_basis.x * 1.0 + Vector3.UP * 0.45, turtle.global_position + Vector3.UP * 0.08)
+			side_sheet.append(await _grab())
+			for wait in range(8):
+				await process_frame
+		elif elapsed > 3.0 and top_sheet.size() < 8:
+			_look(turtle.global_position + Vector3.UP * 1.6 + turtle.global_basis.z * 0.3, turtle.global_position)
+			top_sheet.append(await _grab())
+			for wait in range(8):
+				await process_frame
+		elif not surf_taken and turtle.global_position.z > 36.0:
+			surf_taken = true
+			_look(turtle.global_position - turtle.global_basis.x * 1.3 + Vector3(0.0, 0.5, 0.0), turtle.global_position)
+			_save(await _grab(), "lounges-surf.png")
+	_sheet(side_sheet, 4, "lounges-crawl-side.png")
+	_sheet(top_sheet, 4, "lounges-crawl-top.png")
+	print("PROBE lounges looping=%s intro_seconds=%.1f rests=%d sand_peak=%d gaits=%s" % [route.looping, elapsed, rests, sand_peak, _gait_summary(gait_time)])
+
+
+# --- rescue sites ------------------------------------------------------------------------
+
+func _rescue() -> void:
+	var knife := session.rescue_knife
+	player.set_input_enabled(false)
+	for site_id in knife.sites:
+		var site := knife.sites[site_id] as RescueSite
+		var animator := site.animal.get_node("Animator") as TurtleAnimator
+		var at := site.animal.global_position
+		var in_water := session.swim_service.water.contains_horizontal(at) and at.y < session.swim_service.water.surface_y - 0.1
+		print("PROBE rescue site=%s at=%s ground=%.2f water=%s gait=%d" % [site_id, at, Coastline.surface_y(at.x, at.z), in_water, animator.gait])
+	var land_site: RescueSite = null
+	for site_id in knife.sites:
+		var site := knife.sites[site_id] as RescueSite
+		if site.global_position.y > -0.5:
+			land_site = site
+			break
+	var sheet: Array[Image] = []
+	var animator := land_site.animal.get_node("Animator") as TurtleAnimator
+	var t := 0.0
+	while t < 14.0 and sheet.size() < 8:
+		await process_frame
+		t += root.get_process_delta_time()
+		if animator._struggle > 0.1:
+			var at := land_site.animal.global_position
+			_look(at + Vector3(0.9, 0.7, 0.9), at + Vector3.UP * 0.1)
+			sheet.append(await _grab())
+			for wait in range(4):
+				await process_frame
+	_sheet(sheet, 4, "rescue-struggle-sheet.png")
+	# Release it and watch it head off.
+	var rescue := session.state.rescue_states[land_site.site_id] as Dictionary
+	rescue.released = true
+	land_site.release_animal()
+	var route_sheet: Array[Image] = []
+	for index in range(8):
+		for wait in range(20):
+			await process_frame
+		var at := land_site.animal.global_position
+		_look(at + Vector3(1.2, 0.8, 1.2), at + Vector3.UP * 0.1)
+		route_sheet.append(await _grab())
+	_sheet(route_sheet, 4, "rescue-freed-sheet.png")
+	print("PROBE rescue freed gait=%d entangled=%s" % [animator.gait, animator.entangled])
+
+
+# --- helpers ------------------------------------------------------------------------------
+
+func _look(from: Vector3, target: Vector3) -> void:
+	player.camera.global_position = from
+	if not from.is_equal_approx(target):
+		player.camera.look_at(target)
+	session.swim_service.step_environment(1.0)
+
+
+func _grab() -> Image:
+	await RenderingServer.frame_post_draw
+	return root.get_texture().get_image()
+
+
+func _save(image: Image, filename: String) -> void:
+	image.save_png(out.path_join(filename))
+	print("PROBE capture " + filename)
+
+
+func _sheet(images: Array[Image], columns: int, filename: String) -> void:
+	if images.is_empty():
+		print("PROBE sheet %s empty" % filename)
+		return
+	var width := images[0].get_width() / 3
+	var height := images[0].get_height() / 3
+	var rows := ceili(float(images.size()) / columns)
+	var sheet := Image.create(width * columns, height * rows, false, Image.FORMAT_RGBA8)
+	for index in range(images.size()):
+		var small := images[index].duplicate() as Image
+		small.convert(Image.FORMAT_RGBA8)
+		small.resize(width, height)
+		sheet.blit_rect(small, Rect2i(0, 0, width, height), Vector2i((index % columns) * width, (index / columns) * height))
+	_save(sheet, filename)
+
+
+func _crop(images: Array[Image], fraction: float) -> Array[Image]:
+	var result: Array[Image] = []
+	for image in images:
+		var size := Vector2i(int(image.get_width() * fraction), int(image.get_height() * fraction))
+		var region := Rect2i((Vector2i(image.get_width(), image.get_height()) - size) / 2, size)
+		var cropped := image.get_region(region)
+		cropped.resize(image.get_width(), image.get_height())
+		result.append(cropped)
+	return result
+
+
+func _centre(school: FishSchool) -> Vector3:
+	var centre := Vector3.ZERO
+	for fish in school.fish:
+		centre += fish.position
+	return centre / school.fish.size()
+
+
+func _gait_summary(times: Dictionary) -> String:
+	var names := ["swim", "hover", "crawl", "rest", "entangled"]
+	var parts: Array[String] = []
+	for key in times:
+		parts.append("%s=%.1f" % [names[int(key)], float(times[key])])
+	return ",".join(parts)
