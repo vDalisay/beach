@@ -10,6 +10,7 @@ const BEACH_DEFINITION := preload("res://data/world/beach_01.tres")
 @onready var wallet_label: Label = %Wallet
 @onready var result_label: Label = %Result
 @onready var list: VBoxContainer = %OfferList
+@onready var offer_scroll: ScrollContainer = $Margin/Panel/Rows/Scroll
 @onready var close_button: Button = %CloseButton
 
 var service: ProgressionService
@@ -17,11 +18,15 @@ var player: BeachPlayer
 var mode := Mode.SHOP
 var booklet_page := 0
 var _previous_pause := false
+var _pending_focus: Control
+var _focus_delay := 0
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	close_button.pressed.connect(close)
+	get_viewport().gui_focus_changed.connect(_on_gui_focus_changed)
+	set_process(false)
 	hide()
 
 
@@ -107,17 +112,41 @@ func _refresh() -> void:
 		Mode.RACK:
 			title_label.text = "TOOL RACK · EQUIP"
 			_add_rack_rows(record)
-	var first_button: Button
+	var enabled_buttons: Array[Button] = []
 	for row in list.get_children():
 		for child in row.get_children():
 			if child is Button and not (child as Button).disabled:
-				first_button = child as Button
-				break
-		if first_button != null:
-			break
-	(first_button if first_button != null else close_button).grab_focus()
+				enabled_buttons.append(child as Button)
+	close_button.focus_neighbor_top = NodePath()
+	close_button.focus_neighbor_bottom = NodePath()
+	if mode != Mode.BOOKLET and not enabled_buttons.is_empty():
+		for index in enabled_buttons.size():
+			var button := enabled_buttons[index]
+			button.focus_neighbor_top = button.get_path_to(close_button if index == 0 else enabled_buttons[index - 1])
+			button.focus_neighbor_bottom = button.get_path_to(close_button if index == enabled_buttons.size() - 1 else enabled_buttons[index + 1])
+		close_button.focus_neighbor_top = close_button.get_path_to(enabled_buttons[-1])
+		close_button.focus_neighbor_bottom = close_button.get_path_to(enabled_buttons[0])
+	var focus_target := enabled_buttons[0] if not enabled_buttons.is_empty() else close_button
 	if mode == Mode.BOOKLET:
-		((list.get_child(0) as HBoxContainer).get_child(booklet_page) as Button).grab_focus()
+		focus_target = (list.get_child(0) as HBoxContainer).get_child(booklet_page) as Button
+	focus_target.grab_focus()
+
+
+func _on_gui_focus_changed(target: Control) -> void:
+	if visible and is_instance_valid(target) and offer_scroll.is_ancestor_of(target):
+		offer_scroll.ensure_control_visible(target)
+		_pending_focus = target
+		_focus_delay = 4
+		set_process(true)
+
+
+func _process(_delta: float) -> void:
+	_focus_delay -= 1
+	if _focus_delay > 0:
+		return
+	set_process(false)
+	if visible and is_instance_valid(_pending_focus) and _pending_focus.has_focus():
+		offer_scroll.ensure_control_visible(_pending_focus)
 
 
 func _on_prompt_device_changed(_device: SettingsStore.PromptDevice) -> void:
