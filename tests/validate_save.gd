@@ -64,6 +64,7 @@ func _run() -> void:
 		broken.store_string(JSON.stringify(malformed, "", true, true))
 		broken.close()
 	_check(bool(saver.load_slot(&"beach_01", state.run_id, &"manual").ok), "checksum-valid but schema-invalid latest falls back before scene replacement")
+	_check(bool(saver.write_snapshot(&"beach_01", state.run_id, &"manual", state.to_snapshot()).ok) and int(saver._read_generation(latest_path).sequence) == 3 and int(saver._read_generation(slot_folder.path_join("A.json")).sequence) == 1, "a write after the latest file changed on disk replaces it and keeps the valid generation")
 	broken = FileAccess.open(latest_path, FileAccess.WRITE)
 	_check(broken != null, "latest generation accessible for damage fixture")
 	if broken != null:

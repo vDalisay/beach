@@ -80,13 +80,20 @@ func add_item(record: ItemRecord) -> void:
 
 
 func to_snapshot() -> Dictionary:
-	var item_ids: Array[String] = []
-	for item_key in items:
-		item_ids.append(str(item_key))
-	item_ids.sort()
-	var item_rows: Array[Dictionary] = []
-	for item_id in item_ids:
-		item_rows.append((items[StringName(item_id)] as ItemRecord).to_snapshot())
+	var snapshot := snapshot_from_capture(capture_for_snapshot())
+	snapshot["initial_manifest"] = initial_manifest.duplicate(true)
+	return snapshot
+
+
+## The main-thread half of to_snapshot(): copies every value play can change, so that
+## snapshot_from_capture() can build the snapshot on another thread while the run goes on. The
+## initial manifest is shared, not copied: nothing changes it after the run is created or loaded.
+func capture_for_snapshot() -> Dictionary:
+	var records := items.values()
+	var item_values: Array = []
+	item_values.resize(records.size())
+	for index in records.size():
+		item_values[index] = (records[index] as ItemRecord).capture_values()
 
 	var player_ids: Array[String] = []
 	for player_key in players:
@@ -103,9 +110,9 @@ func to_snapshot() -> Dictionary:
 		"generator_version": generator_version,
 		"run_id": run_id,
 		"seed_text": seed_text,
-		"initial_manifest": initial_manifest.duplicate(true),
+		"initial_manifest": initial_manifest,
 		"initial_manifest_hash": initial_manifest_hash,
-		"items": item_rows,
+		"items": [items.keys(), item_values],
 		"players": player_rows,
 		"table_records": table_records.duplicate(true),
 		"bin_records": bin_records.duplicate(true),
@@ -130,6 +137,27 @@ func to_snapshot() -> Dictionary:
 		"revision": revision,
 		"required_total": required_total,
 	}
+
+
+## The other half of to_snapshot(), safe on any thread: turns a capture_for_snapshot() result
+## into the snapshot, with the item rows in item-ID order.
+static func snapshot_from_capture(capture: Dictionary) -> Dictionary:
+	var captured := capture.items as Array
+	var keys := captured[0] as Array
+	var values := captured[1] as Array
+	var values_by_id := {}
+	var item_ids: Array[String] = []
+	for index in keys.size():
+		var item_id := str(keys[index])
+		item_ids.append(item_id)
+		values_by_id[item_id] = values[index]
+	item_ids.sort()
+	var item_rows: Array[Dictionary] = []
+	for item_id in item_ids:
+		item_rows.append(ItemRecord.row_from_values(values_by_id[item_id] as Array))
+	var snapshot := capture.duplicate()
+	snapshot["items"] = item_rows
+	return snapshot
 
 
 static func from_snapshot(data: Dictionary) -> RunState:

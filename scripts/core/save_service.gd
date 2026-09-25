@@ -28,8 +28,8 @@ var session: RunSession
 var player: BeachPlayer
 var _last_autosave_seconds := 0.0
 var _autosave_pending := false
-# Autosaves are serialised, written and verified on a worker thread; the main thread only captures
-# the snapshot. A request made while one is in flight writes the newest snapshot afterwards.
+# Autosaves are built, serialised, written and verified on a worker thread; the main thread only
+# copies the run's values. A request made while one is in flight writes the newest state afterwards.
 var _autosave_task := -1
 var _autosave_job: Dictionary = {}
 var _autosave_run_id := ""
@@ -76,16 +76,20 @@ func _write_pending_autosave() -> void:
 		return
 	if session == null or player == null:
 		return
-	# The worker validates the written snapshot's full state before publishing it, so an invalid
-	# run still never replaces the previous generation.
-	var snapshot := capture_snapshot()
-	_autosave_job = {"beach_id": beach_id, "run_id": session.state.run_id, "snapshot": snapshot, "result": {}}
+	# The worker builds the snapshot from this copy (copying takes a few milliseconds; building the
+	# snapshot here took 70-100 ms on the full beach) and validates the written snapshot's full
+	# state before publishing it, so an invalid run still never replaces the previous generation.
+	_synchronize_world()
+	_autosave_job = {"beach_id": beach_id, "run_id": session.state.run_id, "capture": session.state.capture_for_snapshot(), "result": {}}
 	_autosave_run_id = session.state.run_id
 	_autosave_task = WorkerThreadPool.add_task(_run_autosave_job.bind(_autosave_job), false, "Beach autosave")
 
 
 func _run_autosave_job(job: Dictionary) -> void:
-	job.result = write_snapshot(StringName(job.beach_id), str(job.run_id), &"autosave", job.snapshot as Dictionary)
+	var snapshot := RunState.snapshot_from_capture(job.capture as Dictionary)
+	# The copy is released here, on the worker, rather than when the main thread clears the job.
+	job.erase("capture")
+	job.result = write_snapshot(StringName(job.beach_id), str(job.run_id), &"autosave", snapshot)
 
 
 func _notification(what: int) -> void:
@@ -139,6 +143,12 @@ func save_slot(slot_id: StringName) -> Dictionary:
 
 
 func capture_snapshot() -> Dictionary:
+	_synchronize_world()
+	return session.state.to_snapshot()
+
+
+## Copies the live physics poses (item and bag views, the player) into their records.
+func _synchronize_world() -> void:
 	if session.item_view_manager != null:
 		for item_id in session.item_view_manager.views:
 			var item := session.state.items.get(item_id) as ItemRecord
@@ -155,7 +165,6 @@ func capture_snapshot() -> Dictionary:
 	var record := session.state.players[&"local"] as Dictionary
 	record.transform = player.global_transform
 	record.velocity = player.velocity
-	return session.state.to_snapshot()
 
 
 func write_snapshot(target_beach: StringName, run_id: String, slot_id: StringName, snapshot: Dictionary) -> Dictionary:

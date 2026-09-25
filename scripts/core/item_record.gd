@@ -55,28 +55,43 @@ var collector_id: StringName
 
 
 func to_snapshot() -> Dictionary:
+	return row_from_values(capture_values())
+
+
+## The record's values in the order row_from_values() reads them. Copying them is cheap, so a
+## save can do it on the main thread and build the row on its writer thread.
+func capture_values() -> Array:
+	return [
+		item_id, definition_id, home_section_id, home_zone_id, required, location, holder_id,
+		container_id, slot_id, attachment_id, last_world_transform, linear_velocity, angular_velocity,
+		sleeping, dirty_patches_remaining.duplicate(), buried, revealed, dig_surface_position,
+		reveal_transform, rescuer_id, collector_id,
+	]
+
+
+static func row_from_values(values: Array) -> Dictionary:
 	return {
-		"item_id": str(item_id),
-		"definition_id": str(definition_id),
-		"home_section_id": str(home_section_id),
-		"home_zone_id": str(home_zone_id),
-		"required": required,
-		"location": str(LOCATION_NAMES[location]),
-		"holder_id": str(holder_id),
-		"container_id": str(container_id),
-		"slot_id": str(slot_id),
-		"attachment_id": str(attachment_id),
-		"last_world_transform": _transform_to_array(last_world_transform),
-		"linear_velocity": _vector_to_array(linear_velocity),
-		"angular_velocity": _vector_to_array(angular_velocity),
-		"sleeping": sleeping,
-		"dirty_patches_remaining": _string_names_to_array(dirty_patches_remaining),
-		"buried": buried,
-		"revealed": revealed,
-		"dig_surface_position": _vector_to_array(dig_surface_position),
-		"reveal_transform": _transform_to_array(reveal_transform),
-		"rescuer_id": str(rescuer_id),
-		"collector_id": str(collector_id),
+		"item_id": str(values[0]),
+		"definition_id": str(values[1]),
+		"home_section_id": str(values[2]),
+		"home_zone_id": str(values[3]),
+		"required": values[4],
+		"location": str(LOCATION_NAMES[values[5]]),
+		"holder_id": str(values[6]),
+		"container_id": str(values[7]),
+		"slot_id": str(values[8]),
+		"attachment_id": str(values[9]),
+		"last_world_transform": _transform_to_array(values[10]),
+		"linear_velocity": _vector_to_array(values[11]),
+		"angular_velocity": _vector_to_array(values[12]),
+		"sleeping": values[13],
+		"dirty_patches_remaining": _string_names_to_array(values[14]),
+		"buried": values[15],
+		"revealed": values[16],
+		"dig_surface_position": _vector_to_array(values[17]),
+		"reveal_transform": _transform_to_array(values[18]),
+		"rescuer_id": str(values[19]),
+		"collector_id": str(values[20]),
 	}
 
 
