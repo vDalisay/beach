@@ -11,7 +11,7 @@ Evidence record for the [game-feel plan](../plan/12-game-feel.md), packets J00�
 | J02 Reticle and label | Done | [J02](#j02--reticle-and-label) |
 | J03 Viewmodel | Done | [J03](#j03--viewmodel) |
 | J04 Pickup and throw | Done | [J04](#j04--pickup-and-throw) |
-| J05 Placement | Open | — |
+| J05 Placement | Done | [J05](#j05--placement) |
 | J06 Tools | Open | — |
 | J07 Completion shine | Open | — |
 | J08 Sorting table | Open | — |
@@ -162,6 +162,33 @@ Observed before any change: the can hover is a thin white hull; the placed chair
 - **Profile:** the 10-second vacuum profile is recorded with J06, which adds the vacuum motes.
 - **Retained tuning:** none.
 - **Open issues:** none.
+
+## J05 — Placement
+
+- **Build:** J04 commit + J05 working tree.
+- **Scene / seed:** `tests/scenes/placement_lab.tscn` for the ghost sweep; `scenes/main.tscn`, `feedback-sequence`, for placements.
+- **Setup:**
+  - Lab: the P10 fixture with two buckets, one held; the player stands at (−4.25, 0, 1.6) while the aim sweeps from x = −2.3 to −6.3 across shelf A (slots at −2.8 and −3.6), the gap and shelf B (−4.9 and −5.7), then turns to the sky.
+  - Main: each prop is taken off the sand with `try_hold`, with dirt cleared for staging. The player is moved in front of the first free slot of its kind and aims at it, and clicks through the real `request_primary` route. The ball is thrown with `PlayerCarry._on_throw_requested` from 1.3 m at an empty arrival shelf slot; the removal uses `try_remove`.
+  - Traces and clips run at `--fixed-fps 60`, so tween timing is exact. The main probe suppresses autosave; see Open issues.
+- **Observed:** [ghost sheet](images/J-feel/j05-ghost-glide.png), [ghost clip](images/J-feel/j05-ghost-glide.mp4), [placement sheet](images/J-feel/j05-placement.png) and [placement clip](images/J-feel/j05-placement.mp4) (Godot movie maker, scaled to 1280×720):
+  - Ghost: a mint hologram of the actual prop, with a bright rim and slow rising scan lines. It materializes over 0.1 s (appear 0 → 1 in six frames, scale 0.92 → 1). It glides to the adjacent slot in 0.08 s (x −2.80 → −3.20 → −3.44 → −3.56 → −3.60), fades in 0.06 s when the aim crosses the gap (appear 1 → 0.72 → 0.44 → 0.17 → freed) and materializes again on shelf B. The shelf behind it stays visible. A soft contact shadow sits under it on shelves and on sand.
+  - Placement: the prop leaves the hand at its in-hand scale (0.35, or 0.4 for the chair) and reaches 1.0 on the way. Travel took 0.267 s for the chair, 0.25 s for each bucket and 0.283 s for the surfboard (0.2 s + 0.04 s per metre, capped at 0.3 s). Paths rise 0.10–0.12 m above the straight line, then drop straight onto the slot. On landing the prop squashes to 0.92 height, rebounds to 1.057 and rests at exactly `ONE`, with one ring, 6 sparkles and 5 dust quads.
+  - Neighbours: the second bucket, landing 0.8 m away, rocked the first by 0.67° (2° × (1 − 0.8/1.2)). Taking a bucket off rocked its neighbour by 0.40° (strength 0.6). Both returned to rotation 0.
+  - Capture: the thrown ball entered the slot 0.05 s after release and travelled in for 0.167 s along a half-height arc (0.18 s tuned). It landed with 12 sparkles and the wider, shine-coloured ring.
+  - Cleanup: counting nodes under the service and every `GhostRoot` gave 2 before and 3 after in both scenes. The extra node is the hidden blob, which is reused.
+- **Reduced motion:** the ghost appears at rest with no breath and still scan lines. It snaps between slots (4 new ghosts, 0 glides) and clears without a fade. Travel keeps its duration and still grows to full size, but goes straight (0.000 m above the line). Landing has no squash, ring, dust or wobble, and 3 sparkles (half).
+- **Checks run:** `validate_placement.gd` exit 0; `validate_placement.gd -- --capture` exit 0 (its generated captures were deleted); `validate_completion.gd` exit 0; `validate_full_run.gd` exit 0 (47.3 s). The 35-frame scale contract holds: travel ≤ 0.3 s + landing 0.22 s.
+- **Departures from the packet:**
+  - The landing ring starts at 0.6 × and grows to the prop's footprint half-diagonal + 0.3 m (+ 0.45 m for a capture) whenever that is larger than the packet's 0.15 → 0.55 m (0.8 m) ring. Otherwise a chair or cooler hides its own ring. Small props keep the packet's sizes.
+  - The blob, ring, dust and sparkles sit on the ground found by a short ray at the slot, because sand rises above some slot origins and buried them. Shelf slots keep their authored top, since shelf modules have no collision.
+  - The blob gradient keeps a broad core (0.7 alpha at half radius). A plain linear falloff at `ghost_blob_alpha` 0.28 was invisible on bright sand. The blob is skipped on moorings, where it would sit on water. It stays on upright racks, where its footprint is the board's edge.
+  - Aiming at the same slot with a different held prop selected now rebuilds the ghost. The old early return kept showing the previous prop.
+  - Ghost meshes do not cast shadows, and landing dust is skipped on moorings.
+- **Retained tuning:** none.
+- **Open issues:** two pre-existing costs, not changed here and flagged as separate tasks:
+  - A group-completion reward triggers an autosave through `wallet_changed`. One `save_slot` on the full beach (5,740 items) took 2.4–6.5 s on the main thread. Any placement travel in flight then finishes in a single step after the stall.
+  - Aiming at an empty, unclaimed shared shelf costs about 30 ms per physics frame, because `_shared_claim_is_safe` scans every item record on each preview. The frame rate drops while lining up such a shelf. Godot's catch-up delta (at most 0.133 s per frame) then shortens the visible travel: real-time traces of the first shelf placement and the capture finished in 30–60 ms. The fixed-FPS traces above show the intended timing.
 
 ## Retained tuning
 

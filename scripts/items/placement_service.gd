@@ -10,8 +10,7 @@ const GHOST_SHADER := preload("res://shaders/placement_ghost.gdshader")
 const GROUP_SWEEP_SHADER := preload("res://shaders/group_sweep.gdshader")
 const PLAYER_ID := &"local"
 const CLEARANCE_MASK := 1 | 4 | 8
-
-static var _ghost_material: ShaderMaterial
+const FEEL := preload("res://data/feel/feel_tuning.tres")
 
 var session: RunSession
 var world_root: Node3D
@@ -21,9 +20,16 @@ var slots: Dictionary = {}
 var pools: Dictionary = {}
 var slotted_views: Dictionary = {}
 var validation_errors: PackedStringArray = []
+## Presentation pools for landings (created with a player).
+var sparkles: ParticlePool
+var dust: ParticlePool
 var _preview_slot_id: StringName
 var _group_sweep_serials: Dictionary = {}
 var _pending_group_sweeps: Dictionary = {}
+# The one live placement ghost: it glides between slots and fades when the aim leaves.
+var _ghost_visual: Node3D
+var _ghost_item_id: StringName
+var _ghost_blob: MeshInstance3D
 
 
 func configure(run_session: RunSession, beach_root: Node3D, player_body: BeachPlayer = null) -> void:
@@ -39,6 +45,12 @@ func configure(run_session: RunSession, beach_root: Node3D, player_body: BeachPl
 		if not player.interactor.primary_requested.is_connected(_on_primary_requested):
 			player.interactor.primary_requested.connect(_on_primary_requested)
 			player.interactor.target_changed.connect(_on_target_changed)
+		if sparkles == null:
+			sparkles = ParticlePool.create(ParticlePool.Kind.SPARKLE, 128, true)
+			add_child(sparkles)
+			dust = ParticlePool.create(ParticlePool.Kind.DUST, 32, true)
+			dust.tint = FEEL.dust_color
+			add_child(dust)
 
 
 func preview_slot(player_id: StringName, slot_id: StringName) -> ActionResult:
@@ -62,12 +74,15 @@ func try_place(player_id: StringName, slot_id: StringName) -> ActionResult:
 	var held := player_record[&"held_objects"] as Array[Dictionary]
 	var selected := int(player_record.get("selected_held_index", -1))
 	var source_transform := _held_source_transform(item_id)
+	var arm := &"both" if _definition_for_item(item_id).hand_cost == 2 else (&"left" if selected == 0 else &"right")
 	held.remove_at(selected)
 	player_record[&"held_objects"] = held
 	player_record[&"selected_held_index"] = mini(selected, held.size() - 1) if not held.is_empty() else -1
 	_commit_to_slot(item_id, slot_id)
 	clear_preview()
 	session.finalize_action(PackedStringArray([str(item_id)]), PackedStringArray([str(player_id)]))
+	if player != null:
+		player.play_cue(&"place", {"arm": arm})
 	if carry != null:
 		# A pickup still flying into the hand ends now; the prop leaves from the hand instead.
 		carry.cancel_presentation(item_id)
@@ -132,6 +147,7 @@ func try_remove(player_id: StringName, slot_id: StringName, target_context: Dict
 	_remove_slotted_view(item_id)
 	clear_preview()
 	session.finalize_action(PackedStringArray([str(item_id)]), PackedStringArray([str(player_id)]))
+	_wobble_neighbors(slot_id, 0.6)
 	if carry != null:
 		# Presentation only: a copy lifts off the slot and travels into the hands.
 		var large := definition.hand_cost == 2
@@ -189,15 +205,37 @@ func target_result(slot_id: StringName, collider: CollisionObject3D, hit_point: 
 	}
 
 
-func clear_preview() -> void:
+## Hides the placement ghost. `fade` (the aim left the slot) lets it dissolve briefly;
+## placement, removal and occupied slots clear it at once.
+func clear_preview(fade := false) -> void:
 	if _preview_slot_id.is_empty() or not slots.has(_preview_slot_id):
 		_preview_slot_id = &""
+		if is_instance_valid(_ghost_visual):
+			_ghost_visual.queue_free()
+		_ghost_visual = null
+		_ghost_item_id = &""
+		_hide_blob(false)
 		return
 	var ghost := ((slots[_preview_slot_id] as Dictionary).area as Area3D).get_node("GhostRoot") as Node3D
-	ghost.hide()
-	for child in ghost.get_children():
-		child.queue_free()
 	_preview_slot_id = &""
+	if fade and is_instance_valid(_ghost_visual) and _ghost_visual.has_meta(&"ghost_material") and not _reduced_motion():
+		var fading := _ghost_visual
+		var material := fading.get_meta(&"ghost_material") as ShaderMaterial
+		# A glide in flight would keep steering the transform in the new parent's space.
+		FeelMotion.replace(fading, &"glide", null)
+		fading.reparent(self, true)
+		ghost.hide()
+		var t := FeelMotion.replace(fading, &"appear", FeelMotion.tween(fading))
+		t.tween_method(func(value: float) -> void: material.set_shader_parameter("appear", value), float(material.get_shader_parameter("appear")), 0.0, 0.06)
+		t.tween_callback(fading.queue_free)
+		_hide_blob(true)
+	else:
+		ghost.hide()
+		for child in ghost.get_children():
+			child.queue_free()
+		_hide_blob(false)
+	_ghost_visual = null
+	_ghost_item_id = &""
 
 
 func occupant_for(slot_id: StringName) -> StringName:
@@ -448,19 +486,141 @@ func _release_slot(slot_id: StringName) -> void:
 
 
 func _show_ghost(slot_id: StringName, item_id: StringName) -> void:
-	if _preview_slot_id == slot_id:
+	if _preview_slot_id == slot_id and _ghost_item_id == item_id and is_instance_valid(_ghost_visual):
 		return
-	clear_preview()
 	var descriptor := slots[slot_id] as Dictionary
 	var area := descriptor.area as Area3D
-	var ghost := area.get_node("GhostRoot") as Node3D
+	var ghost_root := area.get_node("GhostRoot") as Node3D
 	var definition := _definition_for_item(item_id)
-	ghost.position = area.global_basis.inverse() * Vector3.UP * _upright_offset((descriptor.transform as Transform3D).basis, WorldItem.profile_size(definition.collision_profile))
-	var visual := _create_visual(definition)
-	ghost.add_child(visual)
-	_apply_ghost_material(visual)
-	ghost.show()
+	var offset := area.global_basis.inverse() * Vector3.UP * _upright_offset((descriptor.transform as Transform3D).basis, WorldItem.profile_size(definition.collision_profile))
+	var reduced := _reduced_motion()
+	if is_instance_valid(_ghost_visual) and _ghost_item_id == item_id and not reduced:
+		# Glide: the same ghost slides magnetically to the next slot instead of popping.
+		var previous_root := _ghost_visual.get_parent() as Node3D
+		ghost_root.position = offset
+		_ghost_visual.reparent(ghost_root, true)
+		ghost_root.show()
+		if previous_root != null and previous_root != ghost_root:
+			previous_root.hide()
+		var t := FeelMotion.replace(_ghost_visual, &"glide", FeelMotion.tween(_ghost_visual))
+		t.tween_property(_ghost_visual, "transform", Transform3D.IDENTITY, FEEL.ghost_glide_seconds).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		_show_blob(slot_id, definition, true, reduced)
+		_preview_slot_id = slot_id
+		return
+	clear_preview()
+	ghost_root.position = offset
+	_ghost_visual = _create_visual(definition)
+	_ghost_visual.name = "Ghost"
+	ghost_root.add_child(_ghost_visual)
+	var material := ShaderMaterial.new()
+	material.shader = GHOST_SHADER
+	material.set_shader_parameter("ghost_color", FEEL.ghost_color)
+	material.set_shader_parameter("fill_alpha", FEEL.ghost_fill_alpha)
+	material.set_shader_parameter("rim_alpha", FEEL.ghost_rim_alpha)
+	material.set_shader_parameter("scan_density", FEEL.ghost_scan_density)
+	material.set_shader_parameter("breath_amount", 0.0 if reduced else FEEL.ghost_breath)
+	if reduced:
+		material.set_shader_parameter("scan_speed", 0.0)
+	_apply_ghost_material(_ghost_visual, material)
+	_ghost_visual.set_meta(&"ghost_material", material)
+	ghost_root.show()
+	_ghost_item_id = item_id
+	if reduced:
+		material.set_shader_parameter("appear", 1.0)
+	else:
+		# Materialize: a slight grow with the hologram fading in.
+		material.set_shader_parameter("appear", 0.0)
+		_ghost_visual.scale = Vector3.ONE * 0.92
+		var t := FeelMotion.replace(_ghost_visual, &"appear", FeelMotion.tween(_ghost_visual))
+		t.tween_property(_ghost_visual, "scale", Vector3.ONE, FEEL.ghost_appear_seconds).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		t.parallel().tween_method(func(value: float) -> void: material.set_shader_parameter("appear", value), 0.0, 1.0, FEEL.ghost_appear_seconds)
+	_show_blob(slot_id, definition, false, reduced)
 	_preview_slot_id = slot_id
+
+
+## Soft contact shadow under the ghost; skipped on moorings, where it would sit on water.
+func _show_blob(slot_id: StringName, definition: ItemDefinition, glide: bool, reduced: bool) -> void:
+	var pool := pools.get(StringName(str((slots[slot_id] as Dictionary).pool_id))) as PlacementSlot
+	if pool == null or pool.layout == PlacementSlot.Layout.MOORING:
+		_hide_blob(false)
+		return
+	if _ghost_blob == null:
+		# A broad core with a soft edge, so the shadow still reads on bright sand.
+		var gradient := Gradient.new()
+		gradient.set_color(0, Color(0, 0, 0, 1))
+		gradient.set_color(1, Color(0, 0, 0, 0))
+		gradient.add_point(0.55, Color(0, 0, 0, 0.7))
+		var texture := GradientTexture2D.new()
+		texture.gradient = gradient
+		texture.fill = GradientTexture2D.FILL_RADIAL
+		texture.fill_from = Vector2(0.5, 0.5)
+		texture.fill_to = Vector2(0.5, 0.0)
+		var material := StandardMaterial3D.new()
+		material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		material.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
+		material.albedo_texture = texture
+		material.albedo_color = Color(0, 0, 0, FEEL.ghost_blob_alpha)
+		_ghost_blob = MeshInstance3D.new()
+		_ghost_blob.name = "GhostBlob"
+		_ghost_blob.mesh = PlaneMesh.new()
+		_ghost_blob.material_override = material
+		_ghost_blob.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		add_child(_ghost_blob)
+	(_ghost_blob.mesh as PlaneMesh).size = _slot_footprint(slot_id, definition) * 1.3
+	var target := Transform3D(Basis(Vector3.UP, pool.global_rotation.y), _contact_point(slot_id) + Vector3.UP * 0.006)
+	var material := _ghost_blob.material_override as StandardMaterial3D
+	var was_visible := _ghost_blob.visible and material.albedo_color.a > 0.0
+	_ghost_blob.show()
+	if glide and was_visible and not reduced:
+		var t := FeelMotion.replace(_ghost_blob, &"blob", FeelMotion.tween(_ghost_blob))
+		t.tween_property(_ghost_blob, "global_transform", target, FEEL.ghost_glide_seconds).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		t.parallel().tween_property(material, "albedo_color:a", FEEL.ghost_blob_alpha, FEEL.ghost_glide_seconds)
+		return
+	_ghost_blob.global_transform = target
+	if reduced:
+		FeelMotion.replace(_ghost_blob, &"blob", null)
+		material.albedo_color.a = FEEL.ghost_blob_alpha
+		return
+	material.albedo_color.a = 0.0
+	var t := FeelMotion.replace(_ghost_blob, &"blob", FeelMotion.tween(_ghost_blob))
+	t.tween_property(material, "albedo_color:a", FEEL.ghost_blob_alpha, FEEL.ghost_appear_seconds)
+
+
+## Ground footprint (slot-yaw x/z, metres) of the prop as the slot holds it: an upright
+## board stands on its edge.
+func _slot_footprint(slot_id: StringName, definition: ItemDefinition) -> Vector2:
+	var size := WorldItem.profile_size(definition.collision_profile)
+	var pool := pools.get(StringName(str((slots[slot_id] as Dictionary).pool_id))) as PlacementSlot
+	var held := pool.local_slot_transform(int((slots[slot_id] as Dictionary).index)).basis if pool != null else Basis.IDENTITY
+	return Vector2(
+		absf(held.x.x) * size.x + absf(held.y.x) * size.y + absf(held.z.x) * size.z,
+		absf(held.x.z) * size.x + absf(held.y.z) * size.y + absf(held.z.z) * size.z
+	)
+
+
+## Where contact effects sit: the slot origin, lifted onto sand that rises above it. Shelf
+## modules have no collision, so shelf slots keep their authored top.
+func _contact_point(slot_id: StringName) -> Vector3:
+	var origin := slot_transform(slot_id).origin
+	if not is_inside_tree():
+		return origin
+	var ray := PhysicsRayQueryParameters3D.create(origin + Vector3.UP * 0.4, origin - Vector3.UP * 0.2, 1)
+	var hit := get_world_3d().direct_space_state.intersect_ray(ray)
+	return Vector3(origin.x, maxf(origin.y, (hit.position as Vector3).y), origin.z) if not hit.is_empty() else origin
+
+
+func _hide_blob(fade: bool) -> void:
+	if _ghost_blob == null:
+		return
+	if not fade or not _ghost_blob.visible:
+		FeelMotion.replace(_ghost_blob, &"blob", null)
+		_ghost_blob.hide()
+		return
+	var material := _ghost_blob.material_override as StandardMaterial3D
+	var t := FeelMotion.replace(_ghost_blob, &"blob", FeelMotion.tween(_ghost_blob))
+	t.tween_property(material, "albedo_color:a", 0.0, 0.06)
+	t.tween_callback(_ghost_blob.hide)
 
 
 func _animate_to_slot(item_id: StringName, slot_id: StringName, source_transform: Transform3D, physical_view: WorldItem = null) -> void:
@@ -470,22 +630,32 @@ func _animate_to_slot(item_id: StringName, slot_id: StringName, source_transform
 	var destination := Marker3D.new()
 	area.add_child(destination)
 	destination.position = area.global_basis.inverse() * Vector3.UP * _upright_offset((descriptor.transform as Transform3D).basis, WorldItem.profile_size(definition.collision_profile))
+	var reduced := _reduced_motion()
+	var capture := physical_view != null
 	var finish := func() -> void:
 		if is_instance_valid(destination):
 			destination.queue_free()
-		if (session.state.items[item_id] as ItemRecord).location == ItemRecord.Location.SLOTTED and (session.state.items[item_id] as ItemRecord).slot_id == slot_id:
+		var record := session.state.items[item_id] as ItemRecord
+		if record.location == ItemRecord.Location.SLOTTED and record.slot_id == slot_id:
 			_ensure_slotted_view(item_id)
-			_pulse_slotted_view(item_id)
+			_land_slotted_view(item_id, slot_id, capture)
 			_try_start_pending_sweeps()
-	if physical_view != null:
-		physical_view.travel_to(destination, 0.25, false, finish)
+	var distance := source_transform.origin.distance_to(destination.global_position)
+	var seconds := FEEL.capture_travel_seconds if capture else FeelMotion.travel_seconds(distance, FEEL.place_travel_base, FEEL.place_travel_per_meter, FEEL.place_travel_max)
+	# Rise, then come straight down the last few centimetres onto the slot.
+	var options := {} if reduced else {"arc": FEEL.place_arc_height * (0.5 if capture else 1.0), "drop": FEEL.place_drop_height}
+	if capture:
+		options["reduced"] = reduced
+		physical_view.travel_to(destination, seconds, false, finish, options)
 		return
 	var presentation := _create_visual(definition)
 	add_child(presentation)
 	presentation.global_transform = source_transform
-	var tween := create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
-	tween.tween_property(presentation, "global_transform", destination.global_transform, 0.25)
-	tween.tween_callback(func() -> void:
+	# Leaves at the in-hand scale (PlayerCarry._scale_hand_visual) and grows on the way.
+	presentation.scale = Vector3.ONE * (0.4 if definition.hand_cost == 2 else 0.35)
+	options["shrink_to"] = 1.0
+	options["shrink_from"] = 0.0
+	FeelMotion.travel(presentation, self, global_transform.affine_inverse() * destination.global_transform, seconds, options, func() -> void:
 		presentation.queue_free()
 		finish.call()
 	)
@@ -534,16 +704,62 @@ func _remove_slotted_view(item_id: StringName) -> void:
 		(view as Node).queue_free()
 
 
-func _pulse_slotted_view(item_id: StringName) -> void:
-	if not slotted_views.has(item_id):
+## Landing: squash, rebound and settle, with a contact ring, dust, sparkles and a neighbour
+## wobble. A physical capture gets a wider, brighter ring and twice the sparkles.
+func _land_slotted_view(item_id: StringName, slot_id: StringName, capture: bool) -> void:
+	var root := slotted_visual_root(item_id)
+	if root == null:
 		return
-	var visual_root := (slotted_views[item_id] as Node3D).get_node("VisualRoot") as Node3D
+	var base := _contact_point(slot_id)
+	var sparkle_count := FEEL.land_sparkles * (2 if capture else 1)
 	if _reduced_motion():
+		# R09's pulse is removed under reduced motion (P27); a few glints remain.
+		root.scale = Vector3.ONE
+		_land_sparkles(base, maxi(1, sparkle_count / 2))
 		return
-	visual_root.scale = Vector3.ONE
-	var tween := create_tween()
-	tween.tween_property(visual_root, "scale", Vector3.ONE * 1.08, 0.125)
-	tween.tween_property(visual_root, "scale", Vector3.ONE, 0.125)
+	FeelMotion.squash_land(root, FEEL.land_squash, FEEL.land_rebound, FEEL.land_seconds)
+	# The ring clears the prop's own footprint, so a chair or cooler does not hide it.
+	var reach := _slot_footprint(slot_id, _definition_for_item(item_id)).length() * 0.5
+	FeelRing.spawn(self, base + Vector3.UP * 0.02, maxf(0.15, reach * 0.6), maxf(0.8 if capture else 0.55, reach + (0.45 if capture else 0.3)), 0.28, FEEL.shine_core_color if capture else FEEL.ghost_color, 0.05)
+	_land_sparkles(base, sparkle_count)
+	var pool := pools.get(StringName(str((slots[slot_id] as Dictionary).pool_id))) as PlacementSlot
+	if dust != null and (pool == null or pool.layout != PlacementSlot.Layout.MOORING):
+		dust.burst(base + Vector3.UP * 0.03, Vector3.UP, 5, 0.5, 0.4, Vector2(0.04, 0.07), 0.45)
+	_wobble_neighbors(slot_id, 1.0)
+
+
+func _land_sparkles(base: Vector3, count: int) -> void:
+	var palette := FEEL.sparkle_colors
+	if sparkles == null or palette.is_empty():
+		return
+	# Split across the palette so a landing glints in more than one colour.
+	for index in palette.size():
+		var share := count / palette.size() + (1 if index < count % palette.size() else 0)
+		if share > 0:
+			sparkles.burst(base + Vector3.UP * 0.1, Vector3.UP, share, 0.6, 0.5, Vector2(0.05, 0.08), 0.5, palette[index])
+
+
+## Props sharing the shelf rock slightly, like books settling, fading with distance.
+func _wobble_neighbors(slot_id: StringName, strength: float) -> void:
+	if _reduced_motion() or not slots.has(slot_id):
+		return
+	var origin := slot_transform(slot_id).origin
+	var pool_id := StringName(str((slots[slot_id] as Dictionary).pool_id))
+	var occupants := (session.state.container_records[pool_id] as Dictionary).get("occupants", {}) as Dictionary
+	for other_key in occupants:
+		var other_slot := StringName(str(other_key))
+		if other_slot == slot_id or not slots.has(other_slot):
+			continue
+		var root := slotted_visual_root(StringName(str(occupants[other_key])))
+		var distance := origin.distance_to(slot_transform(other_slot).origin)
+		if root == null or distance > FEEL.neighbor_wobble_radius:
+			continue
+		var angle := deg_to_rad(FEEL.neighbor_wobble_degrees) * strength * (1.0 - distance / FEEL.neighbor_wobble_radius)
+		var t := FeelMotion.replace(root, &"wobble", FeelMotion.tween(root))
+		t.tween_interval(distance * 0.04)
+		t.tween_property(root, "rotation:z", angle, 0.07).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		t.tween_property(root, "rotation:z", -angle * 0.5, 0.09).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		t.tween_property(root, "rotation:z", 0.0, 0.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 
 func _on_group_completed(payload: Dictionary) -> void:
@@ -649,14 +865,12 @@ func _create_visual(definition: ItemDefinition) -> Node3D:
 	return root
 
 
-func _apply_ghost_material(node: Node) -> void:
-	if _ghost_material == null:
-		_ghost_material = ShaderMaterial.new()
-		_ghost_material.shader = GHOST_SHADER
+func _apply_ghost_material(node: Node, material: ShaderMaterial) -> void:
 	if node is MeshInstance3D:
-		(node as MeshInstance3D).material_override = _ghost_material
+		(node as MeshInstance3D).material_override = material
+		(node as MeshInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	for child in node.get_children():
-		_apply_ghost_material(child)
+		_apply_ghost_material(child, material)
 
 
 func _upright_offset(basis: Basis, size: Vector3) -> float:
@@ -728,9 +942,12 @@ func _on_primary_requested(target: Dictionary) -> void:
 	var result := try_place(PLAYER_ID, StringName(str(target.get("slot_id", target.get("id", "")))))
 	if not result.ok:
 		feedback_requested.emit(result.message)
+		if player != null:
+			player.play_cue(&"rejected", {"reason": result.message})
 
 
 func _on_target_changed(target: Dictionary) -> void:
 	var actions := target.get("actions", PackedStringArray()) as PackedStringArray
 	if not actions.has("place") or StringName(str(target.get("slot_id", ""))) != _preview_slot_id:
-		clear_preview()
+		# The aim left the slot: let the ghost dissolve rather than blink out.
+		clear_preview(true)
