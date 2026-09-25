@@ -32,6 +32,9 @@ art/synty/                            locally staged selected vendor dependencie
 art/placeholders/                     small project-owned coloured cube scenes
 shaders/                              project-owned effects only
 tools/stage_assets.gd                 explicit editor/offline staging script
+tools/stage_ui_assets.gd              stages interface sprites, icons and particle art (plan 14)
+tools/build_ui_theme.gd               builds data/ui/beach_theme.tres, the project theme
+scripts/ui/kit/                       palette, sticker StyleBox, button motion, glyphs, icon renderer
 tests/run_checks.gd                   small native checks only where justified
 tests/scenes/                         optional shared scenes using real game state
 docs/handoffs/                        one completed handoff per packet

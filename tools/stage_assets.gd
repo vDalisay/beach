@@ -152,6 +152,9 @@ func _configure_staged_texture_imports(folder: String) -> void:
 		_errors.append("Missing staged folder: %s" % folder)
 		return
 	for subfolder in directory.get_directories():
+		# 2D interface sprites stay lossless; tools/stage_ui_assets.gd owns their import settings.
+		if folder.path_join(subfolder) == STAGED_PREFIX + "ui":
+			continue
 		_configure_staged_texture_imports(folder.path_join(subfolder))
 	for file_name in directory.get_files():
 		if file_name.get_extension().to_lower() in TEXTURE_EXTENSIONS:
