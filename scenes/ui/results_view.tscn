@@ -1,6 +1,15 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/results_view.gd" id="1_results"]
+
+[sub_resource type="StyleBoxFlat" id="PostcardFrame"]
+content_margin_left = 10.0
+content_margin_top = 10.0
+content_margin_right = 10.0
+content_margin_bottom = 10.0
+bg_color = Color(1, 1, 1, 1)
+shadow_color = Color(0, 0, 0, 0.35)
+shadow_size = 8
 
 [node name="ResultsView" type="Control"]
 visible = false
@@ -40,12 +49,46 @@ theme_override_constants/margin_bottom = 30
 theme_override_constants/separation = 18
 alignment = 1
 
-[node name="Title" type="Label" parent="Center/Panel/Margin/Stack"]
+[node name="PostcardHolder" type="Control" parent="Center/Panel/Margin/Stack"]
 unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(404, 236)
+size_flags_horizontal = 4
+mouse_filter = 2
+
+[node name="Postcard" type="PanelContainer" parent="Center/Panel/Margin/Stack/PostcardHolder"]
+unique_name_in_owner = true
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("PostcardFrame")
+
+[node name="PostcardImage" type="TextureRect" parent="Center/Panel/Margin/Stack/PostcardHolder/Postcard"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(384, 216)
+expand_mode = 1
+stretch_mode = 6
+
+[node name="TitleHolder" type="Control" parent="Center/Panel/Margin/Stack"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+mouse_filter = 2
+
+[node name="Title" type="Label" parent="Center/Panel/Margin/Stack/TitleHolder"]
+unique_name_in_owner = true
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 theme_override_colors/font_color = Color(0.55, 0.9, 0.73, 1)
 theme_override_font_sizes/font_size = 34
 text = "COAST RESTORED"
 horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="Summary" type="Label" parent="Center/Panel/Margin/Stack"]
 unique_name_in_owner = true
@@ -62,3 +105,33 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 50)
 theme_override_font_sizes/font_size = 20
 text = "Continue exploring"
+
+[node name="Confetti" type="CPUParticles2D" parent="."]
+unique_name_in_owner = true
+process_mode = 3
+emitting = false
+amount = 80
+lifetime = 2.5
+one_shot = true
+explosiveness = 0.85
+emission_shape = 3
+emission_rect_extents = Vector2(640, 8)
+direction = Vector2(0, 1)
+spread = 35.0
+gravity = Vector2(0, 320)
+initial_velocity_min = 120.0
+initial_velocity_max = 260.0
+angular_velocity_min = -360.0
+angular_velocity_max = 360.0
+scale_amount_min = 4.0
+scale_amount_max = 8.0
+
+[node name="Flash" type="ColorRect" parent="."]
+unique_name_in_owner = true
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(1, 1, 1, 0)

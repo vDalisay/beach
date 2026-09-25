@@ -82,6 +82,8 @@ func _run() -> void:
 	check(not (seen.get("completion_receipt", {}) as Dictionary).is_empty() and bool((seen.group_states[&"home:lounge/beach_chair"] as Dictionary).reward_claimed) and bool((seen.section_states[&"home:lounge"] as Dictionary).restored_once), "first public snapshot already includes reward, restoration and result")
 	check(results.visible and session.results_open and paused, "results screen pauses gameplay after first finish")
 	if "--capture" in OS.get_cmdline_user_args():
+		# After the finale intro (J12), so the still shows the final layout.
+		await create_timer(3.5).timeout
 		await _capture("P20-results.png")
 	results.continue_roaming()
 	check(not paused and not results.visible and not session.results_open, "Continue resumes roaming without clearing receipt")

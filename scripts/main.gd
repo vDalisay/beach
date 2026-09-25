@@ -204,8 +204,14 @@ func _open_run(initial_state: RunState, definitions: Dictionary, manifest_hash: 
 	collection.name = "CollectionService"
 	run_root.add_child(collection)
 	collection.configure(session)
-	collection.receipt_created.connect(collection_receipt.show_receipt)
-	collection.receipt_created.connect(_on_receipt_created)
+	collection.receipt_created.connect(func(receipt: Dictionary) -> void:
+		# A final truck call opens the finale first (run_completed is published inside the commit);
+		# the finale supersedes this receipt and its coins.
+		if results_view.visible:
+			return
+		collection_receipt.show_receipt(receipt)
+		_on_receipt_created(receipt)
+	)
 	collection.receipt_created.connect(func(_receipt: Dictionary) -> void:
 		_show_guidance(session, &"collection", "Truck collection credits trash and pays for correctly sorted items.")
 	)
@@ -307,9 +313,12 @@ func _open_run(initial_state: RunState, definitions: Dictionary, manifest_hash: 
 	)
 	session.run_completed.connect(func(receipt: Dictionary) -> void:
 		_clear_notices()
+		guidance_panel.hide()
 		collection_receipt.clear_receipt()
+		_settle_money()
 		player.play_cue(&"run_complete")
-		results_view.show_receipt(receipt, player, session)
+		var hud: Array[CanvasItem] = [progress_panel, context_panel, guidance_panel, target_label, reticle, error_panel, restoration_pointer, scanner_overlay, detector_meter, oxygen_meter]
+		results_view.show_receipt(receipt, player, session, true, hud)
 	)
 	_update_progress(session)
 	_update_context(session)
@@ -341,7 +350,7 @@ func _open_run(initial_state: RunState, definitions: Dictionary, manifest_hash: 
 	status_label.text = "Beach run active: %s" % manifest_hash
 	start_button.text = "Restart beach run"
 	if not initial_state.completion_receipt.is_empty() and session.progress_service.completed_waste + session.progress_service.completed_props == initial_state.required_total:
-		results_view.show_receipt(initial_state.completion_receipt, player, session)
+		results_view.show_receipt(initial_state.completion_receipt, player, session, false)
 	run_started.emit(run_root)
 	return run_root
 
@@ -642,7 +651,7 @@ func _money_held() -> bool:
 
 
 func _react_money(gain: int, final_money: int) -> void:
-	if _money_held() or not is_instance_valid(run_root):
+	if _money_held() or not is_instance_valid(run_root) or results_view.visible:
 		return
 	if FeelMotion.reduced(settings_store):
 		_flash_money()
@@ -683,11 +692,25 @@ func _release_money(amount: int) -> void:
 	var wallet := int(((run_root as RunSession).state.players[&"local"] as Dictionary).money)
 	_shown["money"] = float(wallet - _money_pending)
 	_render_progress(_last_totals)
-	if amount > 0:
+	if amount > 0 and not results_view.visible:
 		if FeelMotion.reduced(settings_store):
 			_flash_money()
 		else:
 			_float_money(amount, wallet - _money_pending)
+
+
+## The finale shows the true wallet at once: nothing held back, flying or floating.
+func _settle_money() -> void:
+	coin_flyer.clear()
+	_money_pending = 0
+	_money_hold_until = 0
+	for floater in _money_floaters:
+		if is_instance_valid(floater):
+			floater.queue_free()
+	_money_floaters.clear()
+	if is_instance_valid(run_root):
+		_shown["money"] = float(int(((run_root as RunSession).state.players[&"local"] as Dictionary).money))
+		_render_progress(_last_totals)
 
 
 func _on_receipt_created(receipt: Dictionary) -> void:
@@ -781,13 +804,15 @@ func _update_bag_bar(bag_count: int, capacity: int) -> void:
 
 
 func _show_guidance(session: RunSession, key: StringName, message: String) -> void:
-	if key in session.state.guidance_seen or _pending_guidance.has(key):
+	if key in session.state.guidance_seen or _pending_guidance.has(key) or results_view.visible:
 		return
 	_pending_guidance[key] = true
 	_queue_notice(message, 4.0, key, session)
 
 
 func _queue_notice(message: String, duration: float, guidance_key: StringName = &"", session: RunSession = null, priority: int = 0) -> void:
+	if results_view.visible:
+		return
 	_notice_queue.append({"message": message, "duration": duration, "guidance_key": guidance_key, "session": session, "priority": priority})
 	if _notice_active and priority > int(_current_notice.get("priority", 0)):
 		_notice_queue.append(_current_notice)
@@ -807,7 +832,7 @@ func _flush_group_notice() -> void:
 	_pending_group_reward = 0
 	_pending_group_family = ""
 	_queue_notice(label + reward, 2.5, &"", null, 1)
-	if reward_amount > 0:
+	if reward_amount > 0 and not results_view.visible:
 		# First-time set rewards send a few coins from the notice to the wallet.
 		if FeelMotion.reduced(settings_store):
 			_release_money(reward_amount)
@@ -832,7 +857,7 @@ func _flush_restored_notices() -> void:
 	var zone_ids := _pending_zones.duplicate()
 	_pending_sections.clear()
 	_pending_zones.clear()
-	if not is_instance_valid(run_root) or not is_instance_valid(_restoration):
+	if not is_instance_valid(run_root) or not is_instance_valid(_restoration) or results_view.visible:
 		return
 	var player := run_root.get_node("Player") as BeachPlayer
 	var origins: Array[Vector3] = []

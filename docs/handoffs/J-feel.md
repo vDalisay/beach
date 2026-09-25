@@ -18,7 +18,7 @@ Evidence record for the [game-feel plan](../plan/12-game-feel.md), packets J00�
 | J09 HUD | Done | [J09](#j09--hud) |
 | J10 Collection and money | Done | [J10](#j10--collection-and-money) |
 | J11 Restoration | Done | [J11](#j11--restoration) |
-| J12 Finale | Open | — |
+| J12 Finale | Done | [J12](#j12--finale) |
 | J13 Rumble (optional) | Open | — |
 | J14 Acceptance | Open | — |
 
@@ -391,6 +391,70 @@ Observed before any change: the can hover is a thin white hull; the placed chair
 - **Retained tuning:** none. New script constants: `RestorationWave.ABOVE_WATER_DIM` 0.5, `RestorationWave.BEACON_FADE_POWER` 0.7 and `RestorationSection.GARDEN_WAVE_FEATHER` 4.0.
 - **Open issues:**
   - At 1280×720 with 150 % UI scale, the pointer's in-view arrow at the screen centre (427, 223) sits over the notice panel. This is the J09 notice-over-reticle overlap and goes to the J14 display audit. The edge arrow (80, 244) is clear.
+
+## J12 — Finale
+
+- **Build:** J11 commit + J12 working tree.
+- **Scene / seed:** `scenes/main.tscn`, `full-run-integration`, at 1920×1080, then 1280×720 with 150 % UI scale.
+- **Setup (accelerated):**
+  - Staging:
+    - 299 props are committed to free slots with their views, as `validate_full_run.gd` does.
+    - All 5,400 required waste items are collected in one commit, as `validate_wildlife.gd` does.
+    - The staging's own effects get 6 s to settle, then the notice lane is cleared.
+  - Final actions (real):
+    - Chair: the last `arrival:start` beach chair is held and placed with `try_place` from 1.8 m, as `validate_full_run.gd` does.
+    - Truck: `arrival:start`'s 80 waste items are sorted and sealed through S1 and deposited, then the hotline is called.
+  - Skip checks: a save made just before the final action is reloaded twice.
+  - Traces and clip run at `--fixed-fps 60`.
+- **Observed:** [finale sheet](images/J-feel/j12-finale.png) and [finale clip](images/J-feel/j12-finale.mp4):
+  - Final chair: results, pause and `results_open` are set synchronously, as the checks require.
+    - **The beat, 0–1.1 s:** the HUD tucks away. The chair's landing, the set shine and the arrival wave keep playing under the pause, while physics and wildlife stay frozen.
+    - **1.1 s:** the frame is taken, with the hands hidden first. The flash rises to 0.54 and clears over 0.41 s while the shade fades in.
+    - **The reveal:**
+      - The panel scales 0.94 → 1.0, overshooting to 1.01, and is in by 1.5 s.
+      - "COAST RESTORED" stamps from 1.6× and −5.7° down to 1.0 and level.
+      - Confetti bursts at 1.67 s: 80 pieces in the four palette colours.
+      - The postcard, showing the settled chairs and the wave front, settles from 0.8 at −4° to 1.0 at −2°, overshooting to 1.02 at −1.8°.
+      - The stats count up: 1,671 → 4,434 → 5,305 → … → 5,700 by 2.5 s.
+      - Continue fades in by 2.6 s. The intro ends at 2.7 s, and Continue pulses between 1.0 and 1.03 at 1 Hz.
+  - Continue: the HUD's visibility (progress, context, error, pointer, scanner, detector, oxygen) matches its state before the finale, and the reticle and hands come back.
+  - Save right after Continue, then reload: the results show at once, paused, with no intro (shade 0.88, panel 1.0). The receipt matches the pre-save receipt, compared as `validate_full_run.gd` compares it. There is no postcard, because it is not saved.
+  - Skips, from reloads of the pre-final save:
+    - A mouse click at 1.5 s, and the controller A button at 1.5 s, each jump straight to the final layout (final texts, panel 1.0) and keep the captured postcard.
+    - A second click on Continue, or a second A press, continues.
+  - Final truck call: the results open before the receipt would, so the receipt stays hidden, no coins fly and nothing is held back. The wallet reads the true $795 after Continue.
+  - At 1280×720 with 150 % UI scale, the card shrinks to 171×96 so the panel fits on screen. The skips and the reload also work there.
+- **Reduced motion:**
+  - No flash (peak 0), confetti, stamp or pulse.
+  - The panel and the card fade in, and the card rests at −2°.
+  - The stats show their final numbers from the start, and the 1.1 s beat is kept.
+- **Checks run:** all exit 0.
+  - `validate_completion.gd`: its only error lines are the two exit-time texture-leak messages.
+  - `validate_full_run.gd`: 43.5 s, with no error lines.
+  - `validate_ui.gd` and `validate_payment.gd`.
+- **Fixes found while validating:**
+  - A final truck call publishes `run_completed` inside the commit, before the collection service emits `receipt_created`. The receipt and its $120 hold therefore arrived after the finale had cleared them, leaving the receipt visible under the results. The receipt now yields to the finale.
+  - Godot containers reset their children's scale and rotation whenever they sort, so the count-up's text changes undid the stamp and the card's tilt. The title and the card now sit in plain holder controls, and the panel scales in through its `CenterContainer`.
+  - Confetti still falling after Continue reappeared when a reload reopened the results at once. The confetti node now hides when the presentation ends.
+- **Departures from the packet:**
+  - Scene:
+    - `Title` sits in `TitleHolder` and `Postcard` in `PostcardHolder` (the stack's first child), and `Center` carries the panel's scale-in. This works around the container resets described above.
+    - The confetti's hard-stop colour ramp is built from `FEEL.confetti_colors` in `_ready`. Its position and emission width follow the view's size at each burst.
+    - The panel's minimum size is unchanged; it grows with the card.
+  - The card's image height fits the room the panel's other rows leave on screen, from 96 to 216 px. A fixed 384×216 card would push the panel off a 1280×720 screen at 150 %.
+  - The capture happens first, and the reveal starts only after the image is taken, so the flash's first frame never lands in the postcard.
+  - The first-person hands are hidden for the capture and stay hidden until Continue, so the card shows the beach rather than the arms.
+  - The tucked-away HUD also includes the scanner overlay, detector meter and oxygen meter, which would otherwise appear in the card.
+  - Money: `_settle_money()` clears coins and floaters, drops every hold and shows the true wallet at once. It is the stacked-hold equivalent of the packet's `_release_money(0)`.
+  - While the results are up:
+    - Notices, tips, set-reward coins, money floaters and the restoration pointer are suppressed. The same commit queues or defers them, so they would otherwise appear over the finale or in the card.
+    - The notice panel is hidden along with its queue, so Continue does not bring back a stale banner.
+  - A run reset from the results (quitting to the menu) drops the saved HUD states instead of restoring them.
+  - Following the packet, `validate_completion.gd -- --capture` now waits 3.5 s before taking `P20-results.png`, so the still shows the final layout. P20 stills are generated, not tracked.
+- **Retained tuning:** none.
+- **Open issues:**
+  - A reloaded finished run shows the HUD dimly under the shade, as before J12, because nothing tucks it away when there is no intro.
+  - The accelerated staging collects waste directly, so these receipts read "Sorted correctly 0" (38 in the truck run).
 
 ## Retained tuning
 
