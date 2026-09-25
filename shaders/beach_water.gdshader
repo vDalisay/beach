@@ -3,6 +3,8 @@ shader_type spatial;
 // the pale horizon sky otherwise turns all distant water white-mint. Sun glints stay native.
 render_mode blend_mix, depth_draw_opaque, cull_disabled, diffuse_lambert, specular_schlick_ggx, ambient_light_disabled;
 
+#include "res://shaders/beach_swash.gdshaderinc"
+
 uniform sampler2D depth_texture : hint_depth_texture, filter_nearest, repeat_disable;
 uniform sampler2D normal_texture : hint_normal, repeat_enable, filter_linear_mipmap;
 uniform sampler2D noise_texture : repeat_enable, filter_linear_mipmap;
@@ -19,6 +21,8 @@ uniform float reflection_strength = 0.3;
 uniform float absorption_density = 0.20;
 uniform float normal_strength = 0.06;
 uniform float debug_time = -1.0;
+// 0 when the Beach detail graphics setting is Off: no rolling surf, only the edge foam.
+uniform int surf_level : hint_range(0, 1) = 1;
 varying vec3 world_position;
 
 void vertex() {
@@ -67,19 +71,18 @@ void fragment() {
     opacity *= smoothstep(0.0, 0.35, shore_distance);
 
     float noise = texture(noise_texture, world_position.xz * 0.8 + phase * vec2(0.02, -0.01)).r;
-    float advance = 0.55 + 0.32 * sin(phase * 1.25 + world_position.x * 0.28)
-                  + 0.08 * sin(world_position.x * 1.7 - phase * 0.6);
-    float aa = max(fwidth(shore_distance), 0.015);
-    float band = 1.0 - smoothstep(0.10, 0.32 + aa, abs(shore_distance - advance));
-    // A thinner line left by the previous wash, trailing seaward of the active edge.
-    float trail_offset = advance + 0.85 + 0.25 * sin(phase * 0.9 + world_position.x * 0.13);
-    float trail = 1.0 - smoothstep(0.03, 0.09 + aa, abs(shore_distance - trail_offset));
     float breakup = smoothstep(0.26, 0.58, noise);
     // The supplied noise is fine grain. A coarse mip supplies metre-scale gaps
     // that survive minification instead of averaging into an unbroken white line.
     float patches = textureLod(noise_texture, world_position.xz * 0.025 + phase * vec2(0.003, -0.001), 3.0).r;
     float patch_mask = mix(0.3, 1.0, smoothstep(0.47, 0.53, patches));
-    float shore_foam = max(band * breakup, trail * breakup * 0.65) * patch_mask;
+    // White water rolls in from the surf and breaks onto the sand in step with the swash that
+    // the sand shader draws (beach_swash.gdshaderinc).
+    vec2 surf = vec2(0.0, (1.0 - smoothstep(0.0, 0.8, shore_distance)) * 0.45);
+    if (surf_level > 0) {
+        surf = swash_water(world_position.x, shore_distance, phase);
+    }
+    float shore_foam = max(surf.x * smoothstep(0.18, 0.55, noise), surf.y * breakup) * patch_mask;
     float contact_foam = (1.0 - smoothstep(0.02, 0.18, contact_depth)) * breakup * 0.25;
     contact_foam *= (1.0 - smoothstep(15.0, 25.0, length(VERTEX))) * float(valid_depth);
     float foam = max(shore_foam, contact_foam);

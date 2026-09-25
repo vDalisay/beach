@@ -240,6 +240,14 @@ theme_type_variation = &"Value"
 unique_name_in_owner = true
 custom_minimum_size = Vector2(72, 0)
 
+[node name="BeachDetailRow" type="HBoxContainer" parent="Margin/Card/Layout/Tabs/Graphics/Content"]
+[node name="Label" type="Label" parent="Margin/Card/Layout/Tabs/Graphics/Content/BeachDetailRow"]
+size_flags_horizontal = 3
+text = "Beach detail (sand, shells, waves)"
+[node name="BeachDetail" type="OptionButton" parent="Margin/Card/Layout/Tabs/Graphics/Content/BeachDetailRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 0)
+
 [node name="Ssao" type="CheckButton" parent="Margin/Card/Layout/Tabs/Graphics/Content"]
 unique_name_in_owner = true
 text = "Ambient occlusion (SSAO)"

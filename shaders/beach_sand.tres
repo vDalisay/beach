@@ -1,15 +1,21 @@
-[gd_resource type="ShaderMaterial" load_steps=5 format=3]
+[gd_resource type="ShaderMaterial" load_steps=8 format=3]
 
 [ext_resource type="Shader" path="res://shaders/beach_sand.gdshader" id="1"]
 [ext_resource type="Texture2D" path="res://art/synty/POLYGON_Palm_City/textures/Sand_01.png" id="2"]
 [ext_resource type="Texture2D" path="res://art/synty/POLYGON_Palm_City/textures/Noise_Small.png" id="3"]
 [ext_resource type="Texture2D" path="res://art/synty/POLYGON_Palm_City/textures/caustic_height.png" id="4"]
+[ext_resource type="Texture2D" path="res://art/textures/sand/sand_detail.png" id="5"]
+[ext_resource type="Texture2D" path="res://art/textures/sand/sand_normals.png" id="6"]
+[ext_resource type="Texture2D" path="res://art/textures/sand/shell_atlas.png" id="7"]
 
 [resource]
 shader = ExtResource("1")
 shader_parameter/sand_texture = ExtResource("2")
 shader_parameter/macro_noise = ExtResource("3")
 shader_parameter/caustic_texture = ExtResource("4")
+shader_parameter/detail_texture = ExtResource("5")
+shader_parameter/detail_normals = ExtResource("6")
+shader_parameter/shell_atlas = ExtResource("7")
 shader_parameter/caustic_strength = 0.22
 shader_parameter/dry_color = Color(0.64, 0.55, 0.42, 1)
 shader_parameter/wet_color = Color(0.42, 0.385, 0.3, 1)

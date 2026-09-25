@@ -31,15 +31,17 @@ const DEFAULT_VALUES := {
 	&"ssao": true,
 	&"glow": true,
 	&"view_distance": 1.0,
+	# Sand grain, shells and the waves on the shore: 0 off, 1 low, 2 medium, 3 high (BeachDetail).
+	&"beach_detail": 3,
 	&"vsync": true,
 	&"max_fps": 0,
 }
 # Ultra is the look before the performance pass; High is the default.
 const GRAPHICS_PRESETS := {
-	&"low": {&"msaa": 0, &"render_scale": 0.75, &"shadow_quality": 1, &"ssao": false, &"glow": false, &"view_distance": 0.7},
-	&"medium": {&"msaa": 1, &"render_scale": 1.0, &"shadow_quality": 2, &"ssao": false, &"glow": true, &"view_distance": 0.85},
-	&"high": {&"msaa": 2, &"render_scale": 1.0, &"shadow_quality": 3, &"ssao": true, &"glow": true, &"view_distance": 1.0},
-	&"ultra": {&"msaa": 2, &"render_scale": 1.0, &"shadow_quality": 4, &"ssao": true, &"glow": true, &"view_distance": 1.2},
+	&"low": {&"msaa": 0, &"render_scale": 0.75, &"shadow_quality": 1, &"ssao": false, &"glow": false, &"view_distance": 0.7, &"beach_detail": 1},
+	&"medium": {&"msaa": 1, &"render_scale": 1.0, &"shadow_quality": 2, &"ssao": false, &"glow": true, &"view_distance": 0.85, &"beach_detail": 2},
+	&"high": {&"msaa": 2, &"render_scale": 1.0, &"shadow_quality": 3, &"ssao": true, &"glow": true, &"view_distance": 1.0, &"beach_detail": 3},
+	&"ultra": {&"msaa": 2, &"render_scale": 1.0, &"shadow_quality": 4, &"ssao": true, &"glow": true, &"view_distance": 1.2, &"beach_detail": 3},
 }
 const FRAME_CAPS := [0, 30, 60, 90, 120, 144, 165, 240]
 const REQUIRED_ACTIONS := [
@@ -111,6 +113,8 @@ func set_value(key: StringName, value: Variant) -> bool:
 			value = clampi(int(value), 0, 4)
 		&"view_distance":
 			value = clampf(float(value), 0.6, 1.5)
+		&"beach_detail":
+			value = clampi(int(value), 0, 3)
 		&"max_fps":
 			value = int(value) if FRAME_CAPS.has(int(value)) else 0
 		_:
@@ -462,6 +466,9 @@ func _apply_display_settings(key: StringName = &"") -> void:
 	if key.is_empty() or key == &"view_distance":
 		# Shorter detail distance also lets automatic mesh LOD switch to coarser levels sooner.
 		root.mesh_lod_threshold = clampf(1.0 / float(get_value(&"view_distance")), 0.8, 2.0)
+	if key.is_empty() or key == &"beach_detail" or key == &"view_distance":
+		# Shared beach materials, so the title backdrop and the run both follow the setting.
+		BeachDetail.apply(int(get_value(&"beach_detail")), float(get_value(&"view_distance")))
 	if key.is_empty() or key == &"vsync":
 		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED if bool(get_value(&"vsync")) else DisplayServer.VSYNC_DISABLED)
 	if key.is_empty() or key == &"max_fps":

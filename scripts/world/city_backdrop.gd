@@ -179,6 +179,8 @@ func _add_inland_ground() -> void:
 	var land_finish := preload("res://shaders/beach_sand.tres").duplicate() as ShaderMaterial
 	land_finish.set_shader_parameter("use_shore_data", false)
 	land_finish.set_shader_parameter("use_vertex_tint", true)
+	# Inland ground: no beach grain, ripples or shells.
+	land_finish.set_shader_parameter("beach_detail", false)
 	land.material_override = land_finish
 	land.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(land)

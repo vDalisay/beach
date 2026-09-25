@@ -7,6 +7,7 @@ const PRESET_ORDER: Array[StringName] = [&"low", &"medium", &"high", &"ultra"]
 const PRESET_NAMES := ["Low", "Medium", "High", "Ultra", "Custom"]
 const MSAA_NAMES := ["Off", "2×", "4×", "8×"]
 const SHADOW_NAMES := ["Off", "Low", "Medium", "High", "Ultra"]
+const BEACH_DETAIL_NAMES := ["Off", "Low", "Medium", "High"]
 const TAB_ICONS := [
 	preload("res://art/synty/ui/icons_flat/ICON_ModernMenus_Controller_01_Stroke.png"),
 	preload("res://art/synty/ui/icons_flat/ICON_ModernMenus_Display_01_Stroke.png"),
@@ -54,6 +55,7 @@ const BINDING_GROUPS := {
 @onready var render_scale: HSlider = %RenderScale
 @onready var render_scale_value: Label = %RenderScaleValue
 @onready var shadow_quality: OptionButton = %ShadowQuality
+@onready var beach_detail: OptionButton = %BeachDetail
 @onready var view_distance: HSlider = %ViewDistance
 @onready var view_distance_value: Label = %ViewDistanceValue
 @onready var ssao: CheckButton = %Ssao
@@ -95,6 +97,8 @@ func _ready() -> void:
 	graphics_preset.set_item_disabled(PRESET_NAMES.size() - 1, true)
 	for label in MSAA_NAMES:
 		msaa.add_item(label)
+	for label in BEACH_DETAIL_NAMES:
+		beach_detail.add_item(label)
 	for label in SHADOW_NAMES:
 		shadow_quality.add_item(label)
 	for cap in SettingsStore.FRAME_CAPS:
@@ -102,6 +106,7 @@ func _ready() -> void:
 	graphics_preset.item_selected.connect(_on_preset_selected)
 	msaa.item_selected.connect(_on_option_changed.bind(&"msaa"))
 	shadow_quality.item_selected.connect(_on_option_changed.bind(&"shadow_quality"))
+	beach_detail.item_selected.connect(_on_option_changed.bind(&"beach_detail"))
 	frame_cap.item_selected.connect(func(index: int) -> void: _on_option_changed(SettingsStore.FRAME_CAPS[index], &"max_fps"))
 	tabs.tab_changed.connect(func(_tab: int) -> void:
 		notice_label.text = _tab_notice()
@@ -194,6 +199,7 @@ func _sync_controls() -> void:
 	render_scale.value = float(store.get_value(&"render_scale"))
 	shadow_quality.select(int(store.get_value(&"shadow_quality")))
 	view_distance.value = float(store.get_value(&"view_distance"))
+	beach_detail.select(int(store.get_value(&"beach_detail")))
 	ssao.button_pressed = bool(store.get_value(&"ssao"))
 	glow.button_pressed = bool(store.get_value(&"glow"))
 	vsync.button_pressed = bool(store.get_value(&"vsync"))
@@ -320,7 +326,7 @@ func _link_focus() -> void:
 	# One vertical chain per tab: the tab bar, that tab's controls, then the shared buttons.
 	var controls: Array[Control] = [tabs.get_tab_bar()]
 	if tabs.get_current_tab_control() == graphics_tab:
-		controls.append_array([graphics_preset, msaa, render_scale, shadow_quality, view_distance, ssao, glow, vsync, frame_cap] as Array[Control])
+		controls.append_array([graphics_preset, msaa, render_scale, shadow_quality, view_distance, beach_detail, ssao, glow, vsync, frame_cap] as Array[Control])
 	else:
 		controls.append_array([mouse_sensitivity, controller_sensitivity, deadzone, fov, ui_scale, invert_y, reduced_motion, controller_vibration, sprint_toggle, crouch_toggle] as Array[Control])
 		for action in SettingsStore.REMAPPABLE_ACTIONS:
