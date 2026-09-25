@@ -22,7 +22,14 @@ $beachGodot = 'C:\Users\Home\Downloads\Godot_v4.6.1-stable_mono_win64\Godot_v4.6
 & $beachGodot --headless --path 'C:\Users\Home\Documents\beach' --export-release 'Windows Desktop' 'builds/windows/Beach.exe'
 ```
 
-Graphics preset for test runs: windowed checks, scenes and play sessions run on Low (`-- --graphics=low`) unless the change affects rendering. Headless runs draw nothing, so they need no preset. The option applies to that launch only and never changes the saved settings. See `AGENTS.md` for when to use High, Ultra and Low instead.
+### Graphics preset for test runs
+
+Run tests on the Low preset unless the change affects rendering; Low makes windowed runs faster. `-- --graphics=<preset>` (low, medium, high or ultra) sets the preset for that launch only and never changes the player's saved settings.
+
+- **Default: Low.** Use it for every windowed run: validation scripts, development scenes and play sessions. Headless runs draw nothing, so they need no preset.
+- **Rendering changes: High,** the default players get. This covers materials, shaders, lighting, shadows, effects, models, textures, draw distance and level of detail.
+- **Preset settings: also Ultra and Low.** Check both when the change touches a setting the presets vary: shadows, SSAO, glow, MSAA, render scale or detail view distance.
+- **Measurements and evidence: High,** unless a specific preset is under test. This covers performance numbers, screenshots and visual evidence. Name the preset in the handoff.
 
 Where written checks are justified, keep `tests/run_checks.gd` as a short SceneTree script with direct checks, a tiny `check(condition, message)` helper and a nonzero exit on failure. No case registry, discovery system or custom test command interface is required. Do not depend on `assert()` alone for release-mode execution. Use temporary `user://test_runs/` saves, never a real player save. Construct only the small amount of state needed by a check; prefer existing playable scenes for integrated behavior and add a development scene only when the game cannot conveniently expose the state needed.
 
