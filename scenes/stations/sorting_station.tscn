@@ -151,6 +151,8 @@ position = Vector3(3.55, 0.92, 1.97)
 mesh = SubResource("RackPostMesh")
 
 [node name="RackLabel" type="Label3D" parent="OutputRack"]
+cast_shadow = 0
+visibility_range_end = 30.0
 position = Vector3(3.1, 2.04, -0.075)
 billboard = 1
 text = "SEALED BAGS 0/8"
@@ -180,6 +182,8 @@ position = Vector3(0, -0.75, 0)
 scale = Vector3(1.5, 0.74, 1.0)
 
 [node name="Label" type="Label3D" parent="BinAreas/PMD"]
+cast_shadow = 0
+visibility_range_end = 30.0
 position = Vector3(0, 0.29, 0)
 billboard = 1
 text = "PMD"
@@ -206,6 +210,8 @@ position = Vector3(0, -0.75, 0)
 scale = Vector3(1.5, 0.74, 1.0)
 
 [node name="Label" type="Label3D" parent="BinAreas/Organic"]
+cast_shadow = 0
+visibility_range_end = 30.0
 position = Vector3(0, 0.29, 0)
 billboard = 1
 text = "ORGANIC"
@@ -232,6 +238,8 @@ position = Vector3(0, -0.75, 0)
 scale = Vector3(1.5, 0.74, 1.0)
 
 [node name="Label" type="Label3D" parent="BinAreas/General"]
+cast_shadow = 0
+visibility_range_end = 30.0
 position = Vector3(0, 0.29, 0)
 billboard = 1
 text = "GENERAL"
@@ -258,6 +266,8 @@ position = Vector3(0, -0.75, 0)
 scale = Vector3(1.5, 0.74, 1.0)
 
 [node name="Label" type="Label3D" parent="BinAreas/Glass"]
+cast_shadow = 0
+visibility_range_end = 30.0
 position = Vector3(0, 0.29, 0)
 billboard = 1
 text = "GLASS"

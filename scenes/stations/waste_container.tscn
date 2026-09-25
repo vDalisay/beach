@@ -38,6 +38,8 @@ mesh = SubResource("FillMesh")
 material_override = SubResource("FillMaterial")
 
 [node name="Label" type="Label3D" parent="."]
+cast_shadow = 0
+visibility_range_end = 30.0
 unique_name_in_owner = true
 position = Vector3(0, 1.73, 0.61)
 billboard = 1

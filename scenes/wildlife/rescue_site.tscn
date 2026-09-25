@@ -13,6 +13,8 @@ unique_name_in_owner = true
 unique_name_in_owner = true
 
 [node name="Status" type="Label3D" parent="."]
+cast_shadow = 0
+visibility_range_end = 40.0
 unique_name_in_owner = true
 position = Vector3(0, 0.75, 0)
 billboard = 1

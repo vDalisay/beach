@@ -341,6 +341,7 @@ func _refresh_markers() -> void:
 			label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 			label.font_size = 32
 			label.pixel_size = 0.004
+			label.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 			marker.add_child(label)
 			_markers[pile_id] = marker
 		marker.global_position = ItemRecord._array_to_vector(pile.origin as Array) + Vector3.UP * 0.08

@@ -88,9 +88,14 @@ func _process(delta: float) -> void:
 		if _ages[index] >= _lifetimes[index]:
 			_remove(index)
 		index -= 1
-	_write_instances()
 	if _positions.is_empty():
+		_write_instances()
 		set_process(false)
+		return
+	# Particles age every frame, but off-screen or distant pools rewrite their instances less often.
+	# A pool's particles stay within a few metres of their emitter.
+	if PresentationLOD.due(PresentationLOD.interval(get_viewport().get_camera_3d(), _positions[0], 4.0, 70.0), get_instance_id()):
+		_write_instances()
 
 
 func _step_bubble(index: int, delta: float) -> void:

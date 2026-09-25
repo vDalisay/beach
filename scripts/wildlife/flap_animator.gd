@@ -8,6 +8,9 @@ extends Node
 @export var speed := 2.2
 @export var rear_scale := 0.6
 
+# Flapping is presentation only: off-screen or beyond this camera distance it is not posed.
+const FLAP_RANGE := 90.0
+
 var _parts: Array[Node3D] = []
 var _signs: Array[float] = []
 var _scales: Array[float] = []
@@ -28,5 +31,8 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_phase += delta * speed
+	var body := get_parent() as Node3D
+	if body != null and not PresentationLOD.due(PresentationLOD.interval(get_viewport().get_camera_3d(), body.global_position, 1.5, FLAP_RANGE), get_instance_id()):
+		return
 	for index in _parts.size():
 		_parts[index].rotation.z = _signs[index] * sin(_phase + float(index) * 0.4) * amplitude * _scales[index]

@@ -305,12 +305,6 @@ void fragment() {
 	vec3 world_pos = (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	vec3 world_normal = normalize((INV_VIEW_MATRIX * vec4(NORMAL, 0.0)).xyz);
 
-	// Triplanar position - world-space or object-space
-	vec3 triplanar_pos = world_pos;
-	if (!triplanar_use_world_space) {
-		triplanar_pos = (inverse(MODEL_MATRIX) * vec4(world_pos, 1.0)).xyz;
-	}
-
 	// UV with panning
 	vec2 uv_panned = UV + uv_pan * TIME;
 
@@ -334,6 +328,12 @@ void fragment() {
 	float final_metallic = metallic;
 	float final_smoothness = smoothness;
 	if (enable_triplanar_texture) {
+		// Triplanar position - world-space or object-space. The matrix inverse is only paid for
+		// materials that use triplanar mapping, not per pixel on every Synty surface.
+		vec3 triplanar_pos = world_pos;
+		if (!triplanar_use_world_space) {
+			triplanar_pos = (inverse(MODEL_MATRIX) * vec4(world_pos, 1.0)).xyz;
+		}
 		triplanar_info tri_info = triplanar_sample(
 			triplanar_texture_top,
 			triplanar_texture_bottom,

@@ -28,6 +28,8 @@ position = Vector3(0, 0.25, 0)
 shape = SubResource("BagShape")
 
 [node name="BagLabel" type="Label3D" parent="."]
+cast_shadow = 0
+visibility_range_end = 20.0
 unique_name_in_owner = true
 position = Vector3(0, 0.35, 0.18)
 billboard = 1

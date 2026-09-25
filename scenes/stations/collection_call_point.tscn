@@ -19,6 +19,8 @@ position = Vector3(0, 0.91, 0)
 shape = SubResource("PhoneShape")
 
 [node name="Label" type="Label3D" parent="."]
+cast_shadow = 0
+visibility_range_end = 30.0
 position = Vector3(0, 2.15, 0.42)
 billboard = 1
 text = "CALL COLLECTION"

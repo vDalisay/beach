@@ -167,6 +167,7 @@ category = &"glass"
 [node name="CollectionCallPoint" parent="ServicePoints/S1" instance=ExtResource("14_call")]
 position = Vector3(5.5, 0, 5.2)
 [node name="Label" type="Label3D" parent="ServicePoints/S1"]
+cast_shadow = 0
 position = Vector3(0, 4.2, 0)
 text = "S1  SORT • STORE • COLLECT"
 font_size = 64
@@ -196,6 +197,7 @@ category = &"glass"
 position = Vector3(5.5, 0, 7.5)
 station_id = &"S2"
 [node name="Label" type="Label3D" parent="ServicePoints/S2"]
+cast_shadow = 0
 position = Vector3(0, 4.2, 0)
 text = "S2  SERVICE + EQUIPMENT SHOP"
 font_size = 64
@@ -225,6 +227,7 @@ category = &"glass"
 position = Vector3(5.5, 0, 5.2)
 station_id = &"S3"
 [node name="Label" type="Label3D" parent="ServicePoints/S3"]
+cast_shadow = 0
 position = Vector3(0, 4.2, 0)
 text = "S3  SORT • STORE • COLLECT"
 font_size = 64
@@ -235,6 +238,7 @@ position = Vector3(10.5, 0, -10)
 [node name="ShopStations" parent="ServicePoints/EquipmentShop" instance=ExtResource("15_shop")]
 position = Vector3(0, 0, 6)
 [node name="Label" type="Label3D" parent="ServicePoints/EquipmentShop"]
+cast_shadow = 0
 position = Vector3(0, 4.5, 0)
 text = "EQUIPMENT SHOP"
 font_size = 64

@@ -35,6 +35,8 @@ var _goals := {}
 var _grips := {&"L": Grip.RELAXED, &"R": Grip.RELAXED}
 var _curl := {&"L": 0.2, &"R": 0.2}
 var _rest := {}
+var _finger_bones := {}
+var _applied_curl := {}
 
 
 static func available() -> bool:
@@ -102,7 +104,8 @@ func _process(delta: float) -> void:
 	var weight := 1.0 - exp(-FOLLOW_RATE * delta)
 	for side in _targets:
 		var target := _targets[side] as Marker3D
-		target.position = target.position.lerp(_goals[side], weight)
+		if not target.position.is_equal_approx(_goals[side]):
+			target.position = target.position.lerp(_goals[side], weight)
 		_curl[side] = lerpf(float(_curl[side]), float((CURLS[_grips[side]] as Array)[0]), weight)
 	_apply_fingers()
 
@@ -110,18 +113,32 @@ func _process(delta: float) -> void:
 func _apply_fingers() -> void:
 	if skeleton == null:
 		return
+	if _finger_bones.is_empty():
+		# Bone indices are looked up once rather than by name for every finger every frame.
+		for side in [&"L", &"R"]:
+			var chains: Array = []
+			for chain in FINGER_CHAINS + [THUMB_CHAIN]:
+				var bones: Array[int] = []
+				for segment in (chain as Array).size():
+					bones.append(skeleton.find_bone("%s_%s" % [chain[segment], side]))
+				chains.append(bones)
+			_finger_bones[side] = chains
 	for side in [&"L", &"R"]:
 		var amount := float(_curl[side])
+		# A settled grip leaves the finger poses as they are.
+		if absf(amount - float(_applied_curl.get(side, -1.0))) < 0.0005:
+			continue
+		_applied_curl[side] = amount
 		var closed := amount / maxf(float((CURLS[Grip.GRIP] as Array)[0]), 0.01)
-		for chain in FINGER_CHAINS:
-			for segment in (chain as Array).size():
-				_curl_bone("%s_%s" % [chain[segment], side], Vector3(0, 0, 1), -amount * FINGER_WEIGHTS[segment])
-		for segment in THUMB_CHAIN.size():
-			_curl_bone("%s_%s" % [THUMB_CHAIN[segment], side], Vector3(0, 0, 1), -closed * THUMB_WEIGHTS[segment])
+		var chains := _finger_bones[side] as Array
+		for chain_index in chains.size():
+			var thumb := chain_index == chains.size() - 1
+			var bones := chains[chain_index] as Array[int]
+			for segment in bones.size():
+				_curl_bone(bones[segment], Vector3(0, 0, 1), -(closed * THUMB_WEIGHTS[segment] if thumb else amount * FINGER_WEIGHTS[segment]))
 
 
-func _curl_bone(bone_name: String, axis: Vector3, angle: float) -> void:
-	var bone := skeleton.find_bone(bone_name)
+func _curl_bone(bone: int, axis: Vector3, angle: float) -> void:
 	if bone < 0:
 		return
 	skeleton.set_bone_pose_rotation(bone, (_rest[bone] as Quaternion) * Quaternion(axis, angle))

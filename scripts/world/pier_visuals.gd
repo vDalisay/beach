@@ -134,6 +134,7 @@ func _ready() -> void:
 	sign_text.font_size = 64
 	sign_text.pixel_size = 0.01
 	sign_text.modulate = Color(0.13, 0.28, 0.3)
+	sign_text.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(sign_text)
 	for side in [-1, 1]:
 		for z in [70.0, 87.0]:

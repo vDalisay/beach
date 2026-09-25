@@ -17,8 +17,10 @@ const CRAWL_PERIOD := 1.35
 const CRAWL_PUSH := 0.45
 # Share of a swim stroke spent on the downstroke (the power phase).
 const DOWNSTROKE := 0.55
-# Beyond this camera distance the gait and surge keep running but nothing is posed.
+# Beyond this camera distance, or off-screen, the gait and surge keep running but nothing is posed;
+# farther turtles are posed every second or fourth frame (PresentationLOD).
 const POSE_RANGE := 70.0
+const POSE_RADIUS := 1.2
 # Poses sweep from these headings (radians forward of straight out to the side), whatever
 # angle a model's flippers happen to rest at.
 const FRONT_REFERENCE_SWEEP := 0.52
@@ -82,6 +84,7 @@ var _bite := 0.0
 var _bite_wait := 1.0
 var _time := 0.0
 var _seed := 0.0
+var _pose_delta := 0.0
 var _rng := RandomNumberGenerator.new()
 
 
@@ -148,6 +151,13 @@ func _process(delta: float) -> void:
 	var heading := _heading()
 	_yaw_rate = lerpf(_yaw_rate, wrapf(heading - _last_heading, -PI, PI) / delta, 1.0 - exp(-6.0 * delta))
 	_last_heading = heading
+	var rate := PresentationLOD.interval(get_viewport().get_camera_3d(), at, POSE_RADIUS, POSE_RANGE)
+	if entangled and rate == 0:
+		# A tangled turtle does not travel, so its struggle only matters while it can be seen.
+		gait = Gait.ENTANGLED
+		surge = 0.0
+		_pose_delta = 0.0
+		return
 	var speed := Vector2(velocity.x, velocity.z).length()
 	var ground := Coastline.surface_y(at.x, at.z)
 	# The dry beach sits a little below the water plane, so the shoreline decides what is sea.
@@ -184,13 +194,18 @@ func _process(delta: float) -> void:
 			_tail *= 1.0 - _crawl_weight
 		else:
 			body = swim_body
-	var camera := get_viewport().get_camera_3d()
-	if camera != null and camera.global_position.distance_squared_to(at) > POSE_RANGE * POSE_RANGE:
+	if rate == 0:
+		_pose_delta = 0.0
 		return
+	_pose_delta += delta
+	if not PresentationLOD.due(rate, get_instance_id()):
+		return
+	var pose_delta := minf(_pose_delta, 0.25)
+	_pose_delta = 0.0
 	for index in range(_flippers.size()):
 		_pose_flipper(index, poses[index])
-	_pose_body(delta, speed, body)
-	_pose_head(delta)
+	_pose_body(pose_delta, speed, body)
+	_pose_head(pose_delta)
 
 
 ## Breath out through the nostrils: a burst of larger bubbles from the head.

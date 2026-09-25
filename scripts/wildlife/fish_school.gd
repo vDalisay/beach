@@ -38,6 +38,8 @@ const STARTLE_COOLDOWN := Vector2(1.8, 2.8)
 const CASCADE_RADIUS := 1.5
 const CASCADE_DELAY := Vector2(0.03, 0.13)
 const REGROUP_SECONDS := 3.5
+# Bounding radius of a school around its leader, for the presentation LOD frustum test.
+const LOD_RADIUS := 4.0
 
 static var _materials: Dictionary = {}
 
@@ -73,6 +75,7 @@ var _pending_threat := Vector3.ZERO
 var _calm := 0.0
 var _regroup := 0.0
 var _time := 0.0
+var _pending_delta := 0.0
 var _rng := RandomNumberGenerator.new()
 
 
@@ -164,13 +167,21 @@ func bursting_count() -> int:
 func _process(delta: float) -> void:
 	if not is_visible_in_tree() or delta <= 0.0:
 		return
-	var camera := get_viewport().get_camera_3d()
-	if camera != null and camera.global_position.distance_squared_to(global_position + mover.position) > SIMULATION_RANGE * SIMULATION_RANGE:
+	# Off-screen or out-of-range schools hold still; distant ones step less often with the time
+	# they missed.
+	var rate := PresentationLOD.interval(get_viewport().get_camera_3d(), global_position + mover.position, LOD_RADIUS, SIMULATION_RANGE)
+	if rate == 0:
+		_pending_delta = 0.0
 		return
+	_pending_delta += delta
+	if not PresentationLOD.due(rate, get_instance_id()):
+		return
+	var elapsed := minf(_pending_delta, 0.25)
+	_pending_delta = 0.0
 	# Large frame steps (slow frames, time scale) are split to keep the flock stable.
-	var steps := ceili(delta / 0.034)
+	var steps := ceili(elapsed / 0.034)
 	for step in range(steps):
-		step_flock(delta / steps)
+		step_flock(elapsed / steps)
 	_write_instances()
 
 

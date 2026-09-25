@@ -18,6 +18,12 @@ var session: RunSession
 var current_target: Dictionary = {}
 var _highlighted_view: WorldItem
 var _highlighted_dirt: DirtVisual
+# Targeting runs every physics tick; its query objects are reused instead of allocated each time.
+var _ray_query := PhysicsRayQueryParameters3D.new()
+var _line_query := PhysicsRayQueryParameters3D.new()
+var _tiny_shape := CapsuleShape3D.new()
+var _tiny_query := PhysicsShapeQueryParameters3D.new()
+var _excluded: Array[RID] = []
 
 
 func configure(run_session: RunSession) -> void:
@@ -40,9 +46,12 @@ func scan() -> Dictionary:
 		return {}
 	var origin := camera.global_position
 	var direction := -camera.global_basis.z.normalized()
-	var query := PhysicsRayQueryParameters3D.create(origin, origin + direction * reach, TARGET_MASK, _excluded_rids())
-	query.collide_with_areas = true
-	var hit := camera.get_world_3d().direct_space_state.intersect_ray(query)
+	_ray_query.from = origin
+	_ray_query.to = origin + direction * reach
+	_ray_query.collision_mask = TARGET_MASK
+	_ray_query.exclude = _excluded_rids()
+	_ray_query.collide_with_areas = true
+	var hit := camera.get_world_3d().direct_space_state.intersect_ray(_ray_query)
 	if not hit.is_empty():
 		var direct_result := _result_for_collider(hit.collider, hit.position, origin.distance_to(hit.position))
 		if not direct_result.is_empty():
@@ -75,16 +84,14 @@ func clear_target() -> void:
 
 
 func _near_tiny_result(origin: Vector3, direction: Vector3) -> Dictionary:
-	var shape := CapsuleShape3D.new()
-	shape.radius = TINY_TOLERANCE
-	shape.height = reach
-	var parameters := PhysicsShapeQueryParameters3D.new()
-	parameters.shape = shape
-	parameters.transform = Transform3D(Basis(Quaternion(Vector3.UP, direction)), origin + direction * reach * 0.5)
-	parameters.collision_mask = ITEM_MASK
-	parameters.exclude = _excluded_rids()
+	_tiny_shape.radius = TINY_TOLERANCE
+	_tiny_shape.height = reach
+	_tiny_query.shape = _tiny_shape
+	_tiny_query.transform = Transform3D(Basis(Quaternion(Vector3.UP, direction)), origin + direction * reach * 0.5)
+	_tiny_query.collision_mask = ITEM_MASK
+	_tiny_query.exclude = _excluded_rids()
 	var candidates: Array[Dictionary] = []
-	for hit in camera.get_world_3d().direct_space_state.intersect_shape(parameters, 32):
+	for hit in camera.get_world_3d().direct_space_state.intersect_shape(_tiny_query, 32):
 		var view := hit.collider as WorldItem
 		if view == null or view.definition.collision_profile != ItemDefinition.CollisionProfile.SMALL:
 			continue
@@ -93,8 +100,11 @@ func _near_tiny_result(origin: Vector3, direction: Vector3) -> Dictionary:
 		var perpendicular := (offset - direction * along).length()
 		if along <= 0.0 or along > reach or perpendicular > TINY_TOLERANCE:
 			continue
-		var line_query := PhysicsRayQueryParameters3D.create(origin, view.global_position + Vector3.UP * 0.05, TARGET_MASK, _excluded_rids())
-		var line_hit := camera.get_world_3d().direct_space_state.intersect_ray(line_query)
+		_line_query.from = origin
+		_line_query.to = view.global_position + Vector3.UP * 0.05
+		_line_query.collision_mask = TARGET_MASK
+		_line_query.exclude = _excluded_rids()
+		var line_hit := camera.get_world_3d().direct_space_state.intersect_ray(_line_query)
 		if line_hit.is_empty() or line_hit.collider != view:
 			continue
 		candidates.append({"view": view, "point": line_hit.position, "distance": origin.distance_to(line_hit.position)})
@@ -236,8 +246,9 @@ func _active_tool() -> StringName:
 
 
 func _excluded_rids() -> Array[RID]:
-	var result: Array[RID] = []
-	var owner := get_parent() as CollisionObject3D
-	if owner != null:
-		result.append(owner.get_rid())
-	return result
+	# The player body's RID never changes, so the exclusion list is built once.
+	if _excluded.is_empty():
+		var owner := get_parent() as CollisionObject3D
+		if owner != null:
+			_excluded.append(owner.get_rid())
+	return _excluded

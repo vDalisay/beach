@@ -68,6 +68,9 @@ func refresh_rack() -> void:
 		label.font_size = 32
 		label.pixel_size = 0.002
 		label.outline_size = 7
+		# Small counter text: no sun shadow, and not drawn from where it cannot be read.
+		label.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		label.visibility_range_end = 20.0
 		anchor.add_child(label)
 		display_index += 1
 
