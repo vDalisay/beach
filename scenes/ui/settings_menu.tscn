@@ -127,6 +127,9 @@ text = "Invert vertical look"
 [node name="ReducedMotion" type="CheckButton" parent="Margin/Layout/Tabs/Controls/Content"]
 unique_name_in_owner = true
 text = "Reduced motion"
+[node name="ControllerVibration" type="CheckButton" parent="Margin/Layout/Tabs/Controls/Content"]
+unique_name_in_owner = true
+text = "Controller vibration"
 [node name="SprintToggle" type="CheckButton" parent="Margin/Layout/Tabs/Controls/Content"]
 unique_name_in_owner = true
 text = "Toggle sprint"

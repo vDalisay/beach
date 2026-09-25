@@ -19,7 +19,7 @@ Evidence record for the [game-feel plan](../plan/12-game-feel.md), packets J00�
 | J10 Collection and money | Done | [J10](#j10--collection-and-money) |
 | J11 Restoration | Done | [J11](#j11--restoration) |
 | J12 Finale | Done | [J12](#j12--finale) |
-| J13 Rumble (optional) | Open | — |
+| J13 Rumble (optional) | Done in code; physical pad blocked on hardware | [J13](#j13--rumble-optional) |
 | J14 Acceptance | Open | — |
 
 ## Entry template
@@ -455,6 +455,33 @@ Observed before any change: the can hover is a thin white hull; the placed chair
 - **Open issues:**
   - A reloaded finished run shows the HUD dimly under the shade, as before J12, because nothing tucks it away when there is no intro.
   - The accelerated staging collects waste directly, so these receipts read "Sorted correctly 0" (38 in the truck run).
+
+## J13 — Rumble (optional)
+
+- **Build:** J12 commit + J13 working tree.
+- **Scene / seed:** `scenes/main.tscn`, `first-shore`.
+- **Device:** no controller was connected during the session (`Input.get_connected_joypads()` was empty).
+- **Setup:** a probe with injected input. It reads each request back from the engine's requested-vibration state (`Input.get_joy_vibration_strength` and `get_joy_vibration_duration`), which shows what was asked of the pad, not what a motor did.
+- **Observed (logic):**
+  - The setting defaults on.
+  - With keyboard and mouse as the active input, a cue requests no vibration.
+  - A pad press makes the controller the active input and pad 0 the target.
+  - Patterns:
+    - `place` requests weak 0.20, strong 0.12 for 0.08 s, from the J00 table.
+    - A detector ping at strength 0.5 requests weak 0.10 for 0.03 s.
+    - A cue with no pattern (`sort`) requests nothing.
+  - The toggle turns it all off, and the setting survives a save and reload of the settings file.
+  - Pausing stops a running pattern and blocks new ones. Only the finale's `run_complete` still plays (weak 0.30, strong 0.10).
+  - Switching input off (the results and menus do this) stops a running pattern. So does a controller disconnect mid-pattern.
+  - The settings menu shows "Controller vibration" right after "Reduced motion" in its focus chain.
+- **Physical validation: blocked on hardware.** The packet's route (collect, full-bag reject, place, set complete, vacuum, detector approach, truck collection, section restore), the feel of each pattern, and motors actually stopping on pause, toggle and disconnect all need a physical pad, with its model recorded. As with FIN-04, injected input cannot verify vibration.
+- **Reduced motion:** independent. Vibration follows its own toggle.
+- **Checks run:** `validate_ui.gd`, `run_checks.gd` (settings round-trip; boot, asset closure, ownership, input bindings and manifest all PASS) and `validate_completion.gd`, all exit 0.
+- **Departures from the packet:**
+  - The finale's `run_complete` cue now plays just after the results open, not just before as J09 wired it. Opening the results switches input off, which stops vibration (step 5), so the finale's pattern would otherwise be cut off at once. `_rumble` allows that one cue under the pause, as the packet intends.
+  - The controller-disconnect stop uses the player's existing connection to `controller_disconnected`.
+- **Retained tuning:** none; the J00 rumble table is used as is.
+- **Open issues:** physical-controller validation, as above.
 
 ## Retained tuning
 

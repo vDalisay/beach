@@ -21,6 +21,7 @@ const DEFAULT_VALUES := {
 	&"fov": 85.0,
 	&"ui_scale": 1.0,
 	&"reduced_motion": false,
+	&"controller_vibration": true,
 	&"sprint_toggle": false,
 	&"crouch_toggle": false,
 	# Graphics. msaa: 0 off, 1 2x, 2 4x, 3 8x. shadow_quality: 0 off .. 4 ultra (RenderQuality).
@@ -64,6 +65,8 @@ const REMAPPABLE_ACTIONS := [
 @export_file("*.cfg") var settings_path := DEFAULT_SETTINGS_PATH
 
 var prompt_device := PromptDevice.KEYBOARD_MOUSE
+## The joypad that last gave meaningful input; vibration goes to it. -1 until one has.
+var last_joypad_device := -1
 var values := DEFAULT_VALUES.duplicate()
 var _project_defaults: Dictionary = {}
 
@@ -308,8 +311,10 @@ func note_input(event: InputEvent) -> void:
 	var next_device := prompt_device
 	if event is InputEventJoypadButton and event.pressed:
 		next_device = PromptDevice.CONTROLLER
+		last_joypad_device = event.device
 	elif event is InputEventJoypadMotion and absf(event.axis_value) >= float(get_value(&"deadzone")):
 		next_device = PromptDevice.CONTROLLER
+		last_joypad_device = event.device
 	elif event is InputEventKey and event.pressed and not event.echo:
 		next_device = PromptDevice.KEYBOARD_MOUSE
 	elif event is InputEventMouseButton and event.pressed:

@@ -24,6 +24,7 @@ const SHADOW_NAMES := ["Off", "Low", "Medium", "High", "Ultra"]
 @onready var ui_scale_value: Label = %UiScaleValue
 @onready var invert_y: CheckButton = %InvertY
 @onready var reduced_motion: CheckButton = %ReducedMotion
+@onready var controller_vibration: CheckButton = %ControllerVibration
 @onready var sprint_toggle: CheckButton = %SprintToggle
 @onready var crouch_toggle: CheckButton = %CrouchToggle
 @onready var bindings: VBoxContainer = %Bindings
@@ -61,6 +62,7 @@ func _ready() -> void:
 	view_distance.value_changed.connect(_on_slider_changed.bind(&"view_distance", view_distance_value))
 	invert_y.toggled.connect(_on_toggle_changed.bind(&"invert_y"))
 	reduced_motion.toggled.connect(_on_toggle_changed.bind(&"reduced_motion"))
+	controller_vibration.toggled.connect(_on_toggle_changed.bind(&"controller_vibration"))
 	sprint_toggle.toggled.connect(_on_toggle_changed.bind(&"sprint_toggle"))
 	crouch_toggle.toggled.connect(_on_toggle_changed.bind(&"crouch_toggle"))
 	ssao.toggled.connect(_on_toggle_changed.bind(&"ssao"))
@@ -160,6 +162,7 @@ func _sync_controls() -> void:
 	ui_scale.value = float(store.get_value(&"ui_scale"))
 	invert_y.button_pressed = bool(store.get_value(&"invert_y"))
 	reduced_motion.button_pressed = bool(store.get_value(&"reduced_motion"))
+	controller_vibration.button_pressed = bool(store.get_value(&"controller_vibration"))
 	sprint_toggle.button_pressed = bool(store.get_value(&"sprint_toggle"))
 	crouch_toggle.button_pressed = bool(store.get_value(&"crouch_toggle"))
 	msaa.select(int(store.get_value(&"msaa")))
@@ -280,7 +283,7 @@ func _link_focus() -> void:
 	if tabs.get_current_tab_control() == graphics_tab:
 		controls.append_array([graphics_preset, msaa, render_scale, shadow_quality, view_distance, ssao, glow, vsync, frame_cap] as Array[Control])
 	else:
-		controls.append_array([mouse_sensitivity, controller_sensitivity, deadzone, fov, ui_scale, invert_y, reduced_motion, sprint_toggle, crouch_toggle] as Array[Control])
+		controls.append_array([mouse_sensitivity, controller_sensitivity, deadzone, fov, ui_scale, invert_y, reduced_motion, controller_vibration, sprint_toggle, crouch_toggle] as Array[Control])
 		for action in SettingsStore.REMAPPABLE_ACTIONS:
 			if _binding_buttons.has(action):
 				controls.append(_binding_buttons[action] as Control)

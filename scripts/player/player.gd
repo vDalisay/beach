@@ -6,6 +6,8 @@ signal booklet_requested
 signal scanner_requested
 signal cue_played(cue: StringName, info: Dictionary)
 
+const FEEL := preload("res://data/feel/feel_tuning.tres")
+
 const CUES: Array[StringName] = [
 	&"whiff", &"poke", &"bag_catch", &"rejected", &"hold", &"hold_bag", &"throw", &"place",
 	&"deposit", &"clean", &"clean_done", &"cut", &"animal_freed", &"detector_ping", &"reveal",
@@ -47,6 +49,8 @@ func configure(settings: SettingsStore, run_session: RunSession = null) -> void:
 		settings.bindings_changed.connect(input_reader.reset_action_edges)
 	if not settings.controller_disconnected.is_connected(input_reader.on_controller_disconnected):
 		settings.controller_disconnected.connect(input_reader.on_controller_disconnected)
+	if not settings.controller_disconnected.is_connected(_stop_rumble):
+		settings.controller_disconnected.connect(_stop_rumble)
 	_apply_fov()
 	if run_session != null:
 		interactor.configure(run_session)
@@ -119,6 +123,7 @@ func set_paused(paused: bool) -> void:
 	input_reader.set_context(InputReader.Context.MODAL if paused else InputReader.Context.WORLD)
 	if paused:
 		interactor.clear_target()
+		_stop_rumble()
 	pause_changed.emit(paused)
 
 
@@ -128,6 +133,7 @@ func set_input_enabled(enabled: bool) -> void:
 	if not enabled:
 		velocity = Vector3.ZERO
 		interactor.clear_target()
+		_stop_rumble()
 
 
 ## Presentation-only feedback for something the player did or tried. Never changes state.
@@ -137,6 +143,31 @@ func play_cue(cue: StringName, info: Dictionary = {}) -> void:
 	if hand_rig != null and hand_rig.has_method(&"play_cue"):
 		hand_rig.play_cue(cue, info)
 	cue_played.emit(cue, info)
+	_rumble(cue, info)
+
+
+## A short, mild vibration under the cue: only when the setting is on and the last input came
+## from a controller, never while paused (the finale's own cue excepted). A new pattern replaces
+## a running one, so rapid ticks never stack.
+func _rumble(cue: StringName, info: Dictionary) -> void:
+	if settings_store == null or not bool(settings_store.get_value(&"controller_vibration")):
+		return
+	if settings_store.prompt_device != SettingsStore.PromptDevice.CONTROLLER or settings_store.last_joypad_device < 0:
+		return
+	if get_tree().paused and cue != &"run_complete":
+		return
+	var pattern: Vector3 = FEEL.rumble.get(cue, Vector3.ZERO)
+	if cue == &"detector_ping":
+		var strength := float(info.get("strength", 0.0))
+		pattern = Vector3(0.05 + 0.10 * strength, 0.0, 0.03)
+	if pattern == Vector3.ZERO:
+		return
+	Input.start_joy_vibration(settings_store.last_joypad_device, pattern.x, pattern.y, pattern.z)
+
+
+func _stop_rumble(_device_id := -1) -> void:
+	if settings_store != null and settings_store.last_joypad_device >= 0:
+		Input.stop_joy_vibration(settings_store.last_joypad_device)
 
 
 func enter_swimming() -> void:

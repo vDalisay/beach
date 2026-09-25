@@ -316,9 +316,10 @@ func _open_run(initial_state: RunState, definitions: Dictionary, manifest_hash: 
 		guidance_panel.hide()
 		collection_receipt.clear_receipt()
 		_settle_money()
-		player.play_cue(&"run_complete")
 		var hud: Array[CanvasItem] = [progress_panel, context_panel, guidance_panel, target_label, reticle, error_panel, restoration_pointer, scanner_overlay, detector_meter, oxygen_meter]
 		results_view.show_receipt(receipt, player, session, true, hud)
+		# After the results switch input off (which stops vibration), so the finale's rumble plays out.
+		player.play_cue(&"run_complete")
 	)
 	_update_progress(session)
 	_update_context(session)
