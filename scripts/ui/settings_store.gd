@@ -69,6 +69,8 @@ var prompt_device := PromptDevice.KEYBOARD_MOUSE
 var last_joypad_device := -1
 var values := DEFAULT_VALUES.duplicate()
 var _project_defaults: Dictionary = {}
+## Saved graphics values hidden by a `--graphics=<preset>` launch override; saving keeps them.
+var _saved_graphics: Dictionary = {}
 
 
 func _ready() -> void:
@@ -179,16 +181,33 @@ func load_settings() -> Error:
 			for event in decoded_events:
 				InputMap.action_add_event(action, event)
 
+	_apply_launch_preset()
 	_apply_display_settings()
 	bindings_changed.emit()
 	return OK
+
+
+## `-- --graphics=low|medium|high|ultra` runs this launch at a preset (used for testing)
+## without changing the saved graphics settings.
+func _apply_launch_preset() -> void:
+	for argument in OS.get_cmdline_user_args():
+		if not argument.begins_with("--graphics="):
+			continue
+		var preset := StringName(argument.trim_prefix("--graphics="))
+		if not GRAPHICS_PRESETS.has(preset):
+			push_warning("Unknown graphics preset: %s" % preset)
+			return
+		for key in GRAPHICS_PRESETS[preset] as Dictionary:
+			_saved_graphics[key] = values[key]
+		apply_graphics_preset(preset)
+		return
 
 
 func save_settings() -> Error:
 	var config := ConfigFile.new()
 	for key_value in DEFAULT_VALUES:
 		var key := key_value as StringName
-		config.set_value("settings", str(key), values[key])
+		config.set_value("settings", str(key), _saved_graphics.get(key, values[key]))
 	for action in REQUIRED_ACTIONS:
 		var encoded_events: Array[Dictionary] = []
 		for event in InputMap.action_get_events(action):

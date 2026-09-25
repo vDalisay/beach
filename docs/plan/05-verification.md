@@ -17,9 +17,12 @@ $beachGodot = 'C:\Users\Home\Downloads\Godot_v4.6.1-stable_mono_win64\Godot_v4.6
 & $beachGodot --version
 & $beachGodot --headless --path 'C:\Users\Home\Documents\beach' --editor --import
 & $beachGodot --headless --path 'C:\Users\Home\Documents\beach' --script res://tests/run_checks.gd
-& $beachGodot --path 'C:\Users\Home\Documents\beach' res://tests/scenes/interaction_lab.tscn
+& $beachGodot --path 'C:\Users\Home\Documents\beach' res://tests/scenes/interaction_lab.tscn -- --graphics=low
+& $beachGodot --path 'C:\Users\Home\Documents\beach' --script res://tests/validate_physics.gd -- --graphics=low
 & $beachGodot --headless --path 'C:\Users\Home\Documents\beach' --export-release 'Windows Desktop' 'builds/windows/Beach.exe'
 ```
+
+Graphics preset for test runs: windowed checks, scenes and play sessions run on Low (`-- --graphics=low`) unless the change affects rendering. Headless runs draw nothing, so they need no preset. The option applies to that launch only and never changes the saved settings. See `AGENTS.md` for when to use High, Ultra and Low instead.
 
 Where written checks are justified, keep `tests/run_checks.gd` as a short SceneTree script with direct checks, a tiny `check(condition, message)` helper and a nonzero exit on failure. No case registry, discovery system or custom test command interface is required. Do not depend on `assert()` alone for release-mode execution. Use temporary `user://test_runs/` saves, never a real player save. Construct only the small amount of state needed by a check; prefer existing playable scenes for integrated behavior and add a development scene only when the game cannot conveniently expose the state needed.
 
