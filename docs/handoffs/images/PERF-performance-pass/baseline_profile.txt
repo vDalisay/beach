@@ -1,0 +1,42 @@
+Baseline before the performance pass: e3883f4, tests/profile_views.gd (first version: draw
+calls are the maximum over the measured frames), seed first-shore, 1920x1080, vsync off,
+Ryzen 5 5600 / RTX 3070 / driver 595.79, Godot 4.6.1 Compatibility, 25 September 2026.
+
+PROFILE_START run_ms=4249 views_built_ms=2938 preset=default
+VIEW spawn        frame_med=7.84 p95=8.70 gpu=4.92 render_cpu=5.66 draws=4890 prims=801516 objects=4700
+VIEW lounge       frame_med=7.20 p95=7.85 gpu=4.00 render_cpu=4.65 draws=3807 prims=801168 objects=3630
+VIEW along-shore  frame_med=6.86 p95=7.54 gpu=3.66 render_cpu=4.74 draws=4040 prims=745554 objects=3891
+VIEW sea          frame_med=4.12 p95=4.70 gpu=1.73 render_cpu=1.79 draws=1206 prims=263818 objects=1206
+VIEW pier         frame_med=5.40 p95=6.10 gpu=2.17 render_cpu=2.47 draws=2034 prims=318788 objects=2034
+VIEW city         frame_med=3.85 p95=4.55 gpu=2.02 render_cpu=1.22 draws=341 prims=189143 objects=341
+VIEW reef         frame_med=4.34 p95=5.08 gpu=1.82 render_cpu=1.52 draws=1040 prims=289877 objects=1040
+VIEW aerial       frame_med=7.51 p95=8.17 gpu=4.19 render_cpu=4.78 draws=3734 prims=549202 objects=3503
+WALK frames=2894 frame_med=4.98 p95=15.74 p99=23.94 max=40.29 over_16ms=107 views=505->355
+PROFILE_MEMORY nodes=7804 static_mb=172.5 video_mb=1606.3 texture_mb=1588.3 buffer_mb=18.1
+
+Same baseline with --restored (every restoration visual shown):
+VIEW spawn        frame_med=8.67 p95=12.88 gpu=5.39 render_cpu=6.28 script=0.51 draws=5371
+VIEW lounge       frame_med=10.01 p95=14.13 gpu=5.69 render_cpu=6.05 script=0.82 draws=4307
+VIEW along-shore  frame_med=8.24 p95=9.76 gpu=4.64 render_cpu=5.32 script=0.50 draws=4481
+VIEW sea          frame_med=5.07 p95=8.57 gpu=1.90 render_cpu=2.00 script=0.79 draws=1301
+VIEW pier         frame_med=6.10 p95=6.71 gpu=2.30 render_cpu=2.65 script=0.85 draws=2135
+VIEW city         frame_med=4.21 p95=5.16 gpu=2.02 render_cpu=1.15 script=0.43 draws=341
+VIEW reef         frame_med=6.28 p95=8.17 gpu=2.21 render_cpu=1.80 script=1.95 draws=1194
+VIEW aerial       frame_med=10.12 p95=13.82 gpu=5.53 render_cpu=5.58 script=0.52 draws=4254
+WALK frames=2279 frame_med=6.15 p95=20.66 p99=27.60 max=36.05 script_p99=19.31 script_max=28.64 over_16ms=253
+
+Spawn view, one group or effect removed at a time (draw calls include the shadow passes):
+-sun_shadow    draws 1744 (-3146)  gpu 1.73 (-3.21)  frame 5.01 (-2.78)
+-Items         draws 2867 (-2023)  gpu 2.63 (-2.31)  frame 5.97 (-1.82)
+-omni_lights   draws 4699 (-191)   gpu 3.71 (-1.21)  frame 6.83 (-0.96)
+-CityBackdrop  draws 4723 (-167)   gpu 4.08 (-0.86)  frame 7.15 (-0.64)
+-msaa          gpu 4.64 (-0.30)    frame 7.41 (-0.38)
+-ssao          gpu 4.85 (-0.09)    -glow gpu 4.84 (-0.10)
+
+Hitch sources measured with scratch probes:
+ItemViewManager._refresh_stream (5,421 candidates, every 0.4 s): 9.5 ms
+streamed view spawn: 2.0 ms of 2.35 ms in re-parsing the visual .tscn (PackedScene not kept)
+freeing a view: 0.24 ms
+autosave on the main thread: 2,665 / 4,880 / 6,942 ms (1st / 2nd / 3rd save; manifest
+  regeneration 1,079 ms per validation, 6.6 MB save file)
+cold shader cache: one 974 ms frame mid-sprint (first draw of an uncompiled variant)

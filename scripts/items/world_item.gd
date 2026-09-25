@@ -290,7 +290,8 @@ func _configure_visual() -> void:
 	var modelled := visual_scene != null and definition.visual_scene_path != MISSING_ASSET_PATH
 	var key := "%s|%d" % [definition.visual_scene_path, definition.collision_profile] if modelled else ""
 	if not key.is_empty() and key == _visual_key:
-		# A pooled view already shows this model; only the dirt and pose change.
+		# A pooled view already shows this model; only the dirt, pose and current draw range change.
+		apply_detail_range()
 		return
 	for child in visual_root.get_children():
 		if child != fallback_mesh:

@@ -1,0 +1,66 @@
+After the performance pass: tests/profile_views.gd (draw calls, primitives and objects are medians), seed first-shore, 1920x1080, vsync off, Ryzen 5 5600 / RTX 3070 / driver 595.79, Godot 4.6.1 Compatibility, 25 September 2026.
+
+== High (default)
+PROFILE_START run_ms=1776 views_built_ms=300 preset=high
+VIEW spawn                    frame_med=6.81 p95=9.82 gpu=3.27 render_cpu=4.72 script=0.39 draw=6.24 physics_other=0.04 draws=2967 prims=791410 objects=2924
+VIEW lounge                   frame_med=6.01 p95=7.51 gpu=3.06 render_cpu=3.78 script=0.38 draw=5.50 physics_other=0.03 draws=2498 prims=789728 objects=2498
+VIEW along-shore              frame_med=5.88 p95=6.58 gpu=2.65 render_cpu=3.61 script=0.32 draw=5.48 physics_other=0.03 draws=2245 prims=734556 objects=2245
+VIEW sea                      frame_med=4.14 p95=6.01 gpu=1.62 render_cpu=1.73 script=0.41 draw=3.60 physics_other=0.02 draws=971 prims=262090 objects=971
+VIEW pier                     frame_med=5.03 p95=7.72 gpu=1.75 render_cpu=2.48 script=0.46 draw=4.46 physics_other=0.02 draws=1637 prims=314024 objects=1637
+VIEW city                     frame_med=3.41 p95=4.13 gpu=1.54 render_cpu=1.21 script=0.29 draw=3.04 physics_other=0.02 draws=288 prims=188195 objects=288
+VIEW reef                     frame_med=4.26 p95=4.96 gpu=1.74 render_cpu=1.56 script=0.57 draw=3.60 physics_other=0.02 draws=954 prims=289805 objects=954
+VIEW aerial                   frame_med=5.63 p95=8.92 gpu=2.37 render_cpu=2.78 script=0.28 draw=5.23 physics_other=0.03 draws=1746 prims=533202 objects=1746
+WALK frames=4323 frame_med=4.41 p95=8.66 p99=9.55 max=22.34 script_med=0.38 script_p99=2.25 script_max=3.63 over_16ms=2 views=505->354
+WALK_WORST frame=22.34 script=1.10 draw=7.28 physics_other=13.96 at_m=28.1
+PROFILE_MEMORY nodes=8613 static_mb=205.8 video_mb=432.3 texture_mb=413.3 buffer_mb=19.0
+PROFILE_DEVICE cpu=AMD Ryzen 5 5600 6-Core Processor gpu=NVIDIA GeForce RTX 3070 size=(1920, 1080)
+
+== Ultra
+PROFILE_START run_ms=1826 views_built_ms=308 preset=ultra
+VIEW spawn                    frame_med=7.29 p95=8.35 gpu=3.74 render_cpu=4.98 script=0.38 draw=6.72 physics_other=0.04 draws=3566 prims=849498 objects=3523
+VIEW lounge                   frame_med=6.73 p95=8.02 gpu=3.57 render_cpu=4.45 script=0.43 draw=6.11 physics_other=0.03 draws=2795 prims=791362 objects=2795
+VIEW along-shore              frame_med=6.38 p95=8.02 gpu=3.12 render_cpu=4.37 script=0.36 draw=5.85 physics_other=0.04 draws=2841 prims=793474 objects=2841
+VIEW sea                      frame_med=4.13 p95=5.50 gpu=1.67 render_cpu=1.85 script=0.39 draw=3.65 physics_other=0.02 draws=1171 prims=315966 objects=1171
+VIEW pier                     frame_med=5.18 p95=5.79 gpu=1.87 render_cpu=2.62 script=0.45 draw=4.60 physics_other=0.03 draws=1882 prims=377204 objects=1882
+VIEW city                     frame_med=3.34 p95=4.04 gpu=1.57 render_cpu=1.21 script=0.29 draw=2.96 physics_other=0.02 draws=321 prims=188365 objects=321
+VIEW reef                     frame_med=4.24 p95=4.85 gpu=1.77 render_cpu=1.60 script=0.57 draw=3.56 physics_other=0.02 draws=1037 prims=291057 objects=1037
+VIEW aerial                   frame_med=5.52 p95=6.38 gpu=2.28 render_cpu=3.16 script=0.30 draw=5.07 physics_other=0.03 draws=2113 prims=561212 objects=2113
+WALK frames=3753 frame_med=5.64 p95=7.72 p99=9.19 max=19.73 script_med=0.42 script_p99=2.48 script_max=3.62 over_16ms=1 views=505->354
+
+== Medium
+PROFILE_START run_ms=1801 views_built_ms=290 preset=medium
+VIEW spawn                    frame_med=5.12 p95=6.04 gpu=1.79 render_cpu=3.48 script=0.33 draw=4.66 physics_other=0.02 draws=2107 prims=736778 objects=2107
+VIEW lounge                   frame_med=5.14 p95=6.24 gpu=1.64 render_cpu=2.87 script=0.36 draw=4.61 physics_other=0.02 draws=1555 prims=787472 objects=1555
+VIEW along-shore              frame_med=4.80 p95=5.57 gpu=1.43 render_cpu=2.81 script=0.29 draw=4.35 physics_other=0.02 draws=1676 prims=689002 objects=1676
+VIEW sea                      frame_med=3.13 p95=3.82 gpu=1.11 render_cpu=1.39 script=0.40 draw=2.63 physics_other=0.02 draws=649 prims=215080 objects=649
+VIEW pier                     frame_med=3.95 p95=4.66 gpu=1.25 render_cpu=2.02 script=0.46 draw=3.38 physics_other=0.02 draws=1092 prims=307412 objects=1092
+VIEW city                     frame_med=2.80 p95=3.49 gpu=1.15 render_cpu=1.16 script=0.27 draw=2.41 physics_other=0.02 draws=208 prims=188125 objects=208
+VIEW reef                     frame_med=3.25 p95=3.67 gpu=1.21 render_cpu=1.23 script=0.53 draw=2.62 physics_other=0.02 draws=609 prims=259765 objects=609
+VIEW aerial                   frame_med=4.45 p95=5.16 gpu=1.49 render_cpu=2.49 script=0.24 draw=4.10 physics_other=0.02 draws=1463 prims=520116 objects=1463
+WALK frames=4697 frame_med=4.50 p95=6.64 p99=7.92 max=26.30 script_med=0.43 script_p99=2.34 script_max=3.97 over_16ms=3 views=505->353
+
+== Low
+PROFILE_START run_ms=1729 views_built_ms=281 preset=low
+VIEW spawn                    frame_med=4.80 p95=7.14 gpu=1.35 render_cpu=3.32 script=0.37 draw=4.27 physics_other=0.03 draws=1560 prims=711483 objects=1560
+VIEW lounge                   frame_med=4.72 p95=6.57 gpu=1.01 render_cpu=2.69 script=0.41 draw=4.10 physics_other=0.03 draws=1048 prims=704582 objects=1048
+VIEW along-shore              frame_med=4.50 p95=6.09 gpu=0.99 render_cpu=2.63 script=0.33 draw=3.99 physics_other=0.02 draws=1259 prims=623707 objects=1259
+VIEW sea                      frame_med=2.89 p95=3.55 gpu=0.72 render_cpu=1.32 script=0.40 draw=2.40 physics_other=0.02 draws=582 prims=180438 objects=582
+VIEW pier                     frame_med=3.69 p95=4.55 gpu=0.96 render_cpu=1.79 script=0.44 draw=3.16 physics_other=0.02 draws=824 prims=299132 objects=824
+VIEW city                     frame_med=2.40 p95=2.90 gpu=0.71 render_cpu=0.95 script=0.28 draw=2.04 physics_other=0.02 draws=190 prims=188125 objects=190
+VIEW reef                     frame_med=3.86 p95=6.03 gpu=0.88 render_cpu=1.28 script=0.63 draw=3.10 physics_other=0.03 draws=465 prims=229251 objects=465
+VIEW aerial                   frame_med=3.93 p95=5.24 gpu=0.87 render_cpu=2.27 script=0.29 draw=3.50 physics_other=0.03 draws=1170 prims=512125 objects=1170
+WALK frames=5882 frame_med=2.99 p95=5.94 p99=7.34 max=28.72 script_med=0.37 script_p99=1.78 script_max=3.25 over_16ms=2 views=505->353
+
+== High --restored
+PROFILE_START run_ms=1808 views_built_ms=275 preset=high
+VIEW spawn                    frame_med=7.60 p95=9.18 gpu=3.74 render_cpu=5.07 script=0.57 draw=6.83 physics_other=0.04 draws=3359 prims=820730 objects=3314
+VIEW lounge                   frame_med=6.59 p95=9.52 gpu=3.64 render_cpu=4.04 script=0.59 draw=5.84 physics_other=0.04 draws=2677 prims=803036 objects=2677
+VIEW along-shore              frame_med=6.17 p95=8.93 gpu=2.94 render_cpu=4.02 script=0.52 draw=5.46 physics_other=0.06 draws=2601 prims=760036 objects=2601
+VIEW sea                      frame_med=4.53 p95=5.60 gpu=1.75 render_cpu=1.84 script=0.58 draw=3.82 physics_other=0.02 draws=1051 prims=280991 objects=1051
+VIEW pier                     frame_med=5.47 p95=6.38 gpu=1.90 render_cpu=2.58 script=0.64 draw=4.71 physics_other=0.02 draws=1722 prims=344247 objects=1722
+VIEW city                     frame_med=3.97 p95=6.35 gpu=1.57 render_cpu=1.33 script=0.47 draw=3.47 physics_other=0.02 draws=288 prims=188195 objects=288
+VIEW reef                     frame_med=6.20 p95=8.75 gpu=2.13 render_cpu=1.86 script=1.88 draw=4.13 physics_other=0.03 draws=1100 prims=389553 objects=1100
+VIEW aerial                   frame_med=5.44 p95=5.96 gpu=2.24 render_cpu=2.97 script=0.44 draw=4.85 physics_other=0.02 draws=2027 prims=563826 objects=2031
+WALK frames=4160 frame_med=4.82 p95=6.85 p99=8.09 max=11.50 script_med=0.55 script_p99=2.36 script_max=3.22 over_16ms=0 views=505->353
+WALK_WORST frame=11.50 script=1.61 draw=9.82 physics_other=0.06 at_m=18.1
+PROFILE_MEMORY nodes=8607 static_mb=206.0 video_mb=432.3 texture_mb=413.3 buffer_mb=19.0

@@ -1,5 +1,23 @@
 # Performance measurements — P28
 
+## Performance pass — 25 September 2026
+
+The [performance pass](plan/13-performance-pass.md) adds a Graphics settings tab with Low/Medium/High/Ultra presets. It also adds sun-shadow and hut-light budgets, pooled grid-streamed item views, a visual-scene cache, VRAM-compressed mipmapped textures, shader warm-up, static scenery instancing, wildlife animation LOD and background autosaves. The new probe `tests/profile_views.gd` measured it on the same Ryzen 5 5600 / RTX 3070 / driver 595.79 at 1920×1080, Godot 4.6.1 Compatibility, seed `first-shore`, vsync off. The probe runs the real `main.tscn` over eight fixed views plus a 7 m/s sprint; `--restored`, `--graphics=<preset>` and `--breakdown` are optional. [Baseline](handoffs/images/PERF-performance-pass/baseline_profile.txt) and [final](handoffs/images/PERF-performance-pass/profile.txt) outputs are recorded.
+
+| Default High preset | Before | After |
+|---|---:|---:|
+| Spawn frame median / GPU / draw calls | 7.84 ms / 4.92 ms / 4,890 | 6.81 ms / 3.27 ms / 2,967 |
+| Dense lounge frame median / GPU / draw calls | 7.20 ms / 4.00 ms / 3,807 | 6.01 ms / 3.06 ms / 2,498 |
+| Aerial frame median / GPU / draw calls | 7.51 ms / 4.19 ms / 3,734 | 5.63 ms / 2.37 ms / 1,746 |
+| Sprint p99 / max / frames over 16.7 ms | 23.9 / 40.3 ms / 107 | 9.6 / 22.3 ms / 2 |
+| Restored sprint p99 / max / frames over 16.7 ms | 27.6 / 36.1 ms / 253 | 8.1 / 11.5 ms / 0 |
+| Autosave main-thread block | 2.7–6.9 s | about 70 ms |
+| Cold-shader-cache worst frame while sprinting | 974 ms | 25 ms |
+| Run start / item-view build | 4.2 s / 2,938 ms | 1.8 s / 300 ms |
+| Godot video / static memory | 1,606 / 172 MB | 432 / 206 MB |
+
+Spawn-view GPU by preset: Ultra 3.74 ms, High 3.27, Medium 1.79, Low 1.35. For scale, a GTX 980 has about a third of this GPU's shading throughput, so Medium or Low is the expected starting point there. Distant-litter LOD and backdrop MultiMesh chunking were measured and not adopted (plan section 3). Frame p95 varies by about ±2 ms between runs on this shared machine. Target-hardware, exported-build and long-session gates remain open.
+
 ## FIN-05 open-item follow-up — 24 September 2026
 
 This sample covers the city grid, reef gardens, view-model FOV and distant-litter colour fix from [plan 12, section 7](plan/12-look-and-model-pass.md#7-model-review-and-open-item-follow-up--24-september-2026). Machine and settings are unchanged: Ryzen 5 5600, RTX 3070, driver 595.79, 1920×1080, Godot 4.6.1 Compatibility.
