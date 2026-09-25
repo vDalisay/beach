@@ -88,6 +88,7 @@ func start_run() -> Node:
 		show_error(str(generation.error))
 		return null
 	seed_input.text = str(generation.seed)
+	SaveService.remember_manifest(generation)
 	var initial_state := generator.create_run_state(generation, "run_%d_%08x" % [int(Time.get_unix_time_from_system()), randi()])
 	return _open_run(initial_state, generation.definitions, str(generation.manifest_hash))
 

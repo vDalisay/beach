@@ -8,6 +8,19 @@ const FORMAT_SCHEMA := 1
 const MAX_FILE_BYTES := 32 * 1024 * 1024
 const MAX_ID_LENGTH := 64
 const AUTOSAVE_INTERVAL := 60.0
+const MANIFEST_CACHE_LIMIT := 4
+
+# Manifest generation is deterministic for a seed and this build's content, so validation reuses one
+# result per seed for the life of the process instead of regenerating it (about 1 s) for every
+# generation file it checks. Entries also keep the derived canonical manifest and row index.
+static var _manifests: Dictionary = {}
+static var _content_hash_value := ""
+# Folder -> {file name -> [modified time, size, read ok, valid, sequence]} for generation files this
+# process already read, validated or wrote. Unchanged files are not parsed and validated again.
+static var _known_generations: Dictionary = {}
+# Save path -> [modified time and size, listing summary] for the title and pause menus.
+static var _summaries: Dictionary = {}
+static var _cache_lock := Mutex.new()
 
 var save_root := "user://saves"
 var beach_id: StringName
@@ -15,6 +28,12 @@ var session: RunSession
 var player: BeachPlayer
 var _last_autosave_seconds := 0.0
 var _autosave_pending := false
+# Autosaves are serialised, written and verified on a worker thread; the main thread only captures
+# the snapshot. A request made while one is in flight writes the newest snapshot afterwards.
+var _autosave_task := -1
+var _autosave_job: Dictionary = {}
+var _autosave_run_id := ""
+var _autosave_again := false
 
 
 func configure(run_session: RunSession, player_body: BeachPlayer, loaded_beach_id: StringName) -> void:
@@ -28,10 +47,14 @@ func configure(run_session: RunSession, player_body: BeachPlayer, loaded_beach_i
 	session.run_completed.connect(func(_receipt: Dictionary) -> void: request_autosave())
 	session.collection_service.receipt_created.connect(func(_receipt: Dictionary) -> void: request_autosave())
 	session.swim_service.faint_completed.connect(func(_receipt: Dictionary) -> void: request_autosave())
+	# Resources load here on the main thread, so background autosaves never need to.
+	_content_hash()
 	set_process(true)
 
 
 func _process(_delta: float) -> void:
+	if _autosave_task != -1 and WorkerThreadPool.is_task_completed(_autosave_task):
+		_finish_autosave()
 	if session != null and not get_tree().paused and session.state.elapsed_active_seconds - _last_autosave_seconds >= AUTOSAVE_INTERVAL:
 		request_autosave()
 
@@ -47,8 +70,55 @@ func _write_pending_autosave() -> void:
 	if not _autosave_pending or not is_instance_valid(session):
 		return
 	_autosave_pending = false
-	save_slot(&"autosave")
 	_last_autosave_seconds = session.state.elapsed_active_seconds
+	if _autosave_task != -1:
+		_autosave_again = true
+		return
+	if session == null or player == null:
+		return
+	# The worker validates the written snapshot's full state before publishing it, so an invalid
+	# run still never replaces the previous generation.
+	var snapshot := capture_snapshot()
+	_autosave_job = {"beach_id": beach_id, "run_id": session.state.run_id, "snapshot": snapshot, "result": {}}
+	_autosave_run_id = session.state.run_id
+	_autosave_task = WorkerThreadPool.add_task(_run_autosave_job.bind(_autosave_job), false, "Beach autosave")
+
+
+func _run_autosave_job(job: Dictionary) -> void:
+	job.result = write_snapshot(StringName(job.beach_id), str(job.run_id), &"autosave", job.snapshot as Dictionary)
+
+
+func _notification(what: int) -> void:
+	# The worker still calls into this object: let an in-flight autosave finish (it publishes
+	# atomically) before the object goes away, including when the game quits.
+	if what == NOTIFICATION_PREDELETE and _autosave_task != -1:
+		WorkerThreadPool.wait_for_task_completion(_autosave_task)
+		_autosave_task = -1
+
+
+## Waits for an in-flight background autosave and reports it; loads and listings call this first so
+## they always see the newest autosave.
+func wait_for_autosave() -> void:
+	_finish_autosave()
+
+
+func _finish_autosave() -> void:
+	if _autosave_task == -1:
+		return
+	# Every task is waited on exactly once; this blocks only if the write is still running.
+	WorkerThreadPool.wait_for_task_completion(_autosave_task)
+	_autosave_task = -1
+	var result := _autosave_job.get("result", {}) as Dictionary
+	_autosave_job = {}
+	# A run that ended or was replaced meanwhile gets no feedback for its old autosave.
+	if session != null and session.state.run_id == _autosave_run_id:
+		if bool(result.get("ok", false)):
+			saved.emit(&"autosave", int(result.sequence))
+		else:
+			save_failed.emit(&"autosave", str(result.get("message", "Autosave failed")))
+	if _autosave_again:
+		_autosave_again = false
+		request_autosave()
 
 
 func save_slot(slot_id: StringName) -> Dictionary:
@@ -97,11 +167,11 @@ func write_snapshot(target_beach: StringName, run_id: String, slot_id: StringNam
 	var folder_error := DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(folder))
 	if folder_error != OK:
 		return {"ok": false, "message": "Could not create save folder (%d)" % folder_error}
-	var a := _read_generation(folder.path_join("A.json"))
-	var b := _read_generation(folder.path_join("B.json"))
-	var a_valid := bool(a.get("ok", false)) and bool(_validate_generation(a.envelope as Dictionary, run_id).get("ok", false))
-	var b_valid := bool(b.get("ok", false)) and bool(_validate_generation(b.envelope as Dictionary, run_id).get("ok", false))
-	var sequence := maxi(int(a.get("sequence", 0)) if bool(a.get("ok", false)) else 0, int(b.get("sequence", 0)) if bool(b.get("ok", false)) else 0) + 1
+	var a := _generation_status(folder, "A.json", run_id)
+	var b := _generation_status(folder, "B.json", run_id)
+	var a_valid := bool(a.read) and bool(a.valid)
+	var b_valid := bool(b.read) and bool(b.valid)
+	var sequence := maxi(int(a.sequence) if bool(a.read) else 0, int(b.sequence) if bool(b.read) else 0) + 1
 	var target := "A.json" if not a_valid or (b_valid and int(a.sequence) <= int(b.sequence)) else "B.json"
 	var content_hash := _content_hash()
 	var body := {"sequence": sequence, "schema": FORMAT_SCHEMA, "content_hash": content_hash, "saved_at": int(Time.get_unix_time_from_system()), "payload": _canonical(snapshot)}
@@ -133,12 +203,59 @@ func write_snapshot(target_beach: StringName, run_id: String, slot_id: StringNam
 			rename_error = DirAccess.rename_absolute(source_path, target_path)
 	if rename_error != OK:
 		return {"ok": false, "message": "Could not publish save (%d); previous generation retained" % rename_error}
+	# The file just written was fully verified above; later saves and menus need not parse it again.
+	var stamp := _file_stamp(destination)
+	_remember_generation(folder, target, stamp, {"read": true, "valid": true, "sequence": sequence})
+	var progress := _progress_summary(snapshot)
+	_cache_lock.lock()
+	_summaries[destination] = [stamp, {"ok": true, "sequence": sequence, "saved_at": float(body.saved_at), "seed": str(snapshot.get("seed_text", "")), "completed": progress.completed, "required": progress.required}]
+	_cache_lock.unlock()
 	return {"ok": true, "sequence": sequence, "slot_id": str(slot_id), "saved_at": body.saved_at}
+
+
+## Whether a generation file parses (read) and validates for this run, and its sequence. A file
+## this process already checked or wrote is not parsed again while its size and time match.
+func _generation_status(folder: String, file_name: String, run_id: String) -> Dictionary:
+	var path := folder.path_join(file_name)
+	var stamp := _file_stamp(path)
+	_cache_lock.lock()
+	var known: Variant = (_known_generations.get(folder, {}) as Dictionary).get(file_name)
+	_cache_lock.unlock()
+	if known is Array and (known as Array)[0] == stamp:
+		return (known as Array)[1] as Dictionary
+	var generation := _read_generation(path)
+	var read := bool(generation.get("ok", false))
+	var status := {
+		"read": read,
+		"valid": read and bool(_validate_generation(generation.envelope as Dictionary, run_id).get("ok", false)),
+		"sequence": int(generation.get("sequence", 0)),
+	}
+	_remember_generation(folder, file_name, stamp, status)
+	return status
+
+
+func _remember_generation(folder: String, file_name: String, stamp: Array, status: Dictionary) -> void:
+	_cache_lock.lock()
+	if not _known_generations.has(folder):
+		_known_generations[folder] = {}
+	(_known_generations[folder] as Dictionary)[file_name] = [stamp, status]
+	_cache_lock.unlock()
+
+
+static func _file_stamp(path: String) -> Array:
+	if not FileAccess.file_exists(path):
+		return [0, -1]
+	var file := FileAccess.open(path, FileAccess.READ)
+	var length := file.get_length() if file != null else -1
+	if file != null:
+		file.close()
+	return [FileAccess.get_modified_time(path), length]
 
 
 func load_slot(target_beach: StringName, run_id: String, slot_id: StringName) -> Dictionary:
 	if not _valid_id(str(target_beach)) or not _valid_id(run_id) or not _valid_id(str(slot_id)):
 		return {"ok": false, "message": "Invalid save ID"}
+	wait_for_autosave()
 	var folder := _slot_folder(target_beach, run_id, slot_id)
 	var candidates := [_read_generation(folder.path_join("A.json")), _read_generation(folder.path_join("B.json"))]
 	candidates.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return int(a.get("sequence", 0)) > int(b.get("sequence", 0)))
@@ -162,11 +279,11 @@ func _validate_generation(envelope: Dictionary, run_id: String) -> Dictionary:
 		return {"ok": false, "message": "Incompatible save schema"}
 	if str(payload.get("run_id", "")) != run_id or str(payload.get("seed_text", "")).to_utf8_buffer().size() > 64:
 		return {"ok": false, "message": "Save identity or seed is invalid"}
-	var generator := ManifestGenerator.new()
-	var generated := generator.generate(str(payload.seed_text))
+	var manifest := _manifest_for(str(payload.seed_text))
+	var generated := manifest.generated as Dictionary
 	if not bool(generated.ok) or str(envelope.content_hash) != str(generated.content_hash) or str(payload.get("initial_manifest_hash", "")) != str(generated.manifest_hash):
 		return {"ok": false, "message": "Save content is incompatible with this beach build"}
-	var shape_error := _validate_payload_shape(payload, generated)
+	var shape_error := _validate_payload_shape(payload, manifest)
 	if not shape_error.is_empty():
 		return {"ok": false, "message": shape_error}
 	var state := RunState.from_snapshot(payload)
@@ -176,10 +293,50 @@ func _validate_generation(envelope: Dictionary, run_id: String) -> Dictionary:
 	return {"ok": true, "state": state, "definitions": generated.definitions, "saved_at": float(envelope.saved_at)}
 
 
+## The manifest generated for a seed with its canonical text and row index, built once per process.
+## Returns {"generated": ...} alone when generation fails.
+func _manifest_for(seed_text: String) -> Dictionary:
+	_cache_lock.lock()
+	var cached: Variant = _manifests.get(seed_text)
+	var entry := (cached as Dictionary).duplicate() if cached != null else {}
+	_cache_lock.unlock()
+	if entry.is_empty():
+		var generated := ManifestGenerator.new().generate(seed_text)
+		if not bool(generated.get("ok", false)):
+			return {"generated": generated}
+		remember_manifest(generated)
+		entry = {"generated": generated}
+	if not entry.has("expected"):
+		var generated_rows := (entry.generated as Dictionary).rows as Array
+		var expected := {}
+		for row in generated_rows:
+			expected[str((row as Dictionary).id)] = row
+		entry["canonical_rows"] = _canonical(JSON.parse_string(_canonical(generated_rows)))
+		entry["expected"] = expected
+		_cache_lock.lock()
+		if _manifests.has(seed_text):
+			_manifests[seed_text] = entry.duplicate()
+		_cache_lock.unlock()
+	return entry
+
+
+## Keeps a run's freshly generated manifest so saving it never regenerates the same seed.
+static func remember_manifest(generated: Dictionary) -> void:
+	if not bool(generated.get("ok", false)):
+		return
+	_cache_lock.lock()
+	if not _manifests.has(str(generated.seed)):
+		if _manifests.size() >= MANIFEST_CACHE_LIMIT:
+			_manifests.clear()
+		_manifests[str(generated.seed)] = {"generated": generated}
+	_cache_lock.unlock()
+
+
 func list_slots(target_beach: StringName) -> Array[Dictionary]:
 	var entries: Array[Dictionary] = []
 	if not _valid_id(str(target_beach)):
 		return entries
+	wait_for_autosave()
 	var root_folder := save_root.path_join(str(target_beach))
 	var directory := DirAccess.open(root_folder)
 	if directory == null:
@@ -197,10 +354,8 @@ func list_slots(target_beach: StringName) -> Array[Dictionary]:
 			if not bool(selected.get("ok", false)):
 				entries.append({"beach_id": str(target_beach), "run_id": run_id, "slot_id": slot_name, "seed": "Unknown seed", "saved_at": 0.0, "sequence": 0, "damaged": true})
 				continue
-			var envelope := selected.envelope as Dictionary
-			var payload := envelope.payload as Dictionary
-			var progress := _progress_summary(payload)
-			entries.append({"beach_id": str(target_beach), "run_id": run_id, "slot_id": slot_name, "seed": str(payload.get("seed_text", "")), "saved_at": float(envelope.saved_at), "sequence": int(envelope.sequence), "completed": progress.completed, "required": progress.required, "damaged": false})
+			var summary := selected.summary as Dictionary
+			entries.append({"beach_id": str(target_beach), "run_id": run_id, "slot_id": slot_name, "seed": str(summary.seed), "saved_at": float(summary.saved_at), "sequence": int(summary.sequence), "completed": summary.completed, "required": summary.required, "damaged": false})
 	entries.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
 		return str(a.run_id) > str(b.run_id) if int(a.saved_at) == int(b.saved_at) else int(a.saved_at) > int(b.saved_at)
 	)
@@ -214,10 +369,8 @@ func checkpoint_summaries() -> Array[Dictionary]:
 		if not bool(selected.get("ok", false)):
 			summaries.append({})
 			continue
-		var envelope := selected.envelope as Dictionary
-		var payload := envelope.payload as Dictionary
-		var progress := _progress_summary(payload)
-		summaries.append({"saved_at": int(envelope.saved_at), "completed": progress.completed, "required": progress.required})
+		var summary := selected.summary as Dictionary
+		summaries.append({"saved_at": int(summary.saved_at), "completed": summary.completed, "required": summary.required})
 	return summaries
 
 
@@ -230,15 +383,37 @@ func _progress_summary(payload: Dictionary) -> Dictionary:
 
 
 func _select_generation(folder: String) -> Dictionary:
-	var a := _read_generation(folder.path_join("A.json"))
-	var b := _read_generation(folder.path_join("B.json"))
+	var a := _generation_summary(folder.path_join("A.json"))
+	var b := _generation_summary(folder.path_join("B.json"))
 	var a_valid := bool(a.get("ok", false))
 	var b_valid := bool(b.get("ok", false))
 	if not a_valid and not b_valid:
 		return {"ok": false, "message": "No valid save generation; files were left untouched" if FileAccess.file_exists(folder.path_join("A.json")) or FileAccess.file_exists(folder.path_join("B.json")) else "No save in this slot"}
 	var chosen := a if a_valid and (not b_valid or int(a.sequence) >= int(b.sequence)) else b
 	var notice := "Recovered an earlier valid save generation" if (a_valid != b_valid and (FileAccess.file_exists(folder.path_join("A.json")) and FileAccess.file_exists(folder.path_join("B.json")))) else ""
-	return {"ok": true, "envelope": chosen.envelope, "notice": notice}
+	return {"ok": true, "summary": chosen, "notice": notice}
+
+
+## A generation file's listing details (parse and checksum only, like the listing always used),
+## kept while the file's size and time are unchanged so menus do not re-parse multi-megabyte saves.
+func _generation_summary(path: String) -> Dictionary:
+	var stamp := _file_stamp(path)
+	_cache_lock.lock()
+	var known: Variant = _summaries.get(path)
+	_cache_lock.unlock()
+	if known is Array and (known as Array)[0] == stamp:
+		return (known as Array)[1] as Dictionary
+	var generation := _read_generation(path)
+	var summary := {"ok": false}
+	if bool(generation.get("ok", false)):
+		var envelope := generation.envelope as Dictionary
+		var payload := envelope.payload as Dictionary
+		var progress := _progress_summary(payload)
+		summary = {"ok": true, "sequence": int(envelope.sequence), "saved_at": float(envelope.saved_at), "seed": str(payload.get("seed_text", "")), "completed": progress.completed, "required": progress.required}
+	_cache_lock.lock()
+	_summaries[path] = [stamp, summary]
+	_cache_lock.unlock()
+	return summary
 
 
 func _read_generation(path: String) -> Dictionary:
@@ -278,7 +453,8 @@ func _generation_checksum(body: Dictionary) -> String:
 	return ("%d\n%d\n%s\n%d\n%s" % [int(body.sequence), int(body.schema), str(body.content_hash), int(body.saved_at), str(body.payload)]).sha256_text()
 
 
-func _validate_payload_shape(payload: Dictionary, generated: Dictionary) -> String:
+func _validate_payload_shape(payload: Dictionary, manifest: Dictionary) -> String:
+	var generated := manifest.generated as Dictionary
 	if not _bounded_value(payload, 0):
 		return "Save contains oversized, non-finite or deeply nested data"
 	if payload.get("items") is not Array or (payload.items as Array).size() != (generated.rows as Array).size() or payload.get("players") is not Array or (payload.players as Array).size() != 1:
@@ -290,7 +466,7 @@ func _validate_payload_shape(payload: Dictionary, generated: Dictionary) -> Stri
 		var count: Variant = payload.faint_count
 		if (count is not int and count is not float) or float(count) != floorf(float(count)) or float(count) < -1.0:
 			return "Saved faint count is invalid"
-	if payload.get("initial_manifest") is not Array or _canonical(payload.initial_manifest) != _canonical(JSON.parse_string(_canonical(generated.rows))):
+	if payload.get("initial_manifest") is not Array or _canonical(payload.initial_manifest) != str(manifest.canonical_rows):
 		return "Saved manifest differs from authored content"
 	for key in ["table_records", "bin_records", "bag_records", "container_records", "recovery_piles", "rescue_states", "section_states", "group_states", "zone_states", "completion_receipt"]:
 		if payload.get(key) is not Dictionary:
@@ -343,9 +519,7 @@ func _validate_payload_shape(payload: Dictionary, generated: Dictionary) -> Stri
 			return "Saved collection receipt is invalid"
 	if (payload.bag_records as Dictionary).size() > 5400 or (payload.recovery_piles as Dictionary).size() > 5400 or payload.get("collection_receipts") is not Array or (payload.collection_receipts as Array).size() > 5400:
 		return "Saved container or receipt count is invalid"
-	var expected := {}
-	for row in generated.rows as Array[Dictionary]:
-		expected[str(row.id)] = row
+	var expected := manifest.expected as Dictionary
 	var seen := {}
 	for item_value in payload.items as Array:
 		if item_value is not Dictionary:
@@ -433,10 +607,19 @@ func _valid_id(value: String) -> bool:
 	return true
 
 
+## This build's content hash, computed once per process (the content cannot change while running).
 func _content_hash() -> String:
-	var generator := ManifestGenerator.new()
-	return generator.compute_content_hash(generator.load_catalog(), load(ManifestGenerator.BEACH_PATH) as BeachDefinition, load(ManifestGenerator.QUOTAS_PATH) as Resource, load(ManifestGenerator.ANCHORS_PATH) as Resource)
+	_cache_lock.lock()
+	var value := _content_hash_value
+	_cache_lock.unlock()
+	if value.is_empty():
+		var generator := ManifestGenerator.new()
+		value = generator.compute_content_hash(generator.load_catalog(), load(ManifestGenerator.BEACH_PATH) as BeachDefinition, load(ManifestGenerator.QUOTAS_PATH) as Resource, load(ManifestGenerator.ANCHORS_PATH) as Resource)
+		_cache_lock.lock()
+		_content_hash_value = value
+		_cache_lock.unlock()
+	return value
 
 
-func _canonical(value: Variant) -> String:
+static func _canonical(value: Variant) -> String:
 	return JSON.stringify(value, "", true, true)
