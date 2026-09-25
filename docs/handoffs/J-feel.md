@@ -17,7 +17,7 @@ Evidence record for the [game-feel plan](../plan/12-game-feel.md), packets J00�
 | J08 Sorting table | Done | [J08](#j08--sorting-table) |
 | J09 HUD | Done | [J09](#j09--hud) |
 | J10 Collection and money | Done | [J10](#j10--collection-and-money) |
-| J11 Restoration | Open | — |
+| J11 Restoration | Done | [J11](#j11--restoration) |
 | J12 Finale | Open | — |
 | J13 Rumble (optional) | Open | — |
 | J14 Acceptance | Open | — |
@@ -341,6 +341,56 @@ Observed before any change: the can hover is a thin white hull; the placed chair
 - **Open issues:**
   - The results-screen safety (`coin_flyer.clear()` and a release when results open) lands with J12, as the packet says.
   - At 150 % UI scale, the toast's right end (x 646 of 853) passes under the sorting table's side panel (from x 563). Short messages stay clear; a long one would be partly hidden. This goes to the J14 display audit.
+
+## J11 — Restoration
+
+- **Build:** J10 commit + J11 working tree.
+- **Scene / seed:** `scenes/main.tscn`: `restoration-fixture` (arrival) and `wildlife-fixture` (reef, shallows, batch). Also 1280×720 with 150 % UI scale.
+- **Setup:**
+  - Arrival: `arrival:start` is staged the way `validate_completion.gd` stages it. Its ten props are committed to slots, and its 80 waste items are sorted and sealed through S1 and deposited. The truck is then called through the hotline's interact handler. The staging's own set notices are cleared before the call, so the banner is not queued behind them.
+  - Near: the player stands 7.8 m from the section centre, facing it.
+  - Far: the player stands 40 m out on the line through the S1 hotline, facing the section and then turning away. The hotline itself is only 14 m from the section.
+  - Reef, shallows and batch (staged): each section's props are committed to slots and its other required items collected in one commit, as `validate_wildlife.gd` does. The player is held still underwater for the reef views.
+  - Save: the arrival restore, saved 0.3 s after the call and reloaded.
+  - Traces and clip run at `--fixed-fps 60`; the profile runs in real time. Autosave is suppressed.
+- **Observed:** [restoration sheet](images/J-feel/j11-restoration.png) and [restoration clip](images/J-feel/j11-restoration.mp4):
+  - Near: a cream wall rises at the section centre and sweeps outward for 1.8 s, a bright line where it cuts the sand, with glints along its front (up to 57). It passes the player at about 0.7 s. The palm, 5.2 m out, pops from 0.01 at 0.6 s (0.51 → 0.82 → 0.88 overshoot) and settles at its authored 0.8. The banner reads "Arrival · Start restored"; there is no pointer or beacon.
+  - Far: the wall and a beacon column rise; the column reads above the rooftops. The pointer's arrow hangs over the spot, pointing down, with "40 m", and pulses between 1.0 and 1.15. Turned away, the arrow moves to the left edge (80, 367) pointing left. It hides 4 s after the restore. The banner reads "Arrival · Start restored · 40 m ahead".
+  - Reef, from underwater: a turquoise wall spreads over the seabed. The coral garden warms piece by piece as its front passes (0.8 m at 0.1 s, 12.5 m at 1.5 s, 26.7 m at 3.2 s); nearby coral is coloured while the far coral is still grey. The front clears at 4.1 s, once it has passed the garden's farthest piece.
+  - Zone: `reef_west:coral` completes the zone. The section wall and the 22 m zone wall run together (two waves, up to 117 glints), the zone fish start as before, and "Reef West nature returns" follows the section banner. Seen from the surface, the submerged walls are dimmed (see the departures).
+  - Shallows, from the shore: the wall crosses the water surface as a pale ring, and the coral pops in behind it.
+  - Batch: four shore sections complete in one commit. One "4 areas restored" banner shows; the Sports zone banner follows with "29 m ahead". Waves peak at 4 and glints at 192, the two caps.
+  - Save and reload: the restored dressing is visible at its authored scale. There are no waves, glints, bloom tweens, banner or pointer.
+  - Existing checks: the first child of the restored root is still `FoliagePalm`. A replayed restoration signal adds no nodes, and the zone keeps three children.
+- **Reduced motion:** no wall, glints, pop-in or beacon. The dressing and colours appear at once (the palm reads 0.80 on the first sample). The banner keeps its distance and direction, and the pointer still shows, at scale 1.00 with no pulse.
+- **Checks run:** `validate_completion.gd`, `validate_wildlife.gd`, `validate_save.gd`, `validate_scanner.gd` and `validate_ui.gd`, all exit 0. The error lines are the two exit-time texture-leak messages seen in earlier runs and the save check's intended write failure to a blocked directory.
+- **Profile:** the arrival restore by a real truck call, standing in the section and looking east along the crowded beach, 1280×720, real time, three runs.
+
+  | Window | Median | p95 | Max | Max draws | Nodes |
+  |---|---|---|---|---|---|
+  | 2 s before the call | 7.69–7.78 ms | 8.32–8.44 ms | 18.0–18.5 ms | 4,959 | 8,539 |
+  | 2 s after (wave, receipt, coins) | 8.26–8.29 ms | 9.04–9.22 ms | 20.2–20.8 ms | 5,329 | 8,541–8,546 |
+  | the next 3 s | 7.81–7.85 ms | 8.65–8.74 ms | 18.1–19.3 ms | 5,030 | back to 8,539 |
+
+  The burst adds 0.6–0.9 ms to p95 (budget 1.5 ms), and it includes J10's collection effects. The lasting 71 extra draws are the restored dressing itself. The wave's own node frees at 1.9 s. The node count is back to baseline 3.2 s after the call; the last node to go is J10's "+$120" floater, which rises for 0.9 s after the tenth coin lands. For reference, the J00 dense-view baseline is p95 18.4 ms.
+- **Departures from the packet:**
+  - Reef coral gardens were added on `main` after the plan was written. They are MultiMesh batches, so a per-child delay would warm a whole garden at once. `reef_garden.gdshader` gains a wave front (`wave_origin`, `wave_front`, `wave_feather` 4 m, `grow_with_wave`): each coral piece warms, and each regrowth piece grows, as the front passes it at the pop-in pace. The default front reaches everything, so the garden looks as before whenever no wave is running.
+  - Recolour delays follow the front past the 12 m wall. Reef sections have coral and seagrass up to 35 m from their centre, which finish warming about 5 s after the restore.
+  - `validate_wildlife.gd` now waits 3.0 s, not 1.3 s, before sampling the restored reef colours. The check is not in the plan's §11.2 list, and this packet's own delay step puts its seagrass bed, 11 m from the centre, at about 2.5 s. The assertions are unchanged.
+  - Wave-light tweaks:
+    - A fully submerged wall is dimmed to half while the camera is above the water, blended over ±0.1 m at the surface. This is the packet's conditional step; from the surface the reef rings had glowed as if they floated on the water.
+    - The beacon uses a gentler height fade (`fade_power` 0.7 instead of the wall's 2.2). With the wall's fade, the part of the column visible above rooftops from 40 m was barely visible.
+  - Scheduling:
+    - Beacons are spawned at the end of the frame, so in a batch the walls take the shared four slots before any beacon does.
+    - The zone handler skips its effects when the zone root was already visible, as the section handler does; the zone populations still start as before.
+    - The glints along the front ride a tween bound to the particle pool, not scene timers, so quitting mid-wave leaves nothing scheduled.
+  - Placement:
+    - Reef glints sit at `Coastline.surface_y + 0.2`, as shore glints do. The seabed uses the same height function, and a sloped seabed puts the anchors' mean height above or below it.
+  - Banners:
+    - Section and zone banners flush together at the end of the frame, sections first, which keeps their old order.
+- **Retained tuning:** none. New script constants: `RestorationWave.ABOVE_WATER_DIM` 0.5, `RestorationWave.BEACON_FADE_POWER` 0.7 and `RestorationSection.GARDEN_WAVE_FEATHER` 4.0.
+- **Open issues:**
+  - At 1280×720 with 150 % UI scale, the pointer's in-view arrow at the screen centre (427, 223) sits over the notice panel. This is the J09 notice-over-reticle overlap and goes to the J14 display audit. The edge arrow (80, 244) is clear.
 
 ## Retained tuning
 

@@ -83,7 +83,9 @@ func _run() -> void:
 	check(((partial_nature.sections[&"reef_west:outer"] as BeachSection).get_node("SeagrassBed01").get_meta(&"material") as StandardMaterial3D).albedo_color.g > 0.65 and ((partial_nature.sections[&"reef_west:coral"] as BeachSection).get_node("SeagrassBed05").get_meta(&"material") as StandardMaterial3D).albedo_color.g < 0.4, "partial reef reload restores only the completed section's plant colour")
 	check((((partial_nature.sections[&"reef_west:outer"] as BeachSection).get_node("CoralCluster00") as Node3D).get_meta(&"material") as StandardMaterial3D).albedo_color.r > 0.8 and (((partial_nature.sections[&"reef_west:coral"] as BeachSection).get_node("CoralCluster00") as Node3D).get_meta(&"material") as StandardMaterial3D).albedo_color.r < 0.4, "partial reef reload restores only the completed section's coral colour")
 	partial_session.free()
-	await create_timer(1.3).timeout
+	# The recolour follows the restoration wave outward (J11), then takes 1.2 s: the sampled seagrass
+	# bed, about 11 m from the wave's origin, finishes near 2.5 s.
+	await create_timer(3.0).timeout
 	check((outer_plant.get_meta(&"material") as StandardMaterial3D).albedo_color.g > 0.65 and (coral.get_node("SeagrassBed05").get_meta(&"material") as StandardMaterial3D).albedo_color.g < 0.4, "only the restored section brightens its existing seagrass")
 	check((outer_coral.get_meta(&"material") as StandardMaterial3D).albedo_color.r > 0.8 and ((coral.get_node("CoralCluster00") as Node3D).get_meta(&"material") as StandardMaterial3D).albedo_color.r < 0.4, "only the restored section brightens its existing coral")
 	check(player.camera.global_transform.is_equal_approx(camera_pose), "before/after reef viewpoints stay identical")

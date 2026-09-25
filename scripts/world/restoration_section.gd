@@ -6,6 +6,11 @@ const FISH_SCENE := preload("res://scenes/wildlife/fish_school.tscn")
 const TURTLE_SCENE := preload("res://scenes/wildlife/turtle.tscn")
 const STARFISH_SCENE := preload("res://scenes/wildlife/starfish.tscn")
 const RECIPES := preload("res://data/world/restoration_recipes.tres")
+const FEEL := preload("res://data/feel/feel_tuning.tres")
+# The coral-garden shader's resting wave front reaches every piece; during a restoration wave
+# the front sweeps out from the wave's origin and this feather is its soft edge (metres).
+const GARDEN_FRONT_CLEAR := 100000.0
+const GARDEN_WAVE_FEATHER := 4.0
 const REEF_DRESSING := preload("res://scripts/world/reef_dressing.gd")
 const REEF_PLANT_ROCKS := {
 	&"reef_west:outer": [0, 1, 3, 4],
@@ -55,11 +60,17 @@ var reef_garden_points: Dictionary = {}
 var _garden_cells: Dictionary = {}
 var _reef_litter_cells: Dictionary = {}
 var settings: SettingsStore
+## Presentation only: glints along restoration waves, placed with a cosmetic RNG.
+var _sparkles: ParticlePool
+var _rng := RandomNumberGenerator.new()
 
 
 func configure(run_session: RunSession, beach: Node3D, settings_store: SettingsStore = null) -> void:
 	session = run_session
 	settings = settings_store
+	_rng.seed = 7
+	_sparkles = ParticlePool.create(ParticlePool.Kind.SPARKLE, 192, true)
+	add_child(_sparkles)
 	_find_nodes(beach)
 	for section_id in sections:
 		var section := sections[section_id] as BeachSection
@@ -639,12 +650,22 @@ func _spawn_school(root: Node3D, key: StringName, origin: Vector3) -> FishSchool
 	return school
 
 
-func _set_section_colors(section: BeachSection, animate: bool) -> void:
+## With a wave `origin`, each piece recolours as the wave reaches it (the same pace as `_bloom`), and
+## coral gardens sweep a wave front through their shader so every coral piece warms, and every
+## regrowth piece grows, as the front passes it.
+func _set_section_colors(section: BeachSection, animate: bool, origin := Vector3.INF, radius := 0.0) -> void:
+	var waved := animate and origin.is_finite() and radius > 0.0 and not _reduced_motion()
+	var speed := radius / (FEEL.wave_seconds * 0.8) if waved else 0.0
 	for child in section.get_children() + section.restoration_visual_root.get_children():
 		if child.has_meta(&"regrowth_material"):
 			var regrowth := child.get_meta(&"regrowth_material") as ShaderMaterial
 			(child as Node3D).show()
-			if animate and not _reduced_motion():
+			if waved:
+				regrowth.set_shader_parameter("growth", 1.0)
+				regrowth.set_shader_parameter("restored", 1.0)
+				regrowth.set_shader_parameter("grow_with_wave", 1.0)
+				_sweep_garden(child as Node3D, regrowth, origin, speed)
+			elif animate and not _reduced_motion():
 				var grow := create_tween().set_parallel(true).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 				grow.tween_property(regrowth, "shader_parameter/growth", 1.0, 2.4)
 				grow.tween_property(regrowth, "shader_parameter/restored", 1.0, 2.4)
@@ -658,10 +679,34 @@ func _set_section_colors(section: BeachSection, animate: bool) -> void:
 		# Coral gardens fade their shader weight; the other habitat pieces tween a colour.
 		var property := "shader_parameter/restored" if material is ShaderMaterial else "albedo_color"
 		var target: Variant = 1.0 if material is ShaderMaterial else child.get_meta(&"target_color")
-		if animate and not _reduced_motion():
+		if waved and material is ShaderMaterial:
+			material.set(property, target)
+			_sweep_garden(child as Node3D, material as ShaderMaterial, origin, speed)
+		elif waved:
+			var warm := FeelMotion.tween(self)
+			warm.tween_interval((child as Node3D).global_position.distance_to(origin) / speed)
+			warm.tween_property(material, property, target, 1.2)
+		elif animate and not _reduced_motion():
 			create_tween().tween_property(material, property, target, 1.2)
 		else:
 			material.set(property, target)
+
+
+## Carries a coral garden's wave front out from `origin` at the wave's pace, then clears it.
+func _sweep_garden(garden: Node3D, material: ShaderMaterial, origin: Vector3, speed: float) -> void:
+	var reach := GARDEN_WAVE_FEATHER
+	for batch in garden.get_children():
+		if batch is VisualInstance3D:
+			var box := (batch as VisualInstance3D).global_transform * (batch as VisualInstance3D).get_aabb()
+			for corner in 8:
+				var point := box.get_endpoint(corner)
+				reach = maxf(reach, Vector2(point.x - origin.x, point.z - origin.z).length() + GARDEN_WAVE_FEATHER)
+	material.set_shader_parameter("wave_origin", origin)
+	material.set_shader_parameter("wave_feather", GARDEN_WAVE_FEATHER)
+	material.set_shader_parameter("wave_front", 0.0)
+	var t := FeelMotion.replace(garden, &"wave", FeelMotion.tween(garden))
+	t.tween_method(func(front: float) -> void: material.set_shader_parameter("wave_front", front), 0.0, reach, reach / speed)
+	t.tween_callback(func() -> void: material.set_shader_parameter("wave_front", GARDEN_FRONT_CLEAR))
 
 
 func _start_zone_population(zone_id: StringName, loaded: bool) -> void:
@@ -687,17 +732,104 @@ func _reduced_motion() -> bool:
 	return settings != null and bool(settings.get_value(&"reduced_motion"))
 
 
+## Where a section's restoration wave starts: the centre of its spawn anchors.
+func section_origin(section_id: StringName) -> Vector3:
+	var positions := anchors.get(section_id, []) as Array
+	if positions.is_empty():
+		return (sections[section_id] as BeachSection).global_position if sections.has(section_id) else Vector3.ZERO
+	var sum := Vector3.ZERO
+	for position in positions:
+		sum += position as Vector3
+	return sum / float(positions.size())
+
+
+## Where a zone's wave starts: the centre of its sections' origins.
+func zone_origin(zone_id: StringName) -> Vector3:
+	var sum := Vector3.ZERO
+	var count := 0
+	for section_id in sections:
+		if (sections[section_id] as BeachSection).zone_id == zone_id:
+			sum += section_origin(section_id)
+			count += 1
+	return sum / float(count) if count > 0 else Vector3.ZERO
+
+
 func _on_section_restored(section_id: StringName) -> void:
-	if sections.has(section_id):
-		var section := sections[section_id] as BeachSection
-		if section.restoration_visual_root.visible:
-			return
-		section.restoration_visual_root.show()
-		_set_section_colors(section, true)
-		_start_section_population(section_id, false)
+	if not sections.has(section_id):
+		return
+	var section := sections[section_id] as BeachSection
+	if section.restoration_visual_root.visible:
+		return
+	section.restoration_visual_root.show()
+	if _reduced_motion():
+		_set_section_colors(section, false)
+	else:
+		var origin := section_origin(section_id)
+		var reef := str(section.zone_id).begins_with("reef_")
+		_bloom(section.restoration_visual_root, origin, FEEL.wave_radius_section)
+		_set_section_colors(section, true, origin, FEEL.wave_radius_section)
+		RestorationWave.spawn(section, origin, FEEL.wave_radius_section, FEEL.wave_seconds, FEEL.wave_color_reef if reef else FEEL.wave_color_shore)
+		_sparkle_front(origin, FEEL.wave_radius_section, reef)
+		_beacon_if_unseen.call_deferred(section, origin, reef)
+	_start_section_population(section_id, false)
 
 
 func _on_zone_restored(zone_id: StringName) -> void:
-	if zone_roots.has(zone_id):
-		(zone_roots[zone_id] as Node3D).show()
-		_start_zone_population(zone_id, false)
+	if not zone_roots.has(zone_id):
+		return
+	var root := zone_roots[zone_id] as Node3D
+	var shown := root.visible
+	root.show()
+	if not shown and not _reduced_motion():
+		var origin := zone_origin(zone_id)
+		var reef := str(zone_id).begins_with("reef_")
+		_bloom(root, origin, FEEL.wave_radius_zone)
+		RestorationWave.spawn(root, origin, FEEL.wave_radius_zone, FEEL.wave_seconds, FEEL.wave_color_reef if reef else FEEL.wave_color_shore)
+		_sparkle_front(origin, FEEL.wave_radius_zone, reef)
+		_beacon_if_unseen.call_deferred(root, origin, reef)
+	_start_zone_population(zone_id, false)
+
+
+## Pops the restored dressing in from nothing as the wave reaches each piece, with a few glints.
+## Animals are left alone: scaling a school or a route's anchor would squash its path.
+func _bloom(root: Node3D, origin: Vector3, radius: float) -> void:
+	var speed := radius / (FEEL.wave_seconds * 0.8)
+	for child in root.get_children():
+		var piece := child as Node3D
+		if piece == null or piece is FishSchool or piece is PathAnimal or not piece.find_children("*", "PathAnimal", true, false).is_empty():
+			continue
+		var rest := piece.scale
+		piece.scale = rest * 0.01
+		var t := FeelMotion.replace(piece, &"bloom", FeelMotion.tween(piece))
+		t.tween_interval(piece.global_position.distance_to(origin) / speed)
+		t.tween_property(piece, "scale", rest, FEEL.bloom_pop_seconds).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		t.tween_callback(func() -> void: _sparkles.burst(piece.global_position + Vector3.UP * 0.3, Vector3.UP, 3, 0.5, 0.3, Vector2(0.05, 0.08), 0.6))
+
+
+## Glints ride the wave's front: every interval, a handful at the radius the wall has reached,
+## on the ground (sand or seabed) under it.
+func _sparkle_front(origin: Vector3, radius: float, reef: bool) -> void:
+	var interval := FEEL.wave_sparkle_interval
+	var steps := int(FEEL.wave_seconds / interval)
+	var t := FeelMotion.tween(_sparkles)
+	for step in steps:
+		var ring := lerpf(0.4, radius, 1.0 - pow(1.0 - float(step) / float(steps), 2.0))
+		t.tween_callback(func() -> void:
+			for index in FEEL.wave_sparkles_per_step:
+				var angle := _rng.randf() * TAU
+				var x := origin.x + cos(angle) * ring
+				var z := origin.z + sin(angle) * ring
+				var color: Color = FEEL.wave_color_reef if reef else FEEL.sparkle_colors[_rng.randi() % FEEL.sparkle_colors.size()]
+				_sparkles.emit(Vector3(x, Coastline.surface_y(x, z) + 0.2, z), Vector3.UP * _rng.randf_range(0.2, 0.5), _rng.randf_range(0.06, 0.1), 0.7, color)
+		)
+		t.tween_interval(interval)
+
+
+## A restoration that is far away or off screen raises a light column where it happened. Deferred
+## to the end of the frame, so a batch's waves take the shared wave slots before any beacon.
+func _beacon_if_unseen(parent: Node3D, origin: Vector3, reef: bool) -> void:
+	if not is_instance_valid(parent):
+		return
+	var camera := get_viewport().get_camera_3d()
+	if camera == null or camera.global_position.distance_to(origin) > FEEL.pointer_far_distance or not camera.is_position_in_frustum(origin):
+		RestorationWave.spawn_beacon(parent, origin, FEEL.wave_color_reef if reef else FEEL.wave_color_shore)

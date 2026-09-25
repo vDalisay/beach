@@ -38,6 +38,7 @@ const FEEL := preload("res://data/feel/feel_tuning.tres")
 @onready var bag_bar: ProgressBar = %BagBar
 @onready var notice_icon: FeelIcon = %NoticeIcon
 @onready var coin_flyer: CoinFlyer = $UI/CoinFlyer
+@onready var restoration_pointer: RestorationPointer = $UI/RestorationPointer
 @onready var context_panel: PanelContainer = %ContextPanel
 @onready var context_label: Label = %ContextLabel
 @onready var guidance_panel: PanelContainer = %GuidancePanel
@@ -74,11 +75,16 @@ var _notice_style_gold: StyleBoxFlat
 var _last_totals := {}
 var _money_pending := 0
 var _money_hold_serial := 0
+# Restorations committed together are announced at the end of the frame: one banner for a batch.
+var _restoration: RestorationSection
+var _pending_sections: Array[StringName] = []
+var _pending_zones: Array[StringName] = []
 
 
 func _ready() -> void:
 	collection_receipt.settings = settings_store
 	collection_receipt.total_ready.connect(_on_receipt_total_ready)
+	restoration_pointer.settings = settings_store
 	for color in [FEEL.bag_color_normal, FEEL.bag_color_warn, FEEL.bag_color_full]:
 		var style := StyleBoxFlat.new()
 		style.bg_color = color
@@ -146,6 +152,7 @@ func _open_run(initial_state: RunState, definitions: Dictionary, manifest_hash: 
 	restoration.name = "RestorationSection"
 	run_root.add_child(restoration)
 	restoration.configure(session, beach, settings_store)
+	_restoration = restoration
 	# Repeated static scenery draws as one MultiMesh per cell instead of one call per copy.
 	var scenery_roots: Array[Node3D] = []
 	for path in ["Foliage", "ActivityAreas", "Skyline", "PierBlockout", "Terrain", "CityBackdrop"]:
@@ -264,11 +271,11 @@ func _open_run(initial_state: RunState, definitions: Dictionary, manifest_hash: 
 	)
 	session.section_restored.connect(func(section_id: StringName) -> void:
 		player.play_cue(&"section_restored", {"section_id": str(section_id)})
-		_queue_notice("%s restored" % str(section_id).replace("_", " ").replace(":", " · ").capitalize(), 2.8, &"", null, 2)
+		_on_area_restored(section_id, false)
 	)
 	session.zone_restored.connect(func(zone_id: StringName) -> void:
 		player.play_cue(&"zone_restored", {"zone_id": str(zone_id)})
-		_queue_notice("%s nature returns" % str(zone_id).replace("_", " ").capitalize(), 3.0, &"", null, 2)
+		_on_area_restored(zone_id, true)
 	)
 	session.wallet_changed.connect(func(_player_id: StringName) -> void:
 		_update_progress(session)
@@ -362,6 +369,10 @@ func clear_run() -> void:
 	progress_panel.hide()
 	context_panel.hide()
 	coin_flyer.clear()
+	restoration_pointer.clear()
+	_restoration = null
+	_pending_sections.clear()
+	_pending_zones.clear()
 	_shown.clear()
 	_shown_session = null
 	_money_hold_until = 0
@@ -802,6 +813,60 @@ func _flush_group_notice() -> void:
 			_release_money(reward_amount)
 		else:
 			_fly_coins(guidance_panel.get_global_rect().get_center(), reward_amount, clampi(reward_amount / 5, 1, 3))
+
+
+func _on_area_restored(area_id: StringName, zone: bool) -> void:
+	if _pending_sections.is_empty() and _pending_zones.is_empty():
+		call_deferred("_flush_restored_notices")
+	if zone:
+		_pending_zones.append(area_id)
+	else:
+		_pending_sections.append(area_id)
+
+
+## Three or more sections restored together get one "N areas restored" banner. Far areas add
+## their distance and direction, and the pointer turns the player toward the nearest one they
+## cannot see.
+func _flush_restored_notices() -> void:
+	var section_ids := _pending_sections.duplicate()
+	var zone_ids := _pending_zones.duplicate()
+	_pending_sections.clear()
+	_pending_zones.clear()
+	if not is_instance_valid(run_root) or not is_instance_valid(_restoration):
+		return
+	var player := run_root.get_node("Player") as BeachPlayer
+	var origins: Array[Vector3] = []
+	if section_ids.size() >= FEEL.banner_batch_threshold:
+		for section_id in section_ids:
+			origins.append(_restoration.section_origin(section_id))
+		_queue_notice("%d areas restored" % section_ids.size(), 3.0, &"", null, 2)
+	else:
+		for section_id in section_ids:
+			var origin := _restoration.section_origin(section_id)
+			origins.append(origin)
+			_queue_notice("%s restored%s" % [str(section_id).replace("_", " ").replace(":", " · ").capitalize(), _where(origin, player)], 2.8, &"", null, 2)
+	for zone_id in zone_ids:
+		var origin := _restoration.zone_origin(zone_id)
+		origins.append(origin)
+		_queue_notice("%s nature returns%s" % [str(zone_id).replace("_", " ").capitalize(), _where(origin, player)], 3.0, &"", null, 2)
+	var camera := player.camera
+	var nearest := Vector3.INF
+	for origin in origins:
+		var distance := camera.global_position.distance_to(origin)
+		var seen := distance <= FEEL.pointer_far_distance and camera.is_position_in_frustum(origin)
+		if not seen and (not nearest.is_finite() or distance < camera.global_position.distance_to(nearest)):
+			nearest = origin
+	if nearest.is_finite():
+		restoration_pointer.point_to(nearest, camera)
+
+
+## " · 42 m ahead-left" for an area far enough away that the player may not see it restore.
+func _where(origin: Vector3, player: BeachPlayer) -> String:
+	var scanner := (run_root as RunSession).scanner
+	var distance := player.global_position.distance_to(origin)
+	if distance <= FEEL.pointer_far_distance or scanner == null:
+		return ""
+	return " · %d m %s" % [roundi(distance), scanner.direction_words(origin)]
 
 
 func _show_next_notice() -> void:

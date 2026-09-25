@@ -195,7 +195,7 @@ func _refresh(existing: Dictionary = {}) -> void:
 	if int(result.carried_count) > 0:
 		title += "\n%d in a carried sealed bag · deposit it" % int(result.carried_count)
 	if farther > 0:
-		title += "\nNearest: %s · %dm" % [_direction(far_position), roundi(nearest_far)]
+		title += "\nNearest: %s · %dm" % [direction_words(far_position), roundi(nearest_far)]
 	if total == 0:
 		title = "SCAN · %s\nNo remaining matches" % filter_label(StringName(str(result.filter)))
 	title += "\n◆ Hints may be occluded; move close to interact"
@@ -251,7 +251,8 @@ func _on_screen(position: Vector3) -> bool:
 	return screen.x >= 24.0 and screen.y >= 24.0 and screen.x <= size.x - 240.0 and screen.y <= size.y - 84.0
 
 
-func _direction(position: Vector3) -> String:
+## "ahead", "behind-left" and so on: where `position` lies relative to the way the player faces.
+func direction_words(position: Vector3) -> String:
 	var offset := player.global_basis.inverse() * (position - player.global_position)
 	var angle := rad_to_deg(atan2(offset.x, -offset.z))
 	if angle > -22.5 and angle <= 22.5:

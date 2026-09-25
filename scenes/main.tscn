@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=3]
+[gd_scene load_steps=22 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
 [ext_resource type="Script" path="res://scripts/ui/settings_store.gd" id="2_settings_store"]
@@ -16,6 +16,7 @@
 [ext_resource type="Script" path="res://scripts/ui/feel_icon.gd" id="14_feel_icon"]
 [ext_resource type="Shader" path="res://shaders/ui_shine.gdshader" id="15_ui_shine"]
 [ext_resource type="Script" path="res://scripts/ui/coin_flyer.gd" id="16_coin_flyer"]
+[ext_resource type="Script" path="res://scripts/ui/restoration_pointer.gd" id="17_restoration_pointer"]
 
 [sub_resource type="StyleBoxFlat" id="HudBarBackground"]
 bg_color = Color(0, 0, 0, 0.35)
@@ -316,6 +317,16 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("16_coin_flyer")
+
+[node name="RestorationPointer" type="Control" parent="UI"]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("17_restoration_pointer")
 
 [node name="ProgressionView" parent="UI" instance=ExtResource("7_progression")]
 unique_name_in_owner = true
