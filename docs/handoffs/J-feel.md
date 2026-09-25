@@ -15,7 +15,7 @@ Evidence record for the [game-feel plan](../plan/12-game-feel.md), packets J00�
 | J06 Tools | Done | [J06](#j06--tools) |
 | J07 Completion shine | Done | [J07](#j07--completion-shine) |
 | J08 Sorting table | Done | [J08](#j08--sorting-table) |
-| J09 HUD | Open | — |
+| J09 HUD | Done | [J09](#j09--hud) |
 | J10 Collection and money | Open | — |
 | J11 Restoration | Open | — |
 | J12 Finale | Open | — |
@@ -274,6 +274,32 @@ Observed before any change: the can hover is a thin white hull; the placed chair
 - **Open issues:**
   - Pre-existing: at 1280×720 and 150 % UI scale, the HUD progress panel overlaps the left bin buttons at the table (noted for J09).
   - Pausing mid-drag uses `_cancel_drag`, which now returns the proxy home with a pause-safe tween. Resume behaviour was not replayed in this entry; J14 covers pause and save flows.
+
+## J09 — HUD
+
+- **Build:** J08 commit + J09 working tree.
+- **Scene / seed:** `scenes/main.tscn`, `restoration-fixture`, at 1920×1080 and at 1280×720 with 150 % UI scale.
+- **Setup:**
+  - Five real pickups (`try_collect`), then the bag filled to 20, and one more collect through the real click (`request_primary`).
+  - The starter section is restored as `validate_completion.gd` does it: props committed straight to slots, so their sets complete on publish; 80 waste items sorted and sealed through S1; bags deposited; then the truck collects for real.
+  - A save and reload of the same run.
+  - Traces and clip run at `--fixed-fps 60`, with autosave suppressed.
+- **Observed:** [HUD sheet](images/J-feel/j09-hud.png) and [HUD clip](images/J-feel/j09-hud.mp4):
+  - Bag: the bar fills mint and bumps on each pickup (scale 1.07 mid-bump), turns amber at 16/20 and red at 20/20. A "Bag full" click shakes the bag panel (x 64 → 68 → 61 → 65 → 64) and flashes the bar.
+  - Sets: two sets completing show the check glyph notice "2 prop sets complete · +$30". The money line (coin glyph, gold) rolls from $0, reaching $24 by 0.12 s, bumps, and "+$30" floats up clear of the final value. The completion bar fills and shines.
+  - Collection: the truck pays $120. Money rolls $30 → 48 → 86 → 111 → 126 → … → 149 → $150 (expo ease, 0.7 s). The restoration notice "Arrival · Start restored" gets the star glyph, a gold border, a bump and a shine. It shares the screen with the collection receipt without overlapping.
+  - Notices slide down 10 px and fade in; the last one fades out before hiding. Tips carry the info glyph.
+  - Reload: the progress text and money label match the pre-save values on the first frame, with no roll from 0.
+- **Reduced motion:** bars and numbers take their values at once, with no bumps, shakes, slides, shines or floaters. The bag panel stays at x 64 on a full-bag click. The money line flashes once on gain. The colour states and glyphs remain.
+- **Checks run:** `validate_ui.gd` (exact label prefixes), `validate_completion.gd` (the 720p lane checks: notice clear of the receipt and progress panel), `validate_payment.gd`, `validate_scanner.gd`, `validate_c01_input.gd` and `validate_sorting.gd`, all exit 0.
+- **Fixes found while validating:** the autowrapped `GuidanceLabel` inside its new icon row measured its minimum size at a sliver of width, so the notice panel grew to 550 × 294. That hid the scanner's only marker, and `validate_scanner` reported `markers=0` where it had 1. A 480 px minimum width puts the panel back at 550 × 74, and the check reports `markers=1` again.
+- **Departures from the packet:**
+  - The "+$N" floater starts past the width the money text will have once the roll ends, not at the current right edge, because the growing number ran into it.
+  - Notices use the panel's theme style for tiers 0–1 and a duplicated style with a 2 px gold border for tier 2.
+- **Retained tuning:** none.
+- **Open issues:** both pre-existing; the packet keeps these panels' anchors and offsets unchanged, so they go to the J14 display audit:
+  - At 1280×720 with 150 % UI scale, the notice panel (y 268–379 px) reaches the screen centre and covers the reticle and target label.
+  - At plain 1280×720, its right edge (x 915) overlaps the scanner summary (x 870–1262) by 45 px while both are up.
 
 ## Retained tuning
 

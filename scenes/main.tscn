@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3]
+[gd_scene load_steps=20 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
 [ext_resource type="Script" path="res://scripts/ui/settings_store.gd" id="2_settings_store"]
@@ -13,6 +13,28 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/pause_menu.tscn" id="11_pause"]
 [ext_resource type="PackedScene" path="res://scenes/ui/scanner_overlay.tscn" id="12_scanner"]
 [ext_resource type="PackedScene" path="res://scenes/ui/reticle.tscn" id="13_reticle"]
+[ext_resource type="Script" path="res://scripts/ui/feel_icon.gd" id="14_feel_icon"]
+[ext_resource type="Shader" path="res://shaders/ui_shine.gdshader" id="15_ui_shine"]
+
+[sub_resource type="StyleBoxFlat" id="HudBarBackground"]
+bg_color = Color(0, 0, 0, 0.35)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="HudBarFill"]
+bg_color = Color(0.623529, 0.901961, 0.839216, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="ShaderMaterial" id="CompletionShine"]
+shader = ExtResource("15_ui_shine")
+
+[sub_resource type="ShaderMaterial" id="NoticeShine"]
+shader = ExtResource("15_ui_shine")
 
 [node name="Main" type="Node"]
 script = ExtResource("1_main")
@@ -33,10 +55,39 @@ anchor_bottom = 0.05
 offset_right = 294.0
 offset_bottom = 138.0
 
-[node name="ProgressLabel" type="Label" parent="UI/ProgressPanel"]
+[node name="ProgressStack" type="VBoxContainer" parent="UI/ProgressPanel"]
+theme_override_constants/separation = 4
+
+[node name="ProgressLabel" type="Label" parent="UI/ProgressPanel/ProgressStack"]
 unique_name_in_owner = true
 theme_override_font_sizes/font_size = 17
-text = "Completed 0 / 5,700\nRemaining 5,700\nProps 0 / 300\nTrash collected 0 / 5,400\n$0"
+text = "Completed 0 / 5,700\nRemaining 5,700\nProps 0 / 300\nTrash collected 0 / 5,400"
+
+[node name="CompletionBar" type="ProgressBar" parent="UI/ProgressPanel/ProgressStack"]
+unique_name_in_owner = true
+material = SubResource("CompletionShine")
+custom_minimum_size = Vector2(0, 8)
+theme_override_styles/background = SubResource("HudBarBackground")
+theme_override_styles/fill = SubResource("HudBarFill")
+max_value = 5700.0
+show_percentage = false
+
+[node name="MoneyRow" type="HBoxContainer" parent="UI/ProgressPanel/ProgressStack"]
+theme_override_constants/separation = 6
+
+[node name="MoneyIcon" type="Control" parent="UI/ProgressPanel/ProgressStack/MoneyRow"]
+custom_minimum_size = Vector2(18, 18)
+size_flags_vertical = 4
+mouse_filter = 2
+script = ExtResource("14_feel_icon")
+kind = 3
+color = Color(1, 0.847059, 0.352941, 1)
+
+[node name="MoneyLabel" type="Label" parent="UI/ProgressPanel/ProgressStack/MoneyRow"]
+unique_name_in_owner = true
+theme_override_colors/font_color = Color(1, 0.847059, 0.352941, 1)
+theme_override_font_sizes/font_size = 19
+text = "$0"
 
 [node name="ContextPanel" type="PanelContainer" parent="UI"]
 unique_name_in_owner = true
@@ -49,10 +100,21 @@ offset_top = -96.0
 offset_right = 294.0
 grow_vertical = 0
 
-[node name="ContextLabel" type="Label" parent="UI/ContextPanel"]
+[node name="ContextStack" type="VBoxContainer" parent="UI/ContextPanel"]
+theme_override_constants/separation = 4
+
+[node name="ContextLabel" type="Label" parent="UI/ContextPanel/ContextStack"]
 unique_name_in_owner = true
 theme_override_font_sizes/font_size = 17
 text = "Bag 0 / 20\nTool Poking stick\nHands free"
+
+[node name="BagBar" type="ProgressBar" parent="UI/ContextPanel/ContextStack"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 6)
+theme_override_styles/background = SubResource("HudBarBackground")
+theme_override_styles/fill = SubResource("HudBarFill")
+max_value = 20.0
+show_percentage = false
 
 [node name="GuidancePanel" type="PanelContainer" parent="UI"]
 unique_name_in_owner = true
@@ -66,9 +128,23 @@ offset_top = 155.0
 offset_right = 275.0
 offset_bottom = 229.0
 grow_horizontal = 2
+material = SubResource("NoticeShine")
 
-[node name="GuidanceLabel" type="Label" parent="UI/GuidancePanel"]
+[node name="GuidanceRow" type="HBoxContainer" parent="UI/GuidancePanel"]
+theme_override_constants/separation = 10
+
+[node name="NoticeIcon" type="Control" parent="UI/GuidancePanel/GuidanceRow"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(22, 22)
+size_flags_vertical = 4
+mouse_filter = 2
+script = ExtResource("14_feel_icon")
+kind = 5
+
+[node name="GuidanceLabel" type="Label" parent="UI/GuidancePanel/GuidanceRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(480, 0)
+size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.75, 0.94, 0.87, 1)
 theme_override_font_sizes/font_size = 17
 text = "Tip"
