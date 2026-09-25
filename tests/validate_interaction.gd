@@ -37,24 +37,24 @@ func _run() -> void:
 	check(glass.is_highlighted() and glass.outline_overlay_count() > 0, "target receives a per-view white outline")
 	var action_material := _hover_material(glass)
 	await process_frame
-	check(target_label.visible and target_label.text_label.text.contains("Glass bottle") and target_label.text_label.text.contains(settings.binding_text(&"primary")), "target label shows the player-facing name and current pickup binding")
+	check(target_label.visible and target_label.prompt_text().contains("Glass bottle") and target_label.prompt_text().contains(settings.binding_text(&"primary")), "target label shows the player-facing name and current pickup binding")
 	var rebound := InputEventKey.new()
 	rebound.physical_keycode = KEY_P
 	rebound.pressed = true
 	settings.rebind(&"primary", rebound)
-	check(target_label.text_label.text.contains(settings.binding_text(&"primary")), "target prompt updates immediately after keyboard remap")
+	check(target_label.prompt_text().contains(settings.binding_text(&"primary")), "target prompt updates immediately after keyboard remap")
 	settings.reset_all()
 	var controller_input := InputEventJoypadButton.new()
 	controller_input.button_index = JOY_BUTTON_A
 	controller_input.pressed = true
 	settings.note_input(controller_input)
-	check(target_label.text_label.text.contains(settings.binding_text(&"primary")), "same target prompt switches to the active controller binding")
-	check(settings.binding_text(&"primary") == "RT" and target_label.text_label.text.contains("Collect [RT]"), "controller trigger has a short pickup label")
+	check(target_label.prompt_text().contains(settings.binding_text(&"primary")), "same target prompt switches to the active controller binding")
+	check(settings.binding_text(&"primary") == "RT" and target_label.prompt_text().contains("Collect [RT]"), "controller trigger has a short pickup label")
 	var remapped_button := InputEventJoypadButton.new()
 	remapped_button.button_index = JOY_BUTTON_X
 	remapped_button.pressed = true
 	settings.rebind(&"primary", remapped_button)
-	check(settings.binding_text(&"primary") == "X" and target_label.text_label.text.contains("Collect [X]"), "controller button remap keeps the short live prompt")
+	check(settings.binding_text(&"primary") == "X" and target_label.prompt_text().contains("Collect [X]"), "controller button remap keeps the short live prompt")
 	settings.reset_all()
 	settings.note_input(rebound)
 
@@ -68,7 +68,7 @@ func _run() -> void:
 	check(result.get("id") == &"chair" and result.get("actions", PackedStringArray()).has("hold"), "multi-part chair exposes the contextual hold action")
 	check(chair.outline_overlay_count() >= 1, "chair outline covers its visible meshes")
 	await process_frame
-	check(target_label.text_label.text.contains("Beach chair"), "target label follows target switches")
+	check(target_label.prompt_text().contains("Beach chair"), "target label follows target switches")
 	if "--capture" in OS.get_cmdline_user_args():
 		await RenderingServer.frame_post_draw
 		var capture_path := ProjectSettings.globalize_path("res://docs/handoffs/images/P08-interaction-lab.png")

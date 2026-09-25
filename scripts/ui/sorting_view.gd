@@ -2,6 +2,10 @@ class_name SortingView
 extends Control
 
 const FEEL := preload("res://data/feel/feel_tuning.tres")
+## POLYGON Icons models for the four bins, so each category has a picture as well as a colour.
+const CATEGORY_ICON_MODELS := ["Food_Soda_Cup_01", "Food_Apple_01", "Trash_01", "Glass_01"]
+const STAMP_CORRECT := preload("res://art/synty/ui/icons_flat/ICON_ModernMenus_Confirm_01_Stroke.png")
+const STAMP_WRONG := preload("res://art/synty/ui/icons_flat/ICON_ModernMenus_ExclamationMark_01_Stroke.png")
 
 @onready var status: Label = %Status
 @onready var unload_button: Button = %UnloadButton
@@ -17,6 +21,7 @@ const FEEL := preload("res://data/feel/feel_tuning.tres")
 @onready var hint: Label = %Hint
 @onready var drag_preview: Label = %DragPreview
 @onready var bin_bar: HBoxContainer = %Bins
+@onready var prompts: HBoxContainer = %Prompts
 
 var station: SortingStation
 var selected_category := 0
@@ -59,14 +64,19 @@ func _ready() -> void:
 	bin_list.item_selected.connect(_on_bin_item_selected)
 	for index in range(bin_buttons.size()):
 		bin_buttons[index].pressed.connect(_on_bin_pressed.bind(index))
+		bin_buttons[index].set_meta(&"ui_no_tilt", true)
+		if UiKit.kit() != null:
+			bin_buttons[index].icon = UiKit.kit().icons.model_icon(CATEGORY_ICON_MODELS[index], 96)
+		# The fill bar runs along the inside of the sticker's bottom edge.
 		var fill := ColorRect.new()
 		fill.name = "Fill"
-		fill.color = (SortingStation.PROXY_COLORS[index] as Color).lightened(0.2)
+		fill.color = (SortingStation.PROXY_COLORS[index] as Color).lightened(0.1)
 		fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		fill.anchor_top = 1.0
 		fill.anchor_bottom = 1.0
-		fill.offset_top = -4.0
-		fill.offset_bottom = 0.0
+		fill.offset_left = 6.0
+		fill.offset_top = -12.0
+		fill.offset_bottom = -7.0
 		fill.size.x = 0.0
 		bin_buttons[index].add_child(fill)
 		_fill_bars.append(fill)
@@ -114,7 +124,18 @@ func _refresh_prompts() -> void:
 	var settings := station.player.settings_store
 	exit_button.text = "Exit [%s]" % settings.binding_text(&"ui_cancel")
 	sell_button.text = "Sell selected valuable [%s]" % settings.binding_text(&"ui_accept")
-	hint.text = "Select a bin; click or drag an item. Grid: %s move · %s select · %s/%s bin · %s inspect. Grid edge opens controls. %s pauses." % [settings.binding_text(&"table_focus_right"), settings.binding_text(&"table_select"), settings.binding_text(&"table_bin_previous"), settings.binding_text(&"table_bin_next"), settings.binding_text(&"table_inspect_bin"), settings.binding_text(&"pause")]
+	hint.text = "Pick a bin, then click or drag items into it. The grid edge leads to the buttons."
+	# One chip per thing the player can do here, for the device they are using.
+	for child in prompts.get_children():
+		prompts.remove_child(child)
+		child.queue_free()
+	var entries: Array = [[&"table_select", "Sort"], [&"table_bin_previous", "Bin"], [&"table_bin_next", ""], [&"table_inspect_bin", "Inspect"], [&"ui_cancel", "Exit"]]
+	if settings.prompt_device == SettingsStore.PromptDevice.CONTROLLER:
+		entries.push_front([&"table_focus_right", "Move"])
+	else:
+		entries = [[&"primary", "Sort · drag"], [&"table_bin_1", "Bins 1-4"], [&"table_inspect_bin", "Inspect"], [&"ui_cancel", "Exit"]]
+	for entry in entries:
+		prompts.add_child(PromptChip.new().setup(settings, entry[0], entry[1], &"HudVerb", 24.0))
 
 
 func resume_from_pause() -> void:
@@ -477,7 +498,7 @@ func _refresh() -> void:
 	for index in range(bin_buttons.size()):
 		var count := (station.bin_record(SortingStation.CATEGORIES[index]).items as Array).size()
 		bin_buttons[index].text = "%s %d/%d" % [SortingStation.CATEGORY_NAMES[index], count, SortingStation.BIN_CAPACITY]
-		bin_buttons[index].modulate = Color.WHITE if index == selected_category else Color(0.72, 0.72, 0.72)
+		bin_buttons[index].theme_type_variation = &"PrimaryButton" if index == selected_category else &"SoftButton"
 		_update_fill_bar(index, count, reduced)
 		if count > _last_counts[index] and not reduced:
 			FeelMotion.bump_control(bin_buttons[index], 1.06, 0.16)
@@ -589,7 +610,7 @@ func _update_fill_bar(index: int, count: int, reduced: bool) -> void:
 	if index >= _fill_bars.size():
 		return
 	var bar := _fill_bars[index]
-	var width := bin_buttons[index].size.x * float(count) / float(SortingStation.BIN_CAPACITY)
+	var width := maxf(bin_buttons[index].size.x - 12.0, 0.0) * float(count) / float(SortingStation.BIN_CAPACITY)
 	if reduced or not is_visible_in_tree():
 		FeelMotion.replace(bar, &"fill", null)
 		bar.size.x = width
@@ -604,11 +625,14 @@ func _stamp(index: int, correct: bool) -> void:
 	var old: Variant = _stamps.get(index)
 	if old != null and is_instance_valid(old):
 		(old as Node).queue_free()
-	var icon := FeelIcon.new()
-	icon.kind = FeelIcon.Kind.CHECK if correct else FeelIcon.Kind.QUESTION
-	icon.color = FEEL.ghost_color if correct else FEEL.hover_blocked_color
-	icon.size = Vector2(24, 24)
-	icon.position = Vector2(button.size.x - 26.0, 2.0)
+	var icon := TextureRect.new()
+	icon.texture = STAMP_CORRECT if correct else STAMP_WRONG
+	icon.modulate = FEEL.ghost_color.lightened(0.3) if correct else FEEL.hover_blocked_color
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.size = Vector2(30, 30)
+	icon.position = Vector2(button.size.x - 22.0, -12.0)
 	icon.pivot_offset = icon.size * 0.5
 	button.add_child(icon)
 	_stamps[index] = icon

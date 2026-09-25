@@ -323,6 +323,12 @@ static func _binding_label(event: InputEvent) -> String:
 			JOY_BUTTON_DPAD_LEFT: return "D-pad ←"
 			JOY_BUTTON_DPAD_RIGHT: return "D-pad →"
 		return "Button %d" % (event as InputEventJoypadButton).button_index
+	if event is InputEventKey:
+		# "E", "Space", "Shift" rather than the engine's "E - Physical".
+		var key := event as InputEventKey
+		var label := OS.get_keycode_string(key.physical_keycode if key.physical_keycode != KEY_NONE else key.keycode)
+		if not label.is_empty():
+			return label
 	return event.as_text()
 
 

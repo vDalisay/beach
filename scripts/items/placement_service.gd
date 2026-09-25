@@ -851,6 +851,7 @@ func _show_group_sweep(group_id: StringName, serial: int) -> void:
 	FeelFloater.spawn(self, Vector3(center.x, highest + 0.35, center.z), "+$%d" % reward if reward > 0 else "Tidy!", FEEL.money_color if reward > 0 else FEEL.shine_core_color, reduced)
 	if reduced:
 		return
+	FeelBurst.spawn(self, Vector3(center.x, highest + 0.15, center.z), FeelBurst.Kind.CONFETTI)
 	var shine := FeelShine.play(self, meshes, FEEL.group_sweep_seconds)
 	if shine.is_empty():
 		return

@@ -1,5 +1,8 @@
 [gd_scene format=3]
 
+[ext_resource type="Texture2D" path="res://art/synty/fx/PolygonParticles_Bubble.png" id="1_bubble"]
+[ext_resource type="Material" path="res://data/ui/icon_outline.tres" id="2_outline"]
+
 [node name="OxygenMeter" type="Control"]
 visible = false
 layout_mode = 3
@@ -12,32 +15,52 @@ mouse_filter = 2
 
 [node name="Panel" type="PanelContainer" parent="."]
 layout_mode = 1
-anchors_preset = 5
+anchors_preset = 7
+anchor_left = 0.5
 anchor_top = 1.0
+anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = 22.0
-offset_top = -108.0
-offset_right = 292.0
-offset_bottom = -22.0
+offset_left = -160.0
+offset_top = -196.0
+offset_right = 160.0
+offset_bottom = -104.0
+grow_horizontal = 2
 grow_vertical = 0
 mouse_filter = 2
+theme_type_variation = &"NavyCard"
 
 [node name="Content" type="VBoxContainer" parent="Panel"]
 layout_mode = 2
+mouse_filter = 2
 theme_override_constants/separation = 4
 
 [node name="AirLabel" type="Label" parent="Panel/Content"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 20
+theme_type_variation = &"HudTitle"
 text = "AIR  10.0 s"
+horizontal_alignment = 1
 
 [node name="AirBar" type="ProgressBar" parent="Panel/Content"]
-layout_mode = 2
 custom_minimum_size = Vector2(0, 16)
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"HudBar"
 value = 100.0
 show_percentage = false
 
 [node name="Hint" type="Label" parent="Panel/Content"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 15
+theme_type_variation = &"HudCaption"
 text = "Jump: rise  •  Crouch: dive"
+horizontal_alignment = 1
+
+[node name="Bubble" type="TextureRect" parent="Panel"]
+material = ExtResource("2_outline")
+custom_minimum_size = Vector2(34, 34)
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 0
+mouse_filter = 2
+texture = ExtResource("1_bubble")
+expand_mode = 1
+stretch_mode = 5

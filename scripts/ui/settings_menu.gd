@@ -7,6 +7,27 @@ const PRESET_ORDER: Array[StringName] = [&"low", &"medium", &"high", &"ultra"]
 const PRESET_NAMES := ["Low", "Medium", "High", "Ultra", "Custom"]
 const MSAA_NAMES := ["Off", "2×", "4×", "8×"]
 const SHADOW_NAMES := ["Off", "Low", "Medium", "High", "Ultra"]
+const TAB_ICONS := [
+	preload("res://art/synty/ui/icons_flat/ICON_ModernMenus_Controller_01_Stroke.png"),
+	preload("res://art/synty/ui/icons_flat/ICON_ModernMenus_Display_01_Stroke.png"),
+]
+## What each remappable action does, in the player's words.
+const ACTION_NAMES := {
+	&"move_left": "Move left", &"move_right": "Move right", &"move_forward": "Move forward", &"move_back": "Move back",
+	&"primary": "Use tool · collect · place", &"throw": "Throw", &"interact": "Interact · carry",
+	&"jump": "Jump · swim up", &"crouch": "Crouch · dive", &"sprint": "Sprint",
+	&"switch_tool": "Switch tool", &"select_held_prop": "Cycle held objects", &"booklet": "Field booklet",
+	&"scanner_pulse": "Scanner pulse", &"pause": "Pause",
+	&"table_bin_previous": "Previous bin", &"table_bin_next": "Next bin",
+	&"table_focus_left": "Table cursor left", &"table_focus_right": "Table cursor right",
+	&"table_focus_up": "Table cursor up", &"table_focus_down": "Table cursor down",
+	&"table_select": "Pick up · drop item", &"table_inspect_bin": "Inspect bin",
+	&"ui_accept": "Confirm", &"ui_cancel": "Back",
+}
+## Section headers inserted before the first binding of each group.
+const BINDING_GROUPS := {
+	&"move_left": "Moving", &"primary": "On the beach", &"table_bin_previous": "Sorting table", &"ui_accept": "Menus",
+}
 
 @onready var tabs: TabContainer = %Tabs
 @onready var controls_tab: ScrollContainer = %Controls
@@ -89,6 +110,8 @@ func _ready() -> void:
 	)
 	reset_button.pressed.connect(_reset_all)
 	close_button.pressed.connect(close_menu)
+	for index in mini(TAB_ICONS.size(), tabs.get_tab_count()):
+		tabs.set_tab_icon(index, TAB_ICONS[index])
 	hide()
 
 
@@ -106,6 +129,8 @@ func open_menu(settings: SettingsStore) -> void:
 	show()
 	_link_focus()
 	call_deferred("_focus_first")
+	if UiKit.kit() != null:
+		UiKit.kit().screen_in($Margin/Card as Control, 0.96)
 
 
 func close_menu() -> void:
@@ -189,14 +214,28 @@ func _build_bindings() -> void:
 	_binding_buttons.clear()
 	device_label.text = "Showing: %s" % ("Controller" if store.prompt_device == SettingsStore.PromptDevice.CONTROLLER else "Keyboard & mouse")
 	for action in SettingsStore.REMAPPABLE_ACTIONS:
+		if BINDING_GROUPS.has(action):
+			var header := Label.new()
+			header.text = BINDING_GROUPS[action]
+			header.theme_type_variation = &"Caption"
+			bindings.add_child(header)
 		var row := HBoxContainer.new()
 		var label := Label.new()
-		label.text = str(action).replace("_", " ").capitalize()
+		label.text = ACTION_NAMES.get(action, str(action).replace("_", " ").capitalize())
 		label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		var button := Button.new()
-		button.custom_minimum_size.x = 300.0
+		button.theme_type_variation = &"SoftButton"
+		button.custom_minimum_size = Vector2(300.0, 44.0)
 		button.text = store.binding_text(action)
 		button.pressed.connect(_begin_capture.bind(action, button))
+		# The binding's icon sits at the left of its button and follows the device and remaps.
+		var glyph := InputGlyph.new()
+		glyph.rimmed = false
+		glyph.glyph_height = 28.0
+		glyph.configure(store, action)
+		glyph.size = glyph.get_combined_minimum_size()
+		button.add_child(glyph)
+		glyph.set_anchors_and_offsets_preset(Control.PRESET_CENTER_LEFT, Control.PRESET_MODE_KEEP_SIZE, 10)
 		row.add_child(label)
 		row.add_child(button)
 		bindings.add_child(row)
@@ -289,20 +328,23 @@ func _link_focus() -> void:
 				controls.append(_binding_buttons[action] as Control)
 	controls.append(reset_button)
 	controls.append(close_button)
+	# Sliders draw no focus box of their own, so every control in the chain gets the same gold
+	# ring as an outline child; the theme's own focus box is turned off to avoid a double ring.
 	var focus_style := StyleBoxFlat.new()
 	focus_style.draw_center = false
-	focus_style.border_width_left = 4
-	focus_style.border_width_top = 4
-	focus_style.border_width_right = 4
-	focus_style.border_width_bottom = 4
-	focus_style.border_color = Color.WHITE
+	focus_style.set_border_width_all(3)
+	focus_style.set_corner_radius_all(14)
+	focus_style.corner_detail = 8
+	focus_style.anti_aliasing = true
+	focus_style.border_color = UiPalette.GOLD
+	var no_focus := StyleBoxEmpty.new()
 	for index in controls.size():
 		var control := controls[index]
 		var previous := controls[posmod(index - 1, controls.size())]
 		var next := controls[(index + 1) % controls.size()]
 		control.focus_neighbor_top = control.get_path_to(previous)
 		control.focus_neighbor_bottom = control.get_path_to(next)
-		control.add_theme_stylebox_override("focus", focus_style)
+		control.add_theme_stylebox_override("focus", no_focus)
 		_add_focus_outline(control, focus_style)
 
 

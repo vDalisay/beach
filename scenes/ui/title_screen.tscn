@@ -1,0 +1,364 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/title_screen.gd" id="1_title"]
+[ext_resource type="Script" path="res://scripts/ui/menu_backdrop.gd" id="2_backdrop"]
+[ext_resource type="Shader" path="res://shaders/ui_frost.gdshader" id="3_frost"]
+[ext_resource type="Texture2D" path="res://art/ui/title_logo_wide.svg" id="4_logo"]
+[ext_resource type="Texture2D" path="res://art/synty/ui/fx/SPR_ModernMenus_FX_Glow_Dot_01.png" id="5_glow"]
+[ext_resource type="Texture2D" path="res://art/synty/fx/PolygonParticles_Sparkle.png" id="6_sparkle"]
+[ext_resource type="Texture2D" path="res://art/synty/ui/icons_flat/ICON_ModernMenus_Play_01_Stroke.png" id="7_play"]
+[ext_resource type="Texture2D" path="res://art/synty/ui/icons_flat/ICON_ModernMenus_Plus_01_Stroke.png" id="8_plus"]
+[ext_resource type="Texture2D" path="res://art/synty/ui/icons_flat/ICON_ModernMenus_Load_01_Stroke.png" id="9_load"]
+[ext_resource type="Texture2D" path="res://art/synty/ui/icons_flat/ICON_ModernMenus_Settings_04_Stroke.png" id="10_settings"]
+[ext_resource type="Texture2D" path="res://art/synty/ui/icons_flat/ICON_ModernMenus_Arrow_Back_01_Stroke.png" id="11_quit"]
+[ext_resource type="Texture2D" path="res://art/synty/ui/icons_flat/ICON_ModernMenus_Reload_01_Stroke.png" id="12_dice"]
+
+[sub_resource type="ShaderMaterial" id="FrostMaterial"]
+shader = ExtResource("3_frost")
+shader_parameter/blur_lod = 2.4
+shader_parameter/tint = Color(0.027, 0.102, 0.173, 0.16)
+shader_parameter/vignette = 0.35
+shader_parameter/amount = 1.0
+
+[sub_resource type="Gradient" id="ShadeGradient"]
+offsets = PackedFloat32Array(0, 0.58)
+colors = PackedColorArray(0.027, 0.102, 0.173, 0.6, 0.027, 0.102, 0.173, 0)
+
+[sub_resource type="GradientTexture2D" id="ShadeTexture"]
+gradient = SubResource("ShadeGradient")
+width = 256
+height = 16
+fill_to = Vector2(1, 0)
+
+[sub_resource type="Gradient" id="FadeInOut"]
+offsets = PackedFloat32Array(0, 0.25, 0.75, 1)
+colors = PackedColorArray(1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0)
+
+[node name="TitleScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_title")
+
+[node name="Backdrop" type="TextureRect" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 6
+script = ExtResource("2_backdrop")
+
+[node name="Frost" type="ColorRect" parent="."]
+unique_name_in_owner = true
+material = SubResource("FrostMaterial")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="LeftShade" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("ShadeTexture")
+expand_mode = 1
+
+[node name="Bokeh" type="CPUParticles2D" parent="."]
+position = Vector2(640, 760)
+amount = 18
+lifetime = 11.0
+preprocess = 11.0
+texture = ExtResource("5_glow")
+emission_shape = 3
+emission_rect_extents = Vector2(700, 20)
+direction = Vector2(0.2, -1)
+spread = 20.0
+gravity = Vector2(0, 0)
+initial_velocity_min = 40.0
+initial_velocity_max = 90.0
+scale_amount_min = 0.06
+scale_amount_max = 0.22
+color = Color(1, 0.97, 0.85, 0.35)
+color_ramp = SubResource("FadeInOut")
+
+[node name="Column" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 9
+anchor_bottom = 1.0
+offset_left = 60.0
+offset_top = 20.0
+offset_right = 560.0
+offset_bottom = -66.0
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 14
+
+[node name="LogoHolder" type="Control" parent="Column"]
+custom_minimum_size = Vector2(0, 90)
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+
+[node name="Logo" type="TextureRect" parent="Column/LogoHolder"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("4_logo")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="LogoSparkles" type="CPUParticles2D" parent="Column/LogoHolder/Logo"]
+unique_name_in_owner = true
+position = Vector2(270, 116)
+amount = 7
+lifetime = 1.4
+texture = ExtResource("6_sparkle")
+emission_shape = 3
+emission_rect_extents = Vector2(250, 95)
+gravity = Vector2(0, 0)
+scale_amount_min = 0.05
+scale_amount_max = 0.12
+color = Color(1, 0.98, 0.85, 1)
+color_ramp = SubResource("FadeInOut")
+
+[node name="Menu" type="VBoxContainer" parent="Column"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(360, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+theme_override_constants/separation = 12
+
+[node name="ContinueButton" type="Button" parent="Column/Menu"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 58)
+layout_mode = 2
+theme_type_variation = &"PrimaryButton"
+theme_override_font_sizes/font_size = 22
+disabled = true
+text = "Continue"
+icon = ExtResource("7_play")
+alignment = 0
+
+[node name="NewButton" type="Button" parent="Column/Menu"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+theme_override_font_sizes/font_size = 21
+text = "New beach"
+icon = ExtResource("8_plus")
+alignment = 0
+
+[node name="LoadButton" type="Button" parent="Column/Menu"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+theme_override_font_sizes/font_size = 21
+disabled = true
+text = "Load run"
+icon = ExtResource("9_load")
+alignment = 0
+
+[node name="SettingsButton" type="Button" parent="Column/Menu"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+theme_override_font_sizes/font_size = 21
+text = "Settings"
+icon = ExtResource("10_settings")
+alignment = 0
+
+[node name="QuitButton" type="Button" parent="Column/Menu"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+theme_override_font_sizes/font_size = 21
+text = "Quit"
+icon = ExtResource("11_quit")
+alignment = 0
+
+[node name="SummaryLabel" type="Label" parent="Column/Menu"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_type_variation = &"HudCaption"
+theme_override_font_sizes/font_size = 17
+autowrap_mode = 2
+
+[node name="NewRunPanel" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -290.0
+offset_top = -150.0
+offset_right = 290.0
+offset_bottom = 150.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Stack" type="VBoxContainer" parent="NewRunPanel"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Title" type="Label" parent="NewRunPanel/Stack"]
+layout_mode = 2
+theme_type_variation = &"Heading"
+text = "NEW BEACH"
+
+[node name="Blurb" type="Label" parent="NewRunPanel/Stack"]
+custom_minimum_size = Vector2(500, 0)
+layout_mode = 2
+theme_type_variation = &"Body"
+text = "Every beach grows from a seed. Share yours and a friend cleans up the very same mess."
+autowrap_mode = 2
+
+[node name="SeedRow" type="HBoxContainer" parent="NewRunPanel/Stack"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="SeedInput" type="LineEdit" parent="NewRunPanel/Stack/SeedRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "first-shore"
+placeholder_text = "Blank makes a random beach"
+alignment = 1
+clear_button_enabled = true
+
+[node name="RandomSeedButton" type="Button" parent="NewRunPanel/Stack/SeedRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(56, 52)
+layout_mode = 2
+tooltip_text = "Random seed"
+theme_type_variation = &"SoftButton"
+icon = ExtResource("12_dice")
+icon_alignment = 1
+
+[node name="Buttons" type="HBoxContainer" parent="NewRunPanel/Stack"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="BackFromNewButton" type="Button" parent="NewRunPanel/Stack/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(140, 54)
+layout_mode = 2
+theme_type_variation = &"SoftButton"
+text = "Back"
+
+[node name="StartButton" type="Button" parent="NewRunPanel/Stack/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"PrimaryButton"
+text = "Start cleaning"
+
+[node name="LoadPanel" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -350.0
+offset_top = -250.0
+offset_right = 350.0
+offset_bottom = 250.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Stack" type="VBoxContainer" parent="LoadPanel"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="LoadPanel/Stack"]
+layout_mode = 2
+theme_type_variation = &"Heading"
+text = "LOAD RUN"
+
+[node name="SaveList" type="ItemList" parent="LoadPanel/Stack"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(640, 300)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Buttons" type="HBoxContainer" parent="LoadPanel/Stack"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="BackFromLoadButton" type="Button" parent="LoadPanel/Stack/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(140, 54)
+layout_mode = 2
+theme_type_variation = &"SoftButton"
+text = "Back"
+
+[node name="OpenSaveButton" type="Button" parent="LoadPanel/Stack/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"PrimaryButton"
+text = "Load selected"
+
+[node name="StatusLabel" type="Label" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 76.0
+offset_top = -58.0
+offset_right = 700.0
+offset_bottom = -26.0
+grow_vertical = 0
+theme_type_variation = &"HudCaption"
+theme_override_font_sizes/font_size = 17
+text = "Choose a new beach or continue a saved run."
+vertical_alignment = 1
+
+[node name="Footer" type="HBoxContainer" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -420.0
+offset_top = -62.0
+offset_right = -30.0
+offset_bottom = -24.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+theme_override_constants/separation = 20
+alignment = 2

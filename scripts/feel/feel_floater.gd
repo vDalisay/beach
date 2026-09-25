@@ -20,11 +20,13 @@ static func spawn(parent: Node, at: Vector3, message: String, color: Color, redu
 	floater.name = "FeelFloater"
 	floater.text = message
 	floater.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	floater.font_size = 56
+	# The HUD's display face and navy rim, so a reward in the world reads like the one on screen.
+	floater.font = UiPalette.FONT_DISPLAY
+	floater.font_size = 52
 	floater.pixel_size = 0.0035
-	floater.outline_size = 12
+	floater.outline_size = 16
 	floater.modulate = color
-	floater.outline_modulate = Color(0.04, 0.08, 0.1, 0.9)
+	floater.outline_modulate = Color(UiPalette.NAVY, 0.95)
 	floater.process_mode = Node.PROCESS_MODE_ALWAYS
 	parent.add_child(floater)
 	floater.global_position = at

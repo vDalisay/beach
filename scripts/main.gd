@@ -8,23 +8,37 @@ const BEACH_SCENE := preload("res://scenes/world/beach.tscn")
 const PLAYER_SCENE := preload("res://scenes/player/player.tscn")
 const BEACH_DEFINITION := preload("res://data/world/beach_01.tres")
 const FEEL := preload("res://data/feel/feel_tuning.tres")
-# The notice lane runs under the top HUD row (5 % of the height plus NOTICE_TOP). When a two-line
-# notice there would come within AIM_CLEARANCE of the aim point, the lane moves just below it.
-const NOTICE_TOP := 150.0
-const NOTICE_HALF_WIDTH := 225.0
-const NOTICE_TWO_LINES := 62.0
+const P := preload("res://scripts/ui/kit/ui_palette.gd")
+const ICON_OUTLINE := preload("res://data/ui/icon_outline.tres")
+# Notice pill icons by tier: tip, set, restoration.
+const NOTICE_ICONS: Array[Texture2D] = [
+	preload("res://art/synty/ui/icons_flat/ICON_ModernMenus_Info_01_Stroke.png"),
+	preload("res://art/synty/ui/icons_flat/ICON_ModernMenus_Confirm_01_Stroke.png"),
+	preload("res://art/synty/ui/icons_flat/ICON_ModernMenus_Star_02_Stroke.png"),
+]
+# Notices run along the top edge in the free lane between the progress block and the hint column.
+# When that lane is narrower than NOTICE_MIN_WIDTH, they move just above the aim point instead.
+const NOTICE_TOP := 16.0
+const NOTICE_GAP := 18.0
+const NOTICE_MAX_WIDTH := 500.0
+const NOTICE_MIN_WIDTH := 280.0
 const AIM_CLEARANCE := 24.0
+# The area chip follows the nearest section, re-checked a few times a second; a new section must be
+# this much nearer than the current one before the chip switches, so it does not flicker on borders.
+const AREA_REFRESH_SECONDS := 0.25
+const AREA_SWITCH_MARGIN := 3.0
 
-@onready var status_label: Label = %StatusLabel
-@onready var seed_input: LineEdit = %SeedInput
-@onready var start_button: Button = %StartButton
-@onready var continue_button: Button = %ContinueButton
-@onready var load_button: Button = %LoadButton
-@onready var load_panel: PanelContainer = %LoadPanel
-@onready var save_list: ItemList = %SaveList
-@onready var open_save_button: Button = %OpenSaveButton
-@onready var back_from_load_button: Button = %BackFromLoadButton
-@onready var settings_button: Button = %SettingsButton
+@onready var title_screen: TitleScreen = %TitleScreen
+@onready var status_label: Label = title_screen.status_label
+@onready var seed_input: LineEdit = title_screen.seed_input
+@onready var start_button: Button = title_screen.start_button
+@onready var continue_button: Button = title_screen.continue_button
+@onready var load_button: Button = title_screen.load_button
+@onready var load_panel: PanelContainer = title_screen.load_panel
+@onready var save_list: ItemList = title_screen.save_list
+@onready var open_save_button: Button = title_screen.open_save_button
+@onready var back_from_load_button: Button = title_screen.back_from_load_button
+@onready var settings_button: Button = title_screen.settings_button
 @onready var settings_store: SettingsStore = %SettingsStore
 @onready var settings_menu: SettingsMenu = %SettingsMenu
 @onready var error_panel: PanelContainer = %ErrorPanel
@@ -38,22 +52,40 @@ const AIM_CLEARANCE := 24.0
 @onready var oxygen_meter: Control = %OxygenMeter
 @onready var faint_fade: ColorRect = %FaintFade
 @onready var progress_panel: PanelContainer = %ProgressPanel
-@onready var progress_label: Label = %ProgressLabel
+@onready var complete_value: Label = %CompleteValue
+@onready var complete_total: Label = %CompleteTotal
+@onready var complete_caption: Label = %CompleteCaption
+@onready var props_label: Label = %PropsLabel
+@onready var trash_label: Label = %TrashLabel
+@onready var props_icon: TextureRect = %PropsIcon
+@onready var trash_icon: TextureRect = %TrashIcon
 @onready var completion_bar: ProgressBar = %CompletionBar
 @onready var money_label: Label = %MoneyLabel
+@onready var money_icon: TextureRect = %MoneyIcon
+@onready var area_row: HBoxContainer = %AreaRow
+@onready var area_name: Label = %AreaName
+@onready var area_bar: ProgressBar = %AreaBar
+@onready var area_caption: Label = %AreaCaption
 @onready var bag_bar: ProgressBar = %BagBar
-@onready var notice_icon: FeelIcon = %NoticeIcon
+@onready var bag_count_label: Label = %BagCount
+@onready var bag_icon: TextureRect = %BagIcon
+@onready var held_list: VBoxContainer = %HeldList
+@onready var held_prompts: HBoxContainer = %HeldPrompts
+@onready var tool_panel: PanelContainer = %ToolPanel
+@onready var tool_slots: HBoxContainer = %ToolSlots
+@onready var tool_name_label: Label = %ToolName
+@onready var hint_panel: VBoxContainer = %HintPanel
+@onready var notice_icon: TextureRect = %NoticeIcon
 @onready var coin_flyer: CoinFlyer = $UI/CoinFlyer
 @onready var restoration_pointer: RestorationPointer = $UI/RestorationPointer
 @onready var context_panel: PanelContainer = %ContextPanel
-@onready var context_label: Label = %ContextLabel
 @onready var guidance_panel: PanelContainer = %GuidancePanel
 @onready var guidance_label: Label = %GuidanceLabel
 @onready var results_view: ResultsView = %ResultsView
 @onready var pause_menu: PauseMenu = %PauseMenu
 @onready var scanner_overlay: Control = %ScannerOverlay
-@onready var backdrop: ColorRect = $UI/Backdrop
-@onready var menu_container: CenterContainer = $UI/Center
+@onready var menu_container: Control = title_screen.menu
+@onready var loading_curtain: LoadingCurtain = %LoadingCurtain
 
 var run_root: Node
 var save_service: SaveService
@@ -75,8 +107,12 @@ var _money_hold_until := 0
 var _money_floaters: Array[Label] = []
 var _last_bag_count := -1
 var _bag_styles: Array[StyleBoxFlat] = []
-var _notice_style_default: StyleBox
-var _notice_style_gold: StyleBoxFlat
+var _area_id := StringName()
+var _area_timer := 0.0
+var _area_done := -1
+var _section_origins := {}
+var _tool_key := ""
+var _held_key := ""
 # Money shown while coins fly: amounts still in the air are held back from the display.
 var _last_totals := {}
 var _money_pending := 0
@@ -89,19 +125,24 @@ var _pending_zones: Array[StringName] = []
 
 
 func _ready() -> void:
+	if UiKit.kit() != null:
+		UiKit.kit().settings = settings_store
 	collection_receipt.settings = settings_store
 	collection_receipt.total_ready.connect(_on_receipt_total_ready)
 	restoration_pointer.settings = settings_store
-	for color in [FEEL.bag_color_normal, FEEL.bag_color_warn, FEEL.bag_color_full]:
+	for color in [P.AQUA_BOTTOM, P.AMBER, P.CORAL]:
 		var style := StyleBoxFlat.new()
 		style.bg_color = color
-		style.set_corner_radius_all(3)
+		style.set_corner_radius_all(6)
+		style.set_border_width_all(2)
+		style.border_color = P.NAVY
+		style.anti_aliasing = true
 		_bag_styles.append(style)
-	_notice_style_default = guidance_panel.get_theme_stylebox(&"panel")
-	var gold := (_notice_style_default.duplicate() as StyleBoxFlat) if _notice_style_default is StyleBoxFlat else StyleBoxFlat.new()
-	gold.border_color = FEEL.money_color
-	gold.set_border_width_all(2)
-	_notice_style_gold = gold
+	if UiKit.kit() != null:
+		var icons := UiKit.kit().icons
+		trash_icon.texture = icons.model_icon("Trash_01", 128)
+		props_icon.texture = icons.icon("hud:props", (load("res://data/items/prop_beach_chair.tres") as ItemDefinition).visual_scene(), 128)
+		bag_icon.texture = icons.icon("hud:bag", preload("res://scenes/items/disposal_bag.tscn"), 128)
 	save_service = SaveService.new()
 	save_service.name = "SaveService"
 	add_child(save_service)
@@ -109,10 +150,11 @@ func _ready() -> void:
 		if slot_id == &"autosave":
 			show_error("Autosave failed: %s. Pause and choose Save to retry." % message)
 	)
-	start_button.pressed.connect(start_run)
-	continue_button.pressed.connect(_continue_run)
+	# From the menu, building or loading a run happens behind the loading curtain.
+	start_button.pressed.connect(_behind_curtain.bind(start_run))
+	continue_button.pressed.connect(_behind_curtain.bind(_continue_run))
 	load_button.pressed.connect(_show_load_panel)
-	open_save_button.pressed.connect(_load_selected)
+	open_save_button.pressed.connect(_behind_curtain.bind(_load_selected))
 	back_from_load_button.pressed.connect(_hide_load_panel)
 	settings_button.pressed.connect(_open_settings_from_title)
 	settings_menu.closed.connect(_on_settings_closed)
@@ -123,6 +165,14 @@ func _ready() -> void:
 	pause_menu.quit_without_save_requested.connect(_quit_without_saving)
 	settings_store.controller_disconnected.connect(_on_controller_disconnected)
 	settings_store.controller_reconnected.connect(_on_controller_reconnected)
+	title_screen.configure(settings_store)
+	# The sorting table is its own screen: the world HUD steps aside while it is open.
+	sorting_view.visibility_changed.connect(func() -> void:
+		if not is_instance_valid(run_root) or results_view.visible:
+			return
+		for panel: Control in [progress_panel, context_panel, tool_panel, hint_panel]:
+			panel.visible = not sorting_view.visible
+	)
 	show_menu()
 
 
@@ -139,9 +189,21 @@ func start_run() -> Node:
 	return _open_run(initial_state, generation.definitions, str(generation.manifest_hash))
 
 
+## Covers the screen, runs `build` (start, continue or load; each blocks while the beach is built)
+## and lifts the curtain on whatever it left: the new run, or the menu with an error.
+func _behind_curtain(build: Callable) -> void:
+	if loading_curtain.visible:
+		return
+	await loading_curtain.cover()
+	build.call()
+	loading_curtain.reveal()
+
+
 func _open_run(initial_state: RunState, definitions: Dictionary, manifest_hash: String) -> Node:
 	clear_run()
 	clear_error()
+	# The title backdrop's beach goes before the run builds its own, so both never coexist.
+	title_screen.close()
 	var session := RunSession.new()
 	session.initialize(initial_state, definitions)
 	run_root = session
@@ -293,6 +355,7 @@ func _open_run(initial_state: RunState, definitions: Dictionary, manifest_hash: 
 	session.wallet_changed.connect(func(_player_id: StringName) -> void:
 		_update_progress(session)
 		_update_context(session)
+		_update_hints(session)
 		if &"cloth" in (session.state.players[&"local"] as Dictionary).owned_tools:
 			_show_guidance(session, &"cloth", "Equip the cloth at the shop rack, then clean marked props before placing them.")
 	)
@@ -323,7 +386,7 @@ func _open_run(initial_state: RunState, definitions: Dictionary, manifest_hash: 
 		guidance_panel.hide()
 		collection_receipt.clear_receipt()
 		_settle_money()
-		var hud: Array[CanvasItem] = [progress_panel, context_panel, guidance_panel, target_label, reticle, error_panel, restoration_pointer, scanner_overlay, detector_meter, oxygen_meter]
+		var hud: Array[CanvasItem] = [progress_panel, context_panel, tool_panel, hint_panel, guidance_panel, target_label, reticle, error_panel, restoration_pointer, scanner_overlay, detector_meter, oxygen_meter]
 		results_view.show_receipt(receipt, player, session, true, hud)
 		# After the results switch input off (which stops vibration), so the finale's rumble plays out.
 		player.play_cue(&"run_complete")
@@ -332,6 +395,8 @@ func _open_run(initial_state: RunState, definitions: Dictionary, manifest_hash: 
 	_update_context(session)
 	progress_panel.show()
 	context_panel.show()
+	tool_panel.show()
+	_build_hints(session)
 	progression_view.configure(progression, player)
 	if not progression_view.opened.is_connected(collection_receipt.clear_receipt):
 		progression_view.opened.connect(collection_receipt.clear_receipt)
@@ -352,11 +417,7 @@ func _open_run(initial_state: RunState, definitions: Dictionary, manifest_hash: 
 	warmup.name = "ShaderWarmup"
 	run_root.add_child(warmup)
 	warmup.start(run_root, warmup_scenes)
-	backdrop.hide()
-	menu_container.hide()
-	load_panel.hide()
 	status_label.text = "Beach run active: %s" % manifest_hash
-	start_button.text = "Restart beach run"
 	if not initial_state.completion_receipt.is_empty() and session.progress_service.completed_waste + session.progress_service.completed_props == initial_state.required_total:
 		results_view.show_receipt(initial_state.completion_receipt, player, session, false)
 	run_started.emit(run_root)
@@ -385,6 +446,14 @@ func clear_run() -> void:
 	_clear_notices()
 	progress_panel.hide()
 	context_panel.hide()
+	tool_panel.hide()
+	hint_panel.hide()
+	area_row.hide()
+	_area_id = StringName()
+	_area_done = -1
+	_section_origins.clear()
+	_tool_key = ""
+	_held_key = ""
 	coin_flyer.clear()
 	restoration_pointer.clear()
 	_restoration = null
@@ -409,13 +478,10 @@ func clear_run() -> void:
 func show_menu() -> void:
 	clear_error()
 	_refresh_saves()
-	backdrop.show()
-	menu_container.show()
-	load_panel.hide()
+	title_screen.open()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	status_label.text = "Choose a new beach or continue a saved run."
-	start_button.text = "New run"
-	start_button.grab_focus()
+	title_screen.focus_default()
 
 
 func load_run(run_id: String, slot_id: StringName) -> Dictionary:
@@ -438,6 +504,12 @@ func _refresh_saves() -> void:
 	_listed_saves = save_service.list_slots(BEACH_DEFINITION.beach_id)
 	continue_button.disabled = _listed_saves.is_empty() or bool(_listed_saves[0].get("damaged", false))
 	load_button.disabled = _listed_saves.is_empty()
+	var summary := ""
+	if not continue_button.disabled:
+		var latest := _listed_saves[0]
+		var saved := Time.get_datetime_dict_from_unix_time(int(latest.saved_at))
+		summary = "%s  ·  %s / %s  ·  %d-%02d-%02d %02d:%02d" % [str(latest.get("seed", "")), _comma(int(latest.get("completed", 0))), _comma(int(latest.get("required", 0))), int(saved.year), int(saved.month), int(saved.day), int(saved.hour), int(saved.minute)]
+	title_screen.set_continue_summary(summary)
 
 
 func _continue_run() -> void:
@@ -457,17 +529,14 @@ func _show_load_panel() -> void:
 		var detail := "DAMAGED" if bool(entry.get("damaged", false)) else "%s — %d/%d" % [Time.get_datetime_string_from_unix_time(int(entry.saved_at), true), int(entry.get("completed", 0)), int(entry.get("required", 0))]
 		var description := "%s  ·  %s  ·  %s  ·  %s" % [str(entry.get("seed", "Unknown seed")), slot_name, detail, str(entry.run_id)]
 		save_list.add_item(description)
-	menu_container.hide()
-	load_panel.show()
+	title_screen.show_load_panel()
 	if not _listed_saves.is_empty():
 		save_list.select(0)
 		open_save_button.grab_focus()
 
 
 func _hide_load_panel() -> void:
-	load_panel.hide()
-	menu_container.show()
-	load_button.grab_focus()
+	title_screen.hide_panels()
 
 
 func _load_selected() -> void:
@@ -506,7 +575,7 @@ func _quit_without_saving() -> void:
 func show_error(message: String) -> void:
 	_toast_serial += 1
 	error_label.text = message
-	error_label.add_theme_color_override("font_color", Color(1.0, 0.72, 0.64))
+	error_panel.theme_type_variation = &"PillWarn"
 	error_panel.show()
 
 
@@ -530,7 +599,7 @@ func _on_controller_reconnected(_device_id: int) -> void:
 
 func _show_gameplay_feedback(message: String) -> void:
 	error_label.text = message
-	error_label.add_theme_color_override("font_color", Color(0.82, 0.95, 0.91))
+	error_panel.theme_type_variation = &"Pill"
 	var was_visible := error_panel.visible
 	error_panel.show()
 	if not was_visible and not FeelMotion.reduced(settings_store):
@@ -607,7 +676,11 @@ func _render_progress(totals: Dictionary) -> void:
 	_last_totals = totals
 	var complete := roundi(float(_shown.get("complete", 0.0)))
 	var required := int(totals.required)
-	progress_label.text = "Completed %s / %s\nRemaining %s\nProps %s / %s\nTrash collected %s / %s" % [_comma(complete), _comma(required), _comma(required - complete), _comma(roundi(float(_shown.get("props", 0.0)))), _comma(int(totals.props_total)), _comma(roundi(float(_shown.get("waste", 0.0)))), _comma(int(totals.waste_total))]
+	complete_value.text = _comma(complete)
+	complete_total.text = "/ " + _comma(required)
+	complete_caption.text = "COMPLETED · %s LEFT" % _comma(required - complete)
+	props_label.text = "PROPS %s / %s" % [_comma(roundi(float(_shown.get("props", 0.0)))), _comma(int(totals.props_total))]
+	trash_label.text = "TRASH COLLECTED %s / %s" % [_comma(roundi(float(_shown.get("waste", 0.0)))), _comma(int(totals.waste_total))]
 	completion_bar.max_value = maxf(float(required), 1.0)
 	completion_bar.value = float(_shown.get("complete", 0.0))
 	money_label.text = "$" + _comma(roundi(float(_shown.get("money", 0.0))))
@@ -624,6 +697,11 @@ func _react_to_progress(start: Dictionary, target: Dictionary, first: bool, redu
 	if float(target["complete"]) > float(start["complete"]):
 		_shine(completion_bar)
 		FeelMotion.bump_control(completion_bar, 1.04, 0.14)
+		FeelMotion.bump_control(complete_value, 1.14, 0.2)
+		if float(target["props"]) > float(start["props"]):
+			FeelMotion.bump_control(props_icon, 1.3, 0.22)
+		if float(target["waste"]) > float(start["waste"]):
+			FeelMotion.bump_control(trash_icon, 1.3, 0.22)
 	if money_gain > 0.0:
 		_react_money.call_deferred(roundi(money_gain), roundi(float(target["money"])))
 
@@ -639,12 +717,10 @@ func _float_money(amount: int, final_money := -1) -> void:
 		return
 	var floater := Label.new()
 	floater.text = "+$%d" % amount
-	floater.add_theme_color_override("font_color", FEEL.money_color)
-	floater.add_theme_color_override("font_outline_color", Color(0.08, 0.06, 0.02, 0.9))
-	floater.add_theme_constant_override("outline_size", 6)
-	floater.add_theme_font_size_override("font_size", 19)
+	floater.theme_type_variation = &"HudMoney"
+	floater.add_theme_font_size_override("font_size", 21)
 	floater.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	money_label.get_parent().get_parent().get_parent().get_parent().add_child(floater)
+	$UI.add_child(floater)
 	var rect := money_label.get_global_rect()
 	var width := rect.size.x
 	if final_money >= 0:
@@ -670,6 +746,7 @@ func _react_money(gain: int, final_money: int) -> void:
 		_flash_money()
 		return
 	FeelMotion.bump_control(money_label, FEEL.bump_scale, FEEL.bump_seconds)
+	FeelMotion.bump_control(money_icon, 1.25, 0.2)
 	_float_money(gain, final_money)
 
 
@@ -743,6 +820,7 @@ func _fly_coins(from_global: Vector2, amount: int, count: int) -> void:
 		_shown["money"] = float(_shown.get("money", 0.0)) + float(amount) / float(total_count)
 		_render_progress(_last_totals)
 		FeelMotion.bump_control(money_label, FEEL.bump_scale, FEEL.bump_seconds)
+		FeelMotion.bump_control(money_icon, 1.25, 0.18)
 	, func() -> void: _release_money(amount))
 
 
@@ -778,25 +856,217 @@ func _on_player_cue(cue: StringName, info: Dictionary) -> void:
 func _update_context(session: RunSession) -> void:
 	var record := session.state.players[&"local"] as Dictionary
 	var bag_count := (record.trash_bag as Array).size() + (record.valuable_bag as Array).size()
-	var tool_id := session.progression.active_tool_id(&"local")
-	var tool_name := "Poking stick" if tool_id == &"stick" else session.progression.offer_name(tool_id)
-	var held := record.held_objects as Array
-	var holding := "Hands free"
-	if not held.is_empty():
-		var index := clampi(int(record.selected_held_index), 0, held.size() - 1)
-		var object_ref := held[index] as Dictionary
-		if str(object_ref.get("kind", "")) == "bag":
-			var bag_id := StringName(str(object_ref.get("id", "")))
-			var category := str((session.state.bag_records[bag_id] as Dictionary).category).capitalize()
-			holding = "Holding %s bag %d / %d" % [category, index + 1, held.size()]
-		else:
-			var item := session.state.items.get(StringName(str(object_ref.get("id", "")))) as ItemRecord
-			if item != null:
-				holding = "Holding %s %d / %d" % [(session.definitions[item.definition_id] as ItemDefinition).display_name, index + 1, held.size()]
-	context_label.text = "Bag %d / %d\nTool %s\n%s" % [bag_count, int(record.bag_capacity), tool_name, holding]
-	_update_bag_bar(bag_count, int(record.bag_capacity))
-	if bag_count == int(record.bag_capacity):
+	var capacity := int(record.bag_capacity)
+	bag_count_label.text = "%d / %d" % [bag_count, capacity]
+	var ratio := float(bag_count) / float(maxi(capacity, 1))
+	bag_count_label.add_theme_color_override(&"font_color", P.CORAL if ratio >= 1.0 else (P.AMBER if ratio >= FEEL.bag_warn_ratio else P.WHITE))
+	_update_bag_bar(bag_count, capacity)
+	_refresh_tools(session, record)
+	_refresh_held(session, record)
+	if bag_count == capacity:
 		_show_guidance(session, &"full_bag", "Bag full. Unload it onto a sorting table, then collect more.")
+
+
+## Bottom-left hotbar: one card per equipped tool with its rendered icon; the active one is gold.
+## Rebuilt only when the loadout or the active slot changes; a switch pops the new card.
+func _refresh_tools(session: RunSession, record: Dictionary) -> void:
+	var equipped: Array[StringName] = []
+	equipped.assign(record.equipped_handheld_ids as Array)
+	if equipped.is_empty():
+		equipped.append(&"stick")
+	var active := clampi(int(record.active_slot), 0, equipped.size() - 1)
+	var key := "%s|%d" % [equipped, active]
+	if key == _tool_key:
+		return
+	var switched := not _tool_key.is_empty() and _tool_key.get_slice("|", 0) == str(equipped)
+	_tool_key = key
+	for child in tool_slots.get_children():
+		tool_slots.remove_child(child)
+		child.queue_free()
+	var active_card: Control
+	for index in equipped.size():
+		var card := _tool_card(session, equipped[index], index == active)
+		tool_slots.add_child(card)
+		if index == active:
+			active_card = card
+	if equipped.size() > 1:
+		var hint := PromptChip.new().setup(settings_store, &"switch_tool", "Switch")
+		tool_slots.add_child(hint)
+	tool_name_label.text = _tool_name(session, equipped[active]).to_upper()
+	if switched and active_card != null and UiKit.kit() != null:
+		active_card.pivot_offset = Vector2(29, 29)
+		UiKit.kit().pop(active_card, 1.22, 0.24)
+		UiKit.kit().pop(tool_name_label, 1.12, 0.2)
+
+
+func _tool_card(session: RunSession, tool_id: StringName, active: bool) -> Control:
+	var card := PanelContainer.new()
+	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	card.custom_minimum_size = Vector2(58, 58)
+	card.size_flags_vertical = Control.SIZE_SHRINK_END
+	var box := StickerBox.new()
+	box.corner_radius = 14.0
+	box.rim_width = 3.0
+	box.line_width = 2.0
+	box.shadow_offset = Vector2(0, 4)
+	if active:
+		box.fill_top = P.GOLD_TOP
+		box.fill_bottom = P.GOLD
+		box.gloss = 0.3
+	else:
+		box.fill_top = Color(P.NAVY, 0.72)
+		box.fill_bottom = Color(P.NAVY_DEEP, 0.72)
+		box.line_color = Color(1, 1, 1, 0.35)
+	box.content_margin_left = 6
+	box.content_margin_right = 6
+	box.content_margin_top = 6
+	box.content_margin_bottom = 7
+	card.add_theme_stylebox_override(&"panel", box)
+	var icon := TextureRect.new()
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.custom_minimum_size = Vector2(42, 42)
+	icon.texture = _tool_icon(session, tool_id)
+	icon.material = ICON_OUTLINE
+	if not active:
+		icon.modulate = Color(1, 1, 1, 0.8)
+	card.add_child(icon)
+	return card
+
+
+func _tool_icon(session: RunSession, tool_id: StringName) -> Texture2D:
+	if UiKit.kit() == null:
+		return null
+	var scene: PackedScene = ProgressionService.STICK_SCENE if tool_id == &"stick" else null
+	var definition := session.progression.offers.get(tool_id) as ToolDefinition
+	if definition != null:
+		scene = definition.scene()
+	var roll := -40.0 if tool_id in [&"stick", &"detector", &"knife", &"sand_cleaner"] else 0.0
+	return UiKit.kit().icons.icon("tool:%s" % tool_id, scene, 96, IconStudio.DEFAULT_VIEW, null, roll)
+
+
+func _tool_name(session: RunSession, tool_id: StringName) -> String:
+	return "Poking stick" if tool_id == &"stick" else session.progression.offer_name(tool_id)
+
+
+## Bottom-right list of what is in the hands, the selected one in display type, with its prompts.
+func _refresh_held(session: RunSession, record: Dictionary) -> void:
+	var held := record.held_objects as Array
+	var selected := clampi(int(record.selected_held_index), 0, maxi(held.size() - 1, 0))
+	var names := PackedStringArray()
+	for object_ref in held:
+		names.append(_held_name(session, object_ref as Dictionary))
+	var key := "%s|%d" % [names, selected]
+	if key == _held_key:
+		return
+	var previous := _held_key
+	_held_key = key
+	for container: Control in [held_list, held_prompts]:
+		for child in container.get_children():
+			container.remove_child(child)
+			child.queue_free()
+	var selected_label: Label
+	for index in names.size():
+		var label := Label.new()
+		label.text = names[index].to_upper()
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		if index == selected:
+			label.theme_type_variation = &"HudTitle"
+			selected_label = label
+		else:
+			label.theme_type_variation = &"HudLabel"
+			label.modulate = Color(1, 1, 1, 0.78)
+		held_list.add_child(label)
+	if not held.is_empty():
+		held_prompts.add_child(PromptChip.new().setup(settings_store, &"throw", "Throw"))
+		if held.size() > 1:
+			held_prompts.add_child(PromptChip.new().setup(settings_store, &"select_held_prop", "Switch"))
+	if selected_label != null and previous != key and UiKit.kit() != null:
+		selected_label.pivot_offset = Vector2(selected_label.get_combined_minimum_size().x, 12.0)
+		UiKit.kit().pop(selected_label, 1.14, 0.2)
+
+
+func _held_name(session: RunSession, object_ref: Dictionary) -> String:
+	if str(object_ref.get("kind", "")) == "bag":
+		var bag := session.state.bag_records.get(StringName(str(object_ref.get("id", ""))), {}) as Dictionary
+		return "%s bag" % str(bag.get("category", "")).to_upper()
+	var item := session.state.items.get(StringName(str(object_ref.get("id", "")))) as ItemRecord
+	return (session.definitions[item.definition_id] as ItemDefinition).display_name if item != null else "Object"
+
+
+## Top-right key hints: the booklet always, the scanner once it is learned.
+func _build_hints(session: RunSession) -> void:
+	for child in hint_panel.get_children():
+		hint_panel.remove_child(child)
+		child.queue_free()
+	var booklet := PromptChip.new().setup(settings_store, &"booklet", "Booklet")
+	booklet.alignment = BoxContainer.ALIGNMENT_END
+	hint_panel.add_child(booklet)
+	var scan := PromptChip.new().setup(settings_store, &"scanner_pulse", "Scan")
+	scan.name = "ScanHint"
+	scan.alignment = BoxContainer.ALIGNMENT_END
+	hint_panel.add_child(scan)
+	hint_panel.show()
+	_update_hints(session)
+
+
+func _update_hints(session: RunSession) -> void:
+	var scan := hint_panel.get_node_or_null("ScanHint") as Control
+	if scan != null:
+		scan.visible = session.progression.is_owned(&"local", &"scanner")
+
+
+## Top-left area chip: the nearest section's name, a bar and what is left there. It pops when the
+## player walks into another section and its bar bumps when something there is completed.
+func _update_area(session: RunSession) -> void:
+	if not is_instance_valid(_restoration) or results_view.visible:
+		return
+	var player := session.get_node_or_null("Player") as Node3D
+	if player == null:
+		return
+	if _section_origins.is_empty():
+		for section_id in BEACH_DEFINITION.ordered_sections:
+			_section_origins[section_id] = _restoration.section_origin(section_id)
+	var here := Vector2(player.global_position.x, player.global_position.z)
+	var best := _area_id
+	var best_distance := INF
+	if _section_origins.has(_area_id):
+		var current := _section_origins[_area_id] as Vector3
+		best_distance = here.distance_to(Vector2(current.x, current.z)) - AREA_SWITCH_MARGIN
+	for section_id in _section_origins:
+		var origin := _section_origins[section_id] as Vector3
+		var distance := here.distance_to(Vector2(origin.x, origin.z))
+		if distance < best_distance:
+			best = section_id
+			best_distance = distance
+	var section := session.state.section_states.get(best, {}) as Dictionary
+	if section.is_empty():
+		return
+	var total := int(section.required_waste) + int(section.required_props)
+	var done := int(section.collected_waste) + int(section.slotted_props)
+	var changed := best != _area_id
+	if not changed and done == _area_done:
+		return
+	var grew := not changed and done > _area_done and _area_done >= 0
+	var first := _area_id.is_empty()
+	_area_id = best
+	_area_done = done
+	area_name.text = str(best).replace(":", " · ").replace("_", " ").to_upper()
+	area_bar.max_value = float(maxi(total, 1))
+	area_caption.text = "RESTORED" if done >= total else "%s LEFT HERE" % _comma(total - done)
+	area_row.show()
+	if FeelMotion.reduced(settings_store) or first:
+		FeelMotion.replace(area_bar, &"value", null)
+		area_bar.value = float(done)
+		return
+	FeelMotion.replace(area_bar, &"value", FeelMotion.tween(area_bar)).tween_property(area_bar, "value", float(done), 0.35).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
+	if changed:
+		area_row.pivot_offset = Vector2(0, 20)
+		FeelMotion.bump_control(area_name, 1.15, 0.22)
+	elif grew:
+		FeelMotion.bump_control(area_bar, 1.05, 0.16)
 
 
 ## The bag bar fills, turns amber near capacity and red when full, and bumps on each new item.
@@ -813,6 +1083,8 @@ func _update_bag_bar(bag_count: int, capacity: int) -> void:
 		FeelMotion.replace(bag_bar, &"value", FeelMotion.tween(bag_bar)).tween_property(bag_bar, "value", float(bag_count), 0.15).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 		if bag_count > _last_bag_count:
 			FeelMotion.bump_control(bag_bar, 1.08, 0.14)
+			FeelMotion.bump_control(bag_icon, 1.2, 0.18)
+			FeelMotion.bump_control(bag_count_label, 1.12, 0.16)
 	_last_bag_count = bag_count
 
 
@@ -951,13 +1223,9 @@ func _show_next_notice() -> void:
 ## Tier glyph and motion: info for tips, a check for sets, a star (gold border, shine) for
 ## restoration. Visibility is set synchronously; only alpha and position animate.
 func _present_notice(priority: int) -> void:
+	notice_icon.texture = NOTICE_ICONS[clampi(priority, 0, NOTICE_ICONS.size() - 1)]
+	guidance_panel.theme_type_variation = &"PillGold" if priority >= 2 else &"Pill"
 	_place_notice_lane()
-	notice_icon.kind = FeelIcon.Kind.STAR if priority >= 2 else (FeelIcon.Kind.CHECK if priority == 1 else FeelIcon.Kind.INFO)
-	notice_icon.color = FEEL.money_color if priority >= 2 else (FEEL.ghost_color if priority == 1 else Color.WHITE)
-	if priority >= 2:
-		guidance_panel.add_theme_stylebox_override(&"panel", _notice_style_gold)
-	else:
-		guidance_panel.remove_theme_stylebox_override(&"panel")
 	if FeelMotion.reduced(settings_store):
 		FeelMotion.replace(guidance_panel, &"notice", null)
 		guidance_panel.modulate.a = 1.0
@@ -968,24 +1236,50 @@ func _present_notice(priority: int) -> void:
 	var t := FeelMotion.replace(guidance_panel, &"notice", FeelMotion.tween(guidance_panel).set_parallel(true))
 	t.tween_property(guidance_panel, "modulate:a", 1.0, FEEL.notice_in_seconds)
 	t.tween_method(func(pixels: float) -> void: FeelMotion.nudge_y(guidance_panel, pixels), -FEEL.notice_rise_px, 0.0, FEEL.notice_in_seconds).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	FeelMotion.bump_control(notice_icon, 1.35, 0.26)
+	if priority >= 1 and UiKit.kit() != null:
+		UiKit.kit().burst.call_deferred(notice_icon.get_global_rect().get_center(), UiKit.Burst.STAR if priority >= 2 else UiKit.Burst.SPARKLE, 8 if priority >= 2 else 6)
 	if priority >= 2:
 		FeelMotion.bump_control(guidance_panel, 1.05, 0.2)
 		_shine(guidance_panel)
 
 
-## On a short UI (a 16:9 screen at 150 % scale leaves 480 px) the lane under the top HUD row would
-## reach the aim point with a two-line notice, so it runs just below the aim point instead. The
-## slide and shake move relative to whichever lane is in use.
+## Notices run along the top edge between the progress block and the hint column, centred on the
+## screen when that fits. When the free lane is too narrow (a 16:9 screen at 150 % UI scale leaves
+## 853 px), they sit just above the aim point instead; the target prompt is below it. The slide and
+## shake move relative to whichever lane is in use.
 func _place_notice_lane() -> void:
-	var height := get_viewport().get_visible_rect().size.y
-	var low := 0.05 * height + NOTICE_TOP + NOTICE_TWO_LINES > height * 0.5 - AIM_CLEARANCE
-	var anchor := 0.5 if low else 0.05
-	var top := AIM_CLEARANCE if low else NOTICE_TOP
-	guidance_panel.anchor_top = anchor
-	guidance_panel.anchor_bottom = anchor
-	guidance_panel.set_meta(&"feel_layout", Vector4(-NOTICE_HALF_WIDTH, top, NOTICE_HALF_WIDTH, top + 40.0))
+	var view := get_viewport().get_visible_rect().size
+	var left := NOTICE_GAP
+	if progress_panel.visible:
+		left = progress_panel.get_global_rect().end.x + NOTICE_GAP
+	var right := view.x - NOTICE_GAP
+	if hint_panel.visible:
+		var hint_width := 0.0
+		for child in hint_panel.get_children():
+			if child is Control and (child as Control).visible:
+				hint_width = maxf(hint_width, (child as Control).get_combined_minimum_size().x)
+		right = hint_panel.get_global_rect().end.x - hint_width - NOTICE_GAP
+	var width := minf(NOTICE_MAX_WIDTH, right - left)
+	var center := view.x * 0.5
+	var top := NOTICE_TOP
+	var grow := Control.GROW_DIRECTION_END
+	if width < NOTICE_MIN_WIDTH:
+		width = minf(NOTICE_MAX_WIDTH, view.x - NOTICE_GAP * 2.0)
+		top = view.y * 0.5 - AIM_CLEARANCE - 14.0 - 44.0
+		grow = Control.GROW_DIRECTION_BEGIN
+	elif center - width * 0.5 < left or center + width * 0.5 > right:
+		center = (left + right) * 0.5
+	guidance_panel.anchor_left = 0.0
+	guidance_panel.anchor_right = 0.0
+	guidance_panel.anchor_top = 0.0
+	guidance_panel.anchor_bottom = 0.0
+	guidance_panel.grow_vertical = grow
+	guidance_label.custom_minimum_size.x = maxf(width - 72.0, 140.0)
+	guidance_panel.set_meta(&"feel_layout", Vector4(center - width * 0.5, top, center + width * 0.5, top + 44.0))
 	FeelMotion.nudge_x(guidance_panel, 0.0)
 	FeelMotion.nudge_y(guidance_panel, 0.0)
+	guidance_panel.reset_size()
 
 
 func _clear_notices() -> void:
@@ -1003,12 +1297,16 @@ func _clear_notices() -> void:
 	guidance_panel.hide()
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if not is_instance_valid(run_root):
 		return
 	var session := run_root as RunSession
 	if bool((session.state.players[&"local"] as Dictionary).immersed):
 		_show_guidance(session, &"oxygen", "Air drains underwater. Surface before it reaches zero, or carried objects will drop.")
+	_area_timer -= delta
+	if _area_timer <= 0.0:
+		_area_timer = AREA_REFRESH_SECONDS
+		_update_area(session)
 
 
 func _on_player_pause_changed(paused: bool, player: BeachPlayer) -> void:

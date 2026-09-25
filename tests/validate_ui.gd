@@ -12,7 +12,8 @@ func _run() -> void:
 	root.add_child(main)
 	main.save_service.save_root = "user://test_runs/legacy"
 	main.settings_store.settings_path = "user://p22-ui-check.cfg"
-	check(main.start_button.has_focus() and main.continue_button.text == "Continue" and main.load_button.text == "Load run", "menu focuses New run and exposes real save choices")
+	var first_choice := main.continue_button if not main.continue_button.disabled else main.title_screen.new_button
+	check(first_choice.has_focus() and main.continue_button.text == "Continue" and main.load_button.text == "Load run", "menu focuses Continue or New beach and exposes real save choices")
 	main.seed_input.text = "ui-fixture"
 	var session := main.start_run() as RunSession
 	check(session != null, "full beach starts from the menu")
@@ -20,8 +21,8 @@ func _run() -> void:
 		quit(1)
 		return
 	var player := session.get_node("Player") as BeachPlayer
-	check(main.progress_label.text.begins_with("Completed 0 / 5,700\nRemaining 5,700\nProps 0 / 300\nTrash collected 0 / 5,400"), "HUD names truck-based trash credit and remaining total")
-	check(main.context_label.text.contains("Bag 0 / 20") and main.context_label.text.contains("Poking stick"), "separate bag/tool context is visible")
+	check(main.complete_value.text == "0" and main.complete_total.text == "/ 5,700" and main.complete_caption.text == "COMPLETED · 5,700 LEFT" and main.props_label.text == "PROPS 0 / 300" and main.trash_label.text == "TRASH COLLECTED 0 / 5,400", "HUD names truck-based trash credit and remaining total")
+	check(main.bag_count_label.text == "0 / 20" and main.tool_name_label.text == "POKING STICK", "separate bag/tool context is visible")
 	var chosen: ItemRecord
 	for value in session.state.items.values():
 		var item := value as ItemRecord
@@ -30,7 +31,7 @@ func _run() -> void:
 			chosen = item
 			break
 	check(chosen != null and session.item_store.try_collect(&"local", chosen.item_id).ok, "real world litter enters the player bag")
-	check(main.context_label.text.contains("Bag 1 / 20") and main.progress_label.text.begins_with("Completed 0 / 5,700"), "pickup changes bag but not truck completion")
+	check(main.bag_count_label.text == "1 / 20" and main.complete_value.text == "0", "pickup changes bag but not truck completion")
 	check(&"pickup" in session.state.guidance_seen and main.guidance_panel.visible, "first pickup guidance is acknowledged in run state")
 	main.settings_store.prompt_device = SettingsStore.PromptDevice.CONTROLLER
 	main.settings_store._on_joy_connection_changed(1, false)
@@ -41,9 +42,9 @@ func _run() -> void:
 	main.pause_menu.resume_button.pressed.emit()
 	check(not paused, "controller or keyboard can resume after reconnection")
 	main.progression_view.open_booklet()
-	check(main.progression_view.visible and paused and main.progression_view.list.get_child_count() == 2, "booklet opens on section tasks while gameplay is paused")
-	var tasks := main.progression_view.list.get_child(1) as Label
-	check(tasks.text.contains("awaiting collection") and tasks.text.contains("1 awaiting collection"), "section task stage identifies collected-but-not-trucked litter")
+	check(main.progression_view.visible and paused and main.progression_view.booklet_page == 0, "booklet opens on section tasks while gameplay is paused")
+	var tasks := main.progression_view.page_text()
+	check(tasks.contains("awaiting collection") and tasks.contains("1 awaiting collection"), "section task stage identifies collected-but-not-trucked litter")
 	if "--capture" in OS.get_cmdline_user_args():
 		await _capture("P22-booklet-%s.png" % root.size.x)
 	main.settings_store.set_value(&"ui_scale", 1.5)
@@ -59,13 +60,13 @@ func _run() -> void:
 	check((tabs.get_child(1) as Button).has_focus(), "controller moves between booklet tabs")
 	_send_joy(JOY_BUTTON_A)
 	await process_frame
-	check((main.progression_view.list.get_child(1) as Label).text.contains("Known objects: 1"), "discoveries display the actual collected object's definition")
+	check(main.progression_view.page_text().contains("Known objects: 1"), "discoveries display the actual collected object's definition")
 	tabs = main.progression_view.list.get_child(0) as HBoxContainer
 	(tabs.get_child(2) as Button).pressed.emit()
 	check(main.progression_view.list.get_child_count() > 2, "skills remain purchasable in the booklet")
 	tabs = main.progression_view.list.get_child(0) as HBoxContainer
 	(tabs.get_child(3) as Button).pressed.emit()
-	check((main.progression_view.list.get_child(1) as Label).text.contains("Interact"), "controls show current bindings")
+	check(main.progression_view.page_text().contains("Interact"), "controls show current bindings")
 	main.progression_view.close()
 	check(not paused and player.input_enabled, "booklet returns control to the beach")
 	if "--capture" in OS.get_cmdline_user_args():

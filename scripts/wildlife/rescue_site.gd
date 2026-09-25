@@ -79,6 +79,8 @@ func release_animal(reduced := false) -> void:
 	if animator != null:
 		animator.exhale()
 	FeelRing.spawn(self, animal.global_position + Vector3.UP * 0.05, 0.3, 1.4, 0.6, FEEL.wave_color_reef, 0.08)
+	if not reduced:
+		FeelBurst.spawn(self, animal.global_position + Vector3.UP * 0.35, FeelBurst.Kind.HEARTS)
 	var t := FeelMotion.replace(status_label, &"freed", FeelMotion.tween(status_label))
 	if not reduced:
 		status_label.scale = Vector3.ONE * 0.4

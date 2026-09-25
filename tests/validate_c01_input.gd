@@ -90,7 +90,7 @@ func _run() -> void:
 	for service_target in service_targets:
 		var target := player.interactor._result_for_collider(service_target, service_target.global_position, 1.0)
 		main.target_label._on_target_changed(target)
-		check(not target.is_empty() and not str(target.get("verb", "")).is_empty() and main.target_label.text_label.text.contains("[%s]" % settings.binding_text(&"interact")) and not main.target_label.text_label.text.contains("E:"), "service uses remapped keyboard Interact: %s" % service_target.name)
+		check(not target.is_empty() and not str(target.get("verb", "")).is_empty() and main.target_label.prompt_text().contains("[%s]" % settings.binding_text(&"interact")) and not main.target_label.prompt_text().contains("E:"), "service uses remapped keyboard Interact: %s" % service_target.name)
 	var controller := InputEventJoypadButton.new()
 	controller.button_index = JOY_BUTTON_Y
 	controller.pressed = true
@@ -99,7 +99,7 @@ func _run() -> void:
 	for service_target in service_targets:
 		var target := player.interactor._result_for_collider(service_target, service_target.global_position, 1.0)
 		main.target_label._on_target_changed(target)
-		check(not target.is_empty() and not str(target.get("verb", "")).is_empty() and main.target_label.text_label.text.contains("[%s]" % settings.binding_text(&"interact")) and not main.target_label.text_label.text.contains("E:"), "service uses remapped controller Interact: %s" % service_target.name)
+		check(not target.is_empty() and not str(target.get("verb", "")).is_empty() and main.target_label.prompt_text().contains("[%s]" % settings.binding_text(&"interact")) and not main.target_label.prompt_text().contains("E:"), "service uses remapped controller Interact: %s" % service_target.name)
 	settings.reset_all()
 	for action in [&"throw", &"interact", &"switch_tool"]:
 		_send_action_edge(action, true)

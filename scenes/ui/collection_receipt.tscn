@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/collection_receipt.gd" id="1_receipt"]
+[ext_resource type="Texture2D" path="res://art/synty/ui/icons_3d/SPR_ModernMenus_Icon_Currency_Notes_01_Ortho.png" id="2_notes"]
 
 [node name="CollectionReceipt" type="Control"]
 visible = false
@@ -15,42 +16,52 @@ script = ExtResource("1_receipt")
 
 [node name="Panel" type="PanelContainer" parent="."]
 layout_mode = 1
-anchor_left = 0.95
-anchor_top = 0.05
-anchor_right = 0.95
-anchor_bottom = 0.05
-offset_left = -386.0
-offset_right = 0.0
-offset_bottom = 104.0
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -392.0
+offset_top = 96.0
+offset_right = -26.0
+offset_bottom = 196.0
 grow_horizontal = 0
+mouse_filter = 2
 
 [node name="Rows" type="VBoxContainer" parent="Panel"]
 layout_mode = 2
-theme_override_constants/separation = 5
+mouse_filter = 2
+theme_override_constants/separation = 4
 
 [node name="TitleRow" type="HBoxContainer" parent="Panel/Rows"]
 layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 10
+
+[node name="Icon" type="TextureRect" parent="Panel/Rows/TitleRow"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("2_notes")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="Title" type="Label" parent="Panel/Rows/TitleRow"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 21
+theme_type_variation = &"Subheading"
 text = "COLLECTION COMPLETE"
+vertical_alignment = 1
+
+[node name="Total" type="Label" parent="Panel/Rows/TitleRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HudMoney"
+text = "+$0"
+horizontal_alignment = 2
 vertical_alignment = 1
 
 [node name="Details" type="Label" parent="Panel/Rows"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 17
+theme_type_variation = &"Body"
 text = "0 items collected"
-
-[node name="Total" type="Label" parent="Panel/Rows/TitleRow"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.847059, 0.352941, 1)
-theme_override_colors/font_outline_color = Color(0.08, 0.06, 0.02, 0.9)
-theme_override_constants/outline_size = 6
-theme_override_font_sizes/font_size = 30
-text = "+$0"
-horizontal_alignment = 2

@@ -69,6 +69,8 @@ func _play_intro(total: int, serial: int) -> void:
 	t.chain().tween_callback(func() -> void:
 		total_label.text = "+$%d" % total
 		FeelMotion.bump_control(total_label, 1.15, 0.16)
+		if total > 0 and UiKit.kit() != null:
+			UiKit.kit().burst(total_label.get_global_rect().get_center(), UiKit.Burst.COIN, clampi(total / 20, 4, 12))
 		_emit_total_ready(total, serial)
 	)
 

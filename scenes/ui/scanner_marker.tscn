@@ -1,24 +1,13 @@
-[gd_scene load_steps=2 format=3]
-
-[sub_resource type="StyleBoxFlat" id="ScanBacking"]
-bg_color = Color(0.015, 0.2, 0.23, 0.9)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.5, 0.95, 0.86, 1)
-content_margin_left = 7.0
-content_margin_top = 4.0
-content_margin_right = 7.0
-content_margin_bottom = 4.0
+[gd_scene format=3]
 
 [node name="ScannerMarker" type="PanelContainer"]
 visible = false
 mouse_filter = 2
-theme_override_styles/panel = SubResource("ScanBacking")
+theme_type_variation = &"Pill"
 
 [node name="Text" type="Label" parent="."]
-custom_minimum_size = Vector2(200, 0)
+custom_minimum_size = Vector2(190, 0)
+theme_type_variation = &"PillText"
 theme_override_colors/font_color = Color(0.8, 1, 0.92, 1)
 theme_override_font_sizes/font_size = 16
 text = "◆ Known item · 5m"

@@ -1,5 +1,7 @@
 [gd_scene format=3]
 
+[ext_resource type="Texture2D" path="res://art/synty/ui/icons_flat/ICON_ModernMenus_Connection_01_Stroke.png" id="1_signal"]
+
 [node name="DetectorMeter" type="Control"]
 visible = false
 layout_mode = 3
@@ -12,38 +14,53 @@ mouse_filter = 2
 
 [node name="Panel" type="PanelContainer" parent="."]
 layout_mode = 1
-anchors_preset = 7
-anchor_left = 0.5
+anchors_preset = 2
 anchor_top = 1.0
-anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -210.0
-offset_top = -112.0
-offset_right = 210.0
-offset_bottom = -24.0
-grow_horizontal = 2
+offset_left = 22.0
+offset_top = -272.0
+offset_right = 392.0
+offset_bottom = -180.0
 grow_vertical = 0
 mouse_filter = 2
+theme_type_variation = &"NavyCard"
 
 [node name="Content" type="VBoxContainer" parent="Panel"]
 layout_mode = 2
+mouse_filter = 2
 theme_override_constants/separation = 4
 
-[node name="Title" type="Label" parent="Panel/Content"]
+[node name="Head" type="HBoxContainer" parent="Panel/Content"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.84, 0.43, 1)
-theme_override_font_sizes/font_size = 19
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="Icon" type="TextureRect" parent="Panel/Content/Head"]
+custom_minimum_size = Vector2(26, 26)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("1_signal")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Title" type="Label" parent="Panel/Content/Head"]
+layout_mode = 2
+theme_type_variation = &"HudTitle"
+theme_override_colors/font_color = Color(1, 0.823529, 0.341176, 1)
+theme_override_font_sizes/font_size = 17
 text = "METAL DETECTOR"
-horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="Distance" type="Label" parent="Panel/Content"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 17
+theme_type_variation = &"HudLabel"
+theme_override_font_sizes/font_size = 18
 text = "NO SIGNAL"
-horizontal_alignment = 1
 
 [node name="Strength" type="ProgressBar" parent="Panel/Content"]
+custom_minimum_size = Vector2(0, 14)
 layout_mode = 2
-custom_minimum_size = Vector2(0, 12)
+mouse_filter = 2
+theme_type_variation = &"HudBar"
 value = 0.0
 show_percentage = false

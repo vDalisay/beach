@@ -1,4 +1,4 @@
-[gd_scene load_steps=22 format=3]
+[gd_scene format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
 [ext_resource type="Script" path="res://scripts/ui/settings_store.gd" id="2_settings_store"]
@@ -13,24 +13,14 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/pause_menu.tscn" id="11_pause"]
 [ext_resource type="PackedScene" path="res://scenes/ui/scanner_overlay.tscn" id="12_scanner"]
 [ext_resource type="PackedScene" path="res://scenes/ui/reticle.tscn" id="13_reticle"]
-[ext_resource type="Script" path="res://scripts/ui/feel_icon.gd" id="14_feel_icon"]
 [ext_resource type="Shader" path="res://shaders/ui_shine.gdshader" id="15_ui_shine"]
 [ext_resource type="Script" path="res://scripts/ui/coin_flyer.gd" id="16_coin_flyer"]
 [ext_resource type="Script" path="res://scripts/ui/restoration_pointer.gd" id="17_restoration_pointer"]
-
-[sub_resource type="StyleBoxFlat" id="HudBarBackground"]
-bg_color = Color(0, 0, 0, 0.35)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
-
-[sub_resource type="StyleBoxFlat" id="HudBarFill"]
-bg_color = Color(0.623529, 0.901961, 0.839216, 1)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
+[ext_resource type="Texture2D" path="res://art/synty/ui/icons_3d/SPR_ModernMenus_Icon_Currency_Coin_01_Ortho.png" id="18_coin"]
+[ext_resource type="Texture2D" path="res://art/synty/ui/icons_flat/ICON_ModernMenus_Flag_01_Stroke.png" id="19_flag"]
+[ext_resource type="Material" path="res://data/ui/icon_outline.tres" id="20_icon_outline"]
+[ext_resource type="PackedScene" path="res://scenes/ui/title_screen.tscn" id="21_title"]
+[ext_resource type="PackedScene" path="res://scenes/ui/loading_curtain.tscn" id="22_curtain"]
 
 [sub_resource type="ShaderMaterial" id="CompletionShine"]
 shader = ExtResource("15_ui_shine")
@@ -50,216 +40,320 @@ script = ExtResource("2_settings_store")
 [node name="ProgressPanel" type="PanelContainer" parent="UI"]
 unique_name_in_owner = true
 visible = false
-anchor_left = 0.05
-anchor_top = 0.05
-anchor_right = 0.05
-anchor_bottom = 0.05
-offset_right = 294.0
-offset_bottom = 138.0
+offset_left = 26.0
+offset_top = 16.0
+offset_right = 326.0
+offset_bottom = 236.0
+mouse_filter = 2
+theme_type_variation = &"HudPanel"
 
 [node name="ProgressStack" type="VBoxContainer" parent="UI/ProgressPanel"]
-theme_override_constants/separation = 4
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 1
 
-[node name="ProgressLabel" type="Label" parent="UI/ProgressPanel/ProgressStack"]
+[node name="HeadRow" type="HBoxContainer" parent="UI/ProgressPanel/ProgressStack"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="CompleteValue" type="Label" parent="UI/ProgressPanel/ProgressStack/HeadRow"]
 unique_name_in_owner = true
-theme_override_font_sizes/font_size = 17
-text = "Completed 0 / 5,700\nRemaining 5,700\nProps 0 / 300\nTrash collected 0 / 5,400"
+layout_mode = 2
+theme_type_variation = &"HudValue"
+text = "0"
+
+[node name="CompleteTotal" type="Label" parent="UI/ProgressPanel/ProgressStack/HeadRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 8
+theme_type_variation = &"HudTitle"
+text = "/ 5,700"
 
 [node name="CompletionBar" type="ProgressBar" parent="UI/ProgressPanel/ProgressStack"]
 unique_name_in_owner = true
 material = SubResource("CompletionShine")
-custom_minimum_size = Vector2(0, 8)
-theme_override_styles/background = SubResource("HudBarBackground")
-theme_override_styles/fill = SubResource("HudBarFill")
+custom_minimum_size = Vector2(250, 14)
+layout_mode = 2
+size_flags_horizontal = 0
+mouse_filter = 2
+theme_type_variation = &"HudBar"
 max_value = 5700.0
 show_percentage = false
 
+[node name="CompleteCaption" type="Label" parent="UI/ProgressPanel/ProgressStack"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HudCaption"
+text = "COMPLETED · 5,700 LEFT"
+
+[node name="Gap" type="Control" parent="UI/ProgressPanel/ProgressStack"]
+custom_minimum_size = Vector2(0, 5)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="PropsRow" type="HBoxContainer" parent="UI/ProgressPanel/ProgressStack"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 7
+
+[node name="PropsIcon" type="TextureRect" parent="UI/ProgressPanel/ProgressStack/PropsRow"]
+material = ExtResource("20_icon_outline")
+unique_name_in_owner = true
+custom_minimum_size = Vector2(26, 26)
+layout_mode = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="PropsLabel" type="Label" parent="UI/ProgressPanel/ProgressStack/PropsRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HudLabel"
+text = "PROPS 0 / 300"
+
+[node name="TrashRow" type="HBoxContainer" parent="UI/ProgressPanel/ProgressStack"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 7
+
+[node name="TrashIcon" type="TextureRect" parent="UI/ProgressPanel/ProgressStack/TrashRow"]
+material = ExtResource("20_icon_outline")
+unique_name_in_owner = true
+custom_minimum_size = Vector2(26, 26)
+layout_mode = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TrashLabel" type="Label" parent="UI/ProgressPanel/ProgressStack/TrashRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HudLabel"
+text = "TRASH COLLECTED 0 / 5,400"
+
 [node name="MoneyRow" type="HBoxContainer" parent="UI/ProgressPanel/ProgressStack"]
+layout_mode = 2
+mouse_filter = 2
 theme_override_constants/separation = 6
 
-[node name="MoneyIcon" type="Control" parent="UI/ProgressPanel/ProgressStack/MoneyRow"]
-custom_minimum_size = Vector2(18, 18)
+[node name="MoneyIcon" type="TextureRect" parent="UI/ProgressPanel/ProgressStack/MoneyRow"]
+material = ExtResource("20_icon_outline")
+unique_name_in_owner = true
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
 size_flags_vertical = 4
 mouse_filter = 2
-script = ExtResource("14_feel_icon")
-kind = 3
-color = Color(1, 0.847059, 0.352941, 1)
+texture = ExtResource("18_coin")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="MoneyLabel" type="Label" parent="UI/ProgressPanel/ProgressStack/MoneyRow"]
 unique_name_in_owner = true
-theme_override_colors/font_color = Color(1, 0.847059, 0.352941, 1)
-theme_override_font_sizes/font_size = 19
+layout_mode = 2
+theme_type_variation = &"HudMoney"
 text = "$0"
+
+[node name="AreaRow" type="HBoxContainer" parent="UI/ProgressPanel/ProgressStack"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 7
+
+[node name="AreaIcon" type="TextureRect" parent="UI/ProgressPanel/ProgressStack/AreaRow"]
+custom_minimum_size = Vector2(26, 26)
+layout_mode = 2
+size_flags_vertical = 0
+mouse_filter = 2
+texture = ExtResource("19_flag")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="AreaStack" type="VBoxContainer" parent="UI/ProgressPanel/ProgressStack/AreaRow"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="AreaName" type="Label" parent="UI/ProgressPanel/ProgressStack/AreaRow/AreaStack"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HudTitle"
+theme_override_font_sizes/font_size = 16
+text = "AREA"
+
+[node name="AreaBar" type="ProgressBar" parent="UI/ProgressPanel/ProgressStack/AreaRow/AreaStack"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(170, 9)
+layout_mode = 2
+size_flags_horizontal = 0
+mouse_filter = 2
+theme_type_variation = &"HudBar"
+max_value = 1.0
+show_percentage = false
+
+[node name="AreaCaption" type="Label" parent="UI/ProgressPanel/ProgressStack/AreaRow/AreaStack"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HudCaption"
+text = "0 LEFT HERE"
 
 [node name="ContextPanel" type="PanelContainer" parent="UI"]
 unique_name_in_owner = true
 visible = false
-anchor_left = 0.05
-anchor_top = 0.95
-anchor_right = 0.05
-anchor_bottom = 0.95
-offset_top = -96.0
-offset_right = 294.0
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -380.0
+offset_top = -190.0
+offset_right = -26.0
+offset_bottom = -18.0
+grow_horizontal = 0
 grow_vertical = 0
+mouse_filter = 2
+theme_type_variation = &"HudPanel"
 
 [node name="ContextStack" type="VBoxContainer" parent="UI/ContextPanel"]
+layout_mode = 2
+mouse_filter = 2
 theme_override_constants/separation = 4
+alignment = 2
 
-[node name="ContextLabel" type="Label" parent="UI/ContextPanel/ContextStack"]
+[node name="HeldList" type="VBoxContainer" parent="UI/ContextPanel/ContextStack"]
 unique_name_in_owner = true
-theme_override_font_sizes/font_size = 17
-text = "Bag 0 / 20\nTool Poking stick\nHands free"
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 0
+alignment = 2
 
-[node name="BagBar" type="ProgressBar" parent="UI/ContextPanel/ContextStack"]
+[node name="HeldPrompts" type="HBoxContainer" parent="UI/ContextPanel/ContextStack"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 6)
-theme_override_styles/background = SubResource("HudBarBackground")
-theme_override_styles/fill = SubResource("HudBarFill")
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 14
+alignment = 2
+
+[node name="BagRow" type="HBoxContainer" parent="UI/ContextPanel/ContextStack"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+alignment = 2
+
+[node name="BagBar" type="ProgressBar" parent="UI/ContextPanel/ContextStack/BagRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(110, 12)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+theme_type_variation = &"HudBar"
 max_value = 20.0
 show_percentage = false
+
+[node name="BagCount" type="Label" parent="UI/ContextPanel/ContextStack/BagRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HudValue"
+text = "0 / 20"
+
+[node name="BagIcon" type="TextureRect" parent="UI/ContextPanel/ContextStack/BagRow"]
+material = ExtResource("20_icon_outline")
+unique_name_in_owner = true
+custom_minimum_size = Vector2(44, 44)
+layout_mode = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ToolPanel" type="PanelContainer" parent="UI"]
+unique_name_in_owner = true
+visible = false
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 26.0
+offset_top = -170.0
+offset_right = 380.0
+offset_bottom = -18.0
+grow_vertical = 0
+mouse_filter = 2
+theme_type_variation = &"HudPanel"
+
+[node name="ToolStack" type="VBoxContainer" parent="UI/ToolPanel"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 6
+alignment = 2
+
+[node name="ToolName" type="Label" parent="UI/ToolPanel/ToolStack"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HudTitle"
+theme_override_font_sizes/font_size = 17
+text = "POKING STICK"
+
+[node name="ToolSlots" type="HBoxContainer" parent="UI/ToolPanel/ToolStack"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 10
+
+[node name="HintPanel" type="VBoxContainer" parent="UI"]
+unique_name_in_owner = true
+visible = false
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -320.0
+offset_top = 18.0
+offset_right = -26.0
+offset_bottom = 90.0
+grow_horizontal = 0
+mouse_filter = 2
+theme_override_constants/separation = 6
 
 [node name="GuidancePanel" type="PanelContainer" parent="UI"]
 unique_name_in_owner = true
 visible = false
 anchor_left = 0.5
-anchor_top = 0.05
 anchor_right = 0.5
-anchor_bottom = 0.05
-offset_left = -225.0
-offset_top = 150.0
-offset_right = 225.0
-offset_bottom = 190.0
+offset_left = -240.0
+offset_top = 16.0
+offset_right = 240.0
+offset_bottom = 60.0
 grow_horizontal = 2
+mouse_filter = 2
 material = SubResource("NoticeShine")
+theme_type_variation = &"Pill"
 
 [node name="GuidanceRow" type="HBoxContainer" parent="UI/GuidancePanel"]
+layout_mode = 2
+mouse_filter = 2
 theme_override_constants/separation = 10
 
-[node name="NoticeIcon" type="Control" parent="UI/GuidancePanel/GuidanceRow"]
+[node name="NoticeIcon" type="TextureRect" parent="UI/GuidancePanel/GuidanceRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(22, 22)
+custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
 size_flags_vertical = 4
 mouse_filter = 2
-script = ExtResource("14_feel_icon")
-kind = 5
+expand_mode = 1
+stretch_mode = 5
 
 [node name="GuidanceLabel" type="Label" parent="UI/GuidancePanel/GuidanceRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(395, 0)
+custom_minimum_size = Vector2(380, 0)
+layout_mode = 2
 size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.75, 0.94, 0.87, 1)
-theme_override_font_sizes/font_size = 17
+theme_type_variation = &"PillText"
 text = "Tip"
+vertical_alignment = 1
 autowrap_mode = 2
 
-[node name="Backdrop" type="ColorRect" parent="UI"]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0.035, 0.16, 0.2, 1)
-
-[node name="Center" type="CenterContainer" parent="UI"]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="Menu" type="VBoxContainer" parent="UI/Center"]
-custom_minimum_size = Vector2(560, 0)
-theme_override_constants/separation = 24
-alignment = 1
-
-[node name="Title" type="Label" parent="UI/Center/Menu"]
-theme_override_font_sizes/font_size = 64
-text = "BEACH"
-horizontal_alignment = 1
-
-[node name="Subtitle" type="Label" parent="UI/Center/Menu"]
-theme_override_colors/font_color = Color(0.72, 0.9, 0.9, 1)
-theme_override_font_sizes/font_size = 24
-text = "Restore the coast, one piece at a time."
-horizontal_alignment = 1
-
-[node name="StatusLabel" type="Label" parent="UI/Center/Menu"]
+[node name="TitleScreen" parent="UI" instance=ExtResource("21_title")]
 unique_name_in_owner = true
-theme_override_font_sizes/font_size = 18
-text = "Choose a new beach or continue a saved run."
-horizontal_alignment = 1
-autowrap_mode = 2
-
-[node name="SeedInput" type="LineEdit" parent="UI/Center/Menu"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 48)
-theme_override_font_sizes/font_size = 18
-text = "first-shore"
-placeholder_text = "Seed (blank creates one)"
-alignment = 1
-clear_button_enabled = true
-
-[node name="StartButton" type="Button" parent="UI/Center/Menu"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 56)
-theme_override_font_sizes/font_size = 20
-text = "Start new run"
-
-[node name="ContinueButton" type="Button" parent="UI/Center/Menu"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 48)
-disabled = true
-text = "Continue"
-
-[node name="LoadButton" type="Button" parent="UI/Center/Menu"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 48)
-disabled = true
-text = "Load run"
-
-[node name="LoadPanel" type="PanelContainer" parent="UI"]
-unique_name_in_owner = true
-visible = false
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -330.0
-offset_top = -240.0
-offset_right = 330.0
-offset_bottom = 240.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="LoadStack" type="VBoxContainer" parent="UI/LoadPanel"]
-theme_override_constants/separation = 12
-
-[node name="LoadTitle" type="Label" parent="UI/LoadPanel/LoadStack"]
-text = "LOAD RUN"
-theme_override_font_sizes/font_size = 28
-horizontal_alignment = 1
-
-[node name="SaveList" type="ItemList" parent="UI/LoadPanel/LoadStack"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(620, 330)
-size_flags_vertical = 3
-
-[node name="OpenSaveButton" type="Button" parent="UI/LoadPanel/LoadStack"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 45)
-text = "Load selected"
-
-[node name="BackFromLoadButton" type="Button" parent="UI/LoadPanel/LoadStack"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 45)
-text = "Back"
-
-[node name="SettingsButton" type="Button" parent="UI/Center/Menu"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 56)
-theme_override_font_sizes/font_size = 20
-text = "Settings"
 
 [node name="ErrorPanel" type="PanelContainer" parent="UI"]
 unique_name_in_owner = true
@@ -269,17 +363,19 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -220.0
-offset_top = -168.0
-offset_right = 220.0
-offset_bottom = -120.0
+offset_left = -230.0
+offset_top = -86.0
+offset_right = 230.0
+offset_bottom = -40.0
 grow_horizontal = 2
 grow_vertical = 0
+mouse_filter = 2
+theme_type_variation = &"PillWarn"
 
 [node name="ErrorLabel" type="Label" parent="UI/ErrorPanel"]
 unique_name_in_owner = true
-theme_override_colors/font_color = Color(1, 0.72, 0.64, 1)
-theme_override_font_sizes/font_size = 18
+layout_mode = 2
+theme_type_variation = &"PillText"
 text = "Error"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -347,4 +443,7 @@ color = Color(0, 0, 0, 0)
 unique_name_in_owner = true
 
 [node name="PauseMenu" parent="UI" instance=ExtResource("11_pause")]
+unique_name_in_owner = true
+
+[node name="LoadingCurtain" parent="UI" instance=ExtResource("22_curtain")]
 unique_name_in_owner = true

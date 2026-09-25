@@ -27,10 +27,18 @@ func _ready() -> void:
 
 
 func open_menu() -> void:
+	var was_visible := visible
 	show()
 	quit_without_save_button.hide()
 	note.text = "Choose a checkpoint. Autosave is separate."
 	resume_button.grab_focus()
+	# Containers reset their children's scale when they sort, so the fit and the entrance scale the
+	# CenterContainer itself, which sits in this plain Control.
+	if UiKit.kit() != null:
+		UiKit.kit().fit($Center as Control)
+	if not was_visible and UiKit.kit() != null:
+		UiKit.kit().screen_in($Center as Control)
+		UiKit.kit().stagger_in($Center/Panel/Margin/Stack as Control, 0.05)
 
 
 func set_slot_summaries(summaries: Array[Dictionary]) -> void:

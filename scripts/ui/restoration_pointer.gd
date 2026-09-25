@@ -5,6 +5,8 @@ extends Control
 ## It hides once the spot is in view and near, or after FEEL.pointer_seconds. Presentation only.
 
 const FEEL := preload("res://data/feel/feel_tuning.tres")
+## The Modern Menus chevron (points +X, rimmed for the world), tinted gold.
+const ARROW := preload("res://art/synty/ui/general/SPR_ModernMenus_Menu_Arrow_05_Underlay.png")
 # The edge arrow keeps this far in from the screen's top-left and bottom-right corners, clear of
 # the HUD panels along the top and bottom.
 const INSET_TOP_LEFT := Vector2(80.0, 140.0)
@@ -14,7 +16,7 @@ const ON_SCREEN_MARGIN := 40.0
 
 ## Set by main so the pulse follows the reduced-motion setting.
 var settings: SettingsStore
-var _arrow: FeelIcon
+var _arrow: TextureRect
 var _distance: Label
 var _camera: Camera3D
 var _target := Vector3.ZERO
@@ -24,20 +26,21 @@ var _age := 0.0
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_arrow = FeelIcon.new()
+	_arrow = TextureRect.new()
 	_arrow.name = "Arrow"
-	_arrow.kind = FeelIcon.Kind.ARROW
-	_arrow.color = FEEL.money_color
-	_arrow.size = Vector2(28, 28)
+	_arrow.texture = ARROW
+	_arrow.modulate = FEEL.money_color
+	_arrow.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_arrow.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_arrow.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_arrow.size = Vector2(32, 32)
 	_arrow.pivot_offset = _arrow.size * 0.5
 	add_child(_arrow)
 	_distance = Label.new()
 	_distance.name = "Distance"
 	_distance.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_distance.add_theme_color_override("font_color", FEEL.money_color)
-	_distance.add_theme_color_override("font_outline_color", Color(0.08, 0.06, 0.02, 0.9))
-	_distance.add_theme_constant_override("outline_size", 6)
-	_distance.add_theme_font_size_override("font_size", 16)
+	_distance.theme_type_variation = &"HudMoney"
+	_distance.add_theme_font_size_override("font_size", 17)
 	add_child(_distance)
 	clear()
 

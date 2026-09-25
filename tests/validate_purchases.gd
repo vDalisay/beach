@@ -37,7 +37,7 @@ func _run() -> void:
 	check(StringName(str(player.interactor.update_target().get("id", ""))) == &"shop:counter", "Synty shop counter is an E target")
 	player.interactor.request_interact()
 	check(main.progression_view.visible and paused and not player.input_enabled and root.gui_get_focus_owner() is Button, "shop pauses play and focuses a controller button")
-	var first_buy := (main.progression_view.list.get_child(0) as HBoxContainer).get_child(1) as Button
+	var first_buy := main.progression_view.row_buttons(0)[0]
 	first_buy.pressed.emit()
 	check(main.progression_view.result_label.text == "Need $30 more" and int(record.money) == 0, "insufficient funds gives an explicit result without mutation")
 	main.progression_view.close()
@@ -71,7 +71,7 @@ func _run() -> void:
 	player.interactor.request_interact()
 	if "--capture" in OS.get_cmdline_user_args():
 		await _capture("P15-shop.png")
-	first_buy = (main.progression_view.list.get_child(0) as HBoxContainer).get_child(1) as Button
+	first_buy = main.progression_view.row_buttons(0)[0]
 	first_buy.pressed.emit()
 	check(int(record.money) == 10 and &"cloth" in (record.owned_tools as Array[StringName]) and main.progression_view.result_label.text.contains("purchased"), "visible shop Buy spends exactly $30 and permanently owns cloth")
 	var duplicate := progression.try_purchase(&"local", &"cloth", UpgradeDefinition.Source.SHOP)
@@ -88,8 +88,7 @@ func _run() -> void:
 	check(StringName(str(player.interactor.update_target().get("id", ""))) == &"shop:rack", "Synty tool rack is a separate E target")
 	player.interactor.request_interact()
 	check(main.progression_view.visible and main.progression_view.mode == ProgressionView.Mode.RACK, "physical rack opens equipment screen")
-	var cloth_row := main.progression_view.list.get_child(1) as HBoxContainer
-	(cloth_row.get_child(2) as Button).pressed.emit()
+	main.progression_view.row_buttons(1)[1].pressed.emit()
 	check((record.equipped_handheld_ids as Array[StringName]) == [&"stick", &"cloth"] and int(record.active_slot) == 1 and player.hand_rig.tool_socket.get_node("View").get_child_count() > 0, "cloth equips into empty second slot and is shown in hand")
 	main.progression_view.close()
 	check(progression.try_switch_tool(&"local").ok and int(record.active_slot) == 0 and progression.try_switch_tool(&"local").ok and int(record.active_slot) == 1, "world switch alternates two equipped tools")

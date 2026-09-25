@@ -1,18 +1,16 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/progression_view.gd" id="1_view"]
+[ext_resource type="Shader" path="res://shaders/ui_frost.gdshader" id="2_frost"]
+[ext_resource type="Texture2D" path="res://art/synty/ui/icons_3d/SPR_ModernMenus_Icon_Book_02_Ortho.png" id="3_book"]
+[ext_resource type="Texture2D" path="res://art/synty/ui/icons_3d/SPR_ModernMenus_Icon_Currency_Coin_01_Ortho.png" id="4_coin"]
 
-[sub_resource type="StyleBoxFlat" id="PanelStyle"]
-bg_color = Color(0.035, 0.115, 0.135, 0.98)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.3, 0.72, 0.75, 1)
-content_margin_left = 20.0
-content_margin_top = 16.0
-content_margin_right = 20.0
-content_margin_bottom = 16.0
+[sub_resource type="ShaderMaterial" id="FrostMaterial"]
+shader = ExtResource("2_frost")
+shader_parameter/blur_lod = 3.2
+shader_parameter/tint = Color(0.027, 0.102, 0.173, 0.5)
+shader_parameter/vignette = 0.35
+shader_parameter/amount = 1.0
 
 [node name="ProgressionView" type="Control"]
 visible = false
@@ -27,13 +25,13 @@ mouse_filter = 2
 script = ExtResource("1_view")
 
 [node name="Shade" type="ColorRect" parent="."]
+material = SubResource("FrostMaterial")
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.015, 0.065, 0.075, 0.88)
 
 [node name="Margin" type="MarginContainer" parent="."]
 layout_mode = 1
@@ -42,14 +40,13 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 80
-theme_override_constants/margin_top = 42
-theme_override_constants/margin_right = 80
-theme_override_constants/margin_bottom = 42
+theme_override_constants/margin_left = 90
+theme_override_constants/margin_top = 34
+theme_override_constants/margin_right = 90
+theme_override_constants/margin_bottom = 34
 
 [node name="Panel" type="PanelContainer" parent="Margin"]
 layout_mode = 2
-theme_override_styles/panel = SubResource("PanelStyle")
 
 [node name="Rows" type="VBoxContainer" parent="Margin/Panel"]
 layout_mode = 2
@@ -57,20 +54,50 @@ theme_override_constants/separation = 12
 
 [node name="Top" type="HBoxContainer" parent="Margin/Panel/Rows"]
 layout_mode = 2
-theme_override_constants/separation = 20
+theme_override_constants/separation = 12
+
+[node name="TitleIcon" type="TextureRect" parent="Margin/Panel/Rows/Top"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("3_book")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="Title" type="Label" parent="Margin/Panel/Rows/Top"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 28
+theme_type_variation = &"Heading"
 text = "EQUIPMENT SHOP"
+vertical_alignment = 1
 
-[node name="Wallet" type="Label" parent="Margin/Panel/Rows/Top"]
+[node name="WalletChip" type="PanelContainer" parent="Margin/Panel/Rows/Top"]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_vertical = 4
+theme_type_variation = &"NavyCard"
+
+[node name="WalletRow" type="HBoxContainer" parent="Margin/Panel/Rows/Top/WalletChip"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Coin" type="TextureRect" parent="Margin/Panel/Rows/Top/WalletChip/WalletRow"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("4_coin")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Wallet" type="Label" parent="Margin/Panel/Rows/Top/WalletChip/WalletRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"HudMoney"
 theme_override_font_sizes/font_size = 24
-text = "WALLET $0"
+text = "$0"
+vertical_alignment = 1
 
 [node name="Scroll" type="ScrollContainer" parent="Margin/Panel/Rows"]
 layout_mode = 2
@@ -81,7 +108,7 @@ horizontal_scroll_mode = 0
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 9
+theme_override_constants/separation = 10
 
 [node name="Bottom" type="HBoxContainer" parent="Margin/Panel/Rows"]
 layout_mode = 2
@@ -91,11 +118,12 @@ theme_override_constants/separation = 18
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 18
-text = ""
+theme_type_variation = &"Subheading"
+vertical_alignment = 1
 
 [node name="CloseButton" type="Button" parent="Margin/Panel/Rows/Bottom"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(170, 50)
 layout_mode = 2
-custom_minimum_size = Vector2(150, 48)
-text = "Close (B / Esc)"
+theme_type_variation = &"SoftButton"
+text = "Close"

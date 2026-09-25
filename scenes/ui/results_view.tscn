@@ -1,6 +1,7 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/results_view.gd" id="1_results"]
+[ext_resource type="Shader" path="res://shaders/ui_frost.gdshader" id="2_frost"]
 
 [sub_resource type="StyleBoxFlat" id="PostcardFrame"]
 content_margin_left = 10.0
@@ -8,8 +9,25 @@ content_margin_top = 10.0
 content_margin_right = 10.0
 content_margin_bottom = 10.0
 bg_color = Color(1, 1, 1, 1)
-shadow_color = Color(0, 0, 0, 0.35)
-shadow_size = 8
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.043, 0.165, 0.267, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(0.043, 0.165, 0.267, 0.45)
+shadow_size = 2
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="ShaderMaterial" id="FrostMaterial"]
+shader = ExtResource("2_frost")
+shader_parameter/blur_lod = 3.4
+shader_parameter/tint = Color(0.027, 0.102, 0.173, 0.5)
+shader_parameter/vignette = 0.35
+shader_parameter/amount = 1.0
 
 [node name="ResultsView" type="Control"]
 visible = false
@@ -22,6 +40,7 @@ mouse_filter = 2
 script = ExtResource("1_results")
 
 [node name="Shade" type="ColorRect" parent="."]
+material = SubResource("FrostMaterial")
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -84,26 +103,28 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_colors/font_color = Color(0.55, 0.9, 0.73, 1)
-theme_override_font_sizes/font_size = 34
+theme_type_variation = &"HudMoney"
+theme_override_font_sizes/font_size = 40
 text = "COAST RESTORED"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="Summary" type="Label" parent="Center/Panel/Margin/Stack"]
 unique_name_in_owner = true
+theme_type_variation = &"Subheading"
 theme_override_font_sizes/font_size = 22
 horizontal_alignment = 1
 
 [node name="Details" type="Label" parent="Center/Panel/Margin/Stack"]
 unique_name_in_owner = true
-theme_override_font_sizes/font_size = 17
+theme_type_variation = &"Body"
+theme_override_font_sizes/font_size = 18
 horizontal_alignment = 1
 
 [node name="Continue" type="Button" parent="Center/Panel/Margin/Stack"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 50)
-theme_override_font_sizes/font_size = 20
+custom_minimum_size = Vector2(0, 56)
+theme_type_variation = &"PrimaryButton"
 text = "Continue exploring"
 
 [node name="Confetti" type="CPUParticles2D" parent="."]

@@ -1,11 +1,12 @@
 class_name CoinFlyer
 extends Control
-## Flies up to FEEL.coin_max coin glyphs from a screen point into a target control. Several
+## Flies up to FEEL.coin_max coins (the Modern Menus 3D coin) from a screen point into a target control. Several
 ## flights may overlap; clear() cancels them all without running their callbacks.
 
 const FEEL := preload("res://data/feel/feel_tuning.tres")
+const COIN := preload("res://art/synty/ui/icons_3d/SPR_ModernMenus_Icon_Currency_Coin_01_Ortho.png")
 
-var _coins: Array[FeelIcon] = []
+var _coins: Array[Control] = []
 var _epoch := 0
 
 
@@ -18,10 +19,12 @@ func fly(from_global: Vector2, target: Control, count: int, on_coin: Callable, o
 	var epoch := _epoch
 	count = clampi(count, 1, FEEL.coin_max)
 	for index in count:
-		var coin := FeelIcon.new()
-		coin.kind = FeelIcon.Kind.COIN
-		coin.color = FEEL.money_color
-		coin.size = Vector2(18, 18)
+		var coin := TextureRect.new()
+		coin.texture = COIN
+		coin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		coin.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		coin.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		coin.size = Vector2(26, 26)
 		coin.pivot_offset = coin.size * 0.5
 		add_child(coin)
 		_coins.append(coin)

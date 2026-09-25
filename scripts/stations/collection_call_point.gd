@@ -53,3 +53,4 @@ func _ring(success: bool) -> void:
 		t.tween_callback(func() -> void: phone.rotation.z = 0.0)
 	if success:
 		FeelRing.spawn(self, global_position + Vector3.UP * 0.05, 0.3, 1.2, 0.45, FEEL.money_color, 0.06)
+		FeelBurst.spawn(self, global_position + Vector3.UP * 1.1, FeelBurst.Kind.COINS)
