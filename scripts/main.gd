@@ -262,6 +262,19 @@ func _open_run(initial_state: RunState, definitions: Dictionary, manifest_hash: 
 	shop.configure(progression, player, progression_view)
 	player.booklet_requested.connect(progression_view.open_booklet)
 	save_service.configure(session, player, BEACH_DEFINITION.beach_id)
+	# Compile every material's shader variants now, not the first time the player sees each one.
+	var warmup_scenes: Array[PackedScene] = []
+	for definition_value in definitions.values():
+		var visual := (definition_value as ItemDefinition).visual_scene()
+		if visual != null and not warmup_scenes.has(visual):
+			warmup_scenes.append(visual)
+	for offer in progression.offers.values():
+		if offer is ToolDefinition and (offer as ToolDefinition).scene() != null:
+			warmup_scenes.append((offer as ToolDefinition).scene())
+	var warmup := ShaderWarmup.new()
+	warmup.name = "ShaderWarmup"
+	run_root.add_child(warmup)
+	warmup.start(run_root, warmup_scenes)
 	backdrop.hide()
 	menu_container.hide()
 	load_panel.hide()

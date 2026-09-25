@@ -429,6 +429,9 @@ func _apply_display_settings(key: StringName = &"") -> void:
 		# Bilinear is the only 3D scaler the Compatibility renderer offers; the UI stays native.
 		root.scaling_3d_mode = Viewport.SCALING_3D_MODE_BILINEAR
 		root.scaling_3d_scale = float(get_value(&"render_scale"))
+	if key.is_empty() or key == &"view_distance":
+		# Shorter detail distance also lets automatic mesh LOD switch to coarser levels sooner.
+		root.mesh_lod_threshold = clampf(1.0 / float(get_value(&"view_distance")), 0.8, 2.0)
 	if key.is_empty() or key == &"vsync":
 		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED if bool(get_value(&"vsync")) else DisplayServer.VSYNC_DISABLED)
 	if key.is_empty() or key == &"max_fps":
