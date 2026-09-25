@@ -3,6 +3,14 @@ extends PanelContainer
 
 signal closed
 
+const PRESET_ORDER: Array[StringName] = [&"low", &"medium", &"high", &"ultra"]
+const PRESET_NAMES := ["Low", "Medium", "High", "Ultra", "Custom"]
+const MSAA_NAMES := ["Off", "2×", "4×", "8×"]
+const SHADOW_NAMES := ["Off", "Low", "Medium", "High", "Ultra"]
+
+@onready var tabs: TabContainer = %Tabs
+@onready var controls_tab: ScrollContainer = %Controls
+@onready var graphics_tab: ScrollContainer = %Graphics
 @onready var device_label: Label = %DeviceLabel
 @onready var mouse_sensitivity: HSlider = %MouseSensitivity
 @onready var mouse_sensitivity_value: Label = %MouseSensitivityValue
@@ -19,6 +27,17 @@ signal closed
 @onready var sprint_toggle: CheckButton = %SprintToggle
 @onready var crouch_toggle: CheckButton = %CrouchToggle
 @onready var bindings: VBoxContainer = %Bindings
+@onready var graphics_preset: OptionButton = %GraphicsPreset
+@onready var msaa: OptionButton = %Msaa
+@onready var render_scale: HSlider = %RenderScale
+@onready var render_scale_value: Label = %RenderScaleValue
+@onready var shadow_quality: OptionButton = %ShadowQuality
+@onready var view_distance: HSlider = %ViewDistance
+@onready var view_distance_value: Label = %ViewDistanceValue
+@onready var ssao: CheckButton = %Ssao
+@onready var glow: CheckButton = %Glow
+@onready var vsync: CheckButton = %Vsync
+@onready var frame_cap: OptionButton = %FrameCap
 @onready var notice_label: Label = %NoticeLabel
 @onready var reset_button: Button = %ResetButton
 @onready var close_button: Button = %CloseButton
@@ -38,10 +57,34 @@ func _ready() -> void:
 	deadzone.value_changed.connect(_on_slider_changed.bind(&"deadzone", deadzone_value))
 	fov.value_changed.connect(_on_slider_changed.bind(&"fov", fov_value))
 	ui_scale.value_changed.connect(_on_slider_changed.bind(&"ui_scale", ui_scale_value))
+	render_scale.value_changed.connect(_on_slider_changed.bind(&"render_scale", render_scale_value))
+	view_distance.value_changed.connect(_on_slider_changed.bind(&"view_distance", view_distance_value))
 	invert_y.toggled.connect(_on_toggle_changed.bind(&"invert_y"))
 	reduced_motion.toggled.connect(_on_toggle_changed.bind(&"reduced_motion"))
 	sprint_toggle.toggled.connect(_on_toggle_changed.bind(&"sprint_toggle"))
 	crouch_toggle.toggled.connect(_on_toggle_changed.bind(&"crouch_toggle"))
+	ssao.toggled.connect(_on_toggle_changed.bind(&"ssao"))
+	glow.toggled.connect(_on_toggle_changed.bind(&"glow"))
+	vsync.toggled.connect(_on_toggle_changed.bind(&"vsync"))
+	for label in PRESET_NAMES:
+		graphics_preset.add_item(label)
+	# Custom only reports a mixed selection; it cannot be picked.
+	graphics_preset.set_item_disabled(PRESET_NAMES.size() - 1, true)
+	for label in MSAA_NAMES:
+		msaa.add_item(label)
+	for label in SHADOW_NAMES:
+		shadow_quality.add_item(label)
+	for cap in SettingsStore.FRAME_CAPS:
+		frame_cap.add_item("Unlimited" if cap == 0 else "%d fps" % cap)
+	graphics_preset.item_selected.connect(_on_preset_selected)
+	msaa.item_selected.connect(_on_option_changed.bind(&"msaa"))
+	shadow_quality.item_selected.connect(_on_option_changed.bind(&"shadow_quality"))
+	frame_cap.item_selected.connect(func(index: int) -> void: _on_option_changed(SettingsStore.FRAME_CAPS[index], &"max_fps"))
+	tabs.tab_changed.connect(func(_tab: int) -> void:
+		notice_label.text = _tab_notice()
+		if visible:
+			_link_focus()
+	)
 	reset_button.pressed.connect(_reset_all)
 	close_button.pressed.connect(close_menu)
 	hide()
@@ -53,6 +96,7 @@ func open_menu(settings: SettingsStore) -> void:
 	_previous_mouse_mode = Input.mouse_mode
 	get_tree().paused = true
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	notice_label.text = _tab_notice()
 	_sync_controls()
 	_build_bindings()
 	if not store.prompt_device_changed.is_connected(_on_prompt_device_changed):
@@ -96,6 +140,12 @@ func _input(event: InputEvent) -> void:
 			_link_focus()
 			get_viewport().set_input_as_handled()
 		return
+	if event is InputEventJoypadButton and event.pressed and event.button_index in [JOY_BUTTON_LEFT_SHOULDER, JOY_BUTTON_RIGHT_SHOULDER]:
+		# Shoulder buttons switch tabs, as in most controller menus.
+		tabs.current_tab = posmod(tabs.current_tab + (1 if event.button_index == JOY_BUTTON_RIGHT_SHOULDER else -1), tabs.get_tab_count())
+		call_deferred("_focus_first")
+		get_viewport().set_input_as_handled()
+		return
 	if event.is_action_pressed(&"ui_cancel") and not event.is_echo():
 		close_menu()
 		get_viewport().set_input_as_handled()
@@ -112,8 +162,22 @@ func _sync_controls() -> void:
 	reduced_motion.button_pressed = bool(store.get_value(&"reduced_motion"))
 	sprint_toggle.button_pressed = bool(store.get_value(&"sprint_toggle"))
 	crouch_toggle.button_pressed = bool(store.get_value(&"crouch_toggle"))
+	msaa.select(int(store.get_value(&"msaa")))
+	render_scale.value = float(store.get_value(&"render_scale"))
+	shadow_quality.select(int(store.get_value(&"shadow_quality")))
+	view_distance.value = float(store.get_value(&"view_distance"))
+	ssao.button_pressed = bool(store.get_value(&"ssao"))
+	glow.button_pressed = bool(store.get_value(&"glow"))
+	vsync.button_pressed = bool(store.get_value(&"vsync"))
+	frame_cap.select(maxi(SettingsStore.FRAME_CAPS.find(int(store.get_value(&"max_fps"))), 0))
 	_syncing = false
 	_update_value_labels()
+	_sync_preset()
+
+
+func _sync_preset() -> void:
+	var preset := store.graphics_preset()
+	graphics_preset.select(PRESET_ORDER.find(preset) if preset != &"custom" else PRESET_NAMES.size() - 1)
 
 
 func _build_bindings() -> void:
@@ -161,11 +225,27 @@ func _on_slider_changed(value: float, key: StringName, value_label: Label) -> vo
 		return
 	store.set_value(key, value)
 	value_label.text = _format_value(key, value)
+	_sync_preset()
 
 
 func _on_toggle_changed(pressed: bool, key: StringName) -> void:
 	if not _syncing:
 		store.set_value(key, pressed)
+		_sync_preset()
+
+
+func _on_option_changed(value: int, key: StringName) -> void:
+	if not _syncing:
+		store.set_value(key, value)
+		_sync_preset()
+
+
+func _on_preset_selected(index: int) -> void:
+	if _syncing or index >= PRESET_ORDER.size():
+		return
+	store.apply_graphics_preset(PRESET_ORDER[index])
+	_sync_controls()
+	notice_label.text = "%s graphics applied." % PRESET_NAMES[index]
 
 
 func _on_prompt_device_changed(_device: SettingsStore.PromptDevice) -> void:
@@ -178,15 +258,15 @@ func _update_value_labels() -> void:
 	deadzone_value.text = _format_value(&"deadzone", deadzone.value)
 	fov_value.text = _format_value(&"fov", fov.value)
 	ui_scale_value.text = _format_value(&"ui_scale", ui_scale.value)
+	render_scale_value.text = _format_value(&"render_scale", render_scale.value)
+	view_distance_value.text = _format_value(&"view_distance", view_distance.value)
 
 
 func _format_value(key: StringName, value: float) -> String:
 	match key:
 		&"mouse_sensitivity":
 			return "%.4f" % value
-		&"deadzone":
-			return "%d%%" % roundi(value * 100.0)
-		&"ui_scale":
+		&"deadzone", &"ui_scale", &"render_scale", &"view_distance":
 			return "%d%%" % roundi(value * 100.0)
 		&"fov":
 			return "%d°" % roundi(value)
@@ -195,13 +275,15 @@ func _format_value(key: StringName, value: float) -> String:
 
 
 func _link_focus() -> void:
-	var controls: Array[Control] = [
-		mouse_sensitivity, controller_sensitivity, deadzone, fov, ui_scale,
-		invert_y, reduced_motion, sprint_toggle, crouch_toggle,
-	]
-	for action in SettingsStore.REMAPPABLE_ACTIONS:
-		if _binding_buttons.has(action):
-			controls.append(_binding_buttons[action] as Control)
+	# One vertical chain per tab: the tab bar, that tab's controls, then the shared buttons.
+	var controls: Array[Control] = [tabs.get_tab_bar()]
+	if tabs.get_current_tab_control() == graphics_tab:
+		controls.append_array([graphics_preset, msaa, render_scale, shadow_quality, view_distance, ssao, glow, vsync, frame_cap] as Array[Control])
+	else:
+		controls.append_array([mouse_sensitivity, controller_sensitivity, deadzone, fov, ui_scale, invert_y, reduced_motion, sprint_toggle, crouch_toggle] as Array[Control])
+		for action in SettingsStore.REMAPPABLE_ACTIONS:
+			if _binding_buttons.has(action):
+				controls.append(_binding_buttons[action] as Control)
 	controls.append(reset_button)
 	controls.append(close_button)
 	var focus_style := StyleBoxFlat.new()
@@ -240,6 +322,16 @@ func _add_focus_outline(control: Control, style: StyleBoxFlat) -> void:
 	control.focus_exited.connect(outline.hide)
 
 
+func _tab_notice() -> String:
+	if tabs.get_current_tab_control() == graphics_tab:
+		return "Graphics changes apply immediately. LB/RB switch tabs."
+	return "Select a binding to change it."
+
+
 func _focus_first() -> void:
-	if visible:
+	if not visible:
+		return
+	if tabs.get_current_tab_control() == graphics_tab:
+		graphics_preset.grab_focus()
+	else:
 		mouse_sensitivity.grab_focus()

@@ -22,6 +22,17 @@ enum FloatMode { FLOAT, SINK, NEUTRAL }
 @export_range(1, 100) var spawn_weight := 1
 @export var dirt_patch_anchors: Array[Vector3] = []
 
+# Loaded visuals stay referenced here. A PackedScene nothing holds is freed, and the next load()
+# parses the wrapper scene again: about 2 ms for every streamed item view.
+static var _visual_scenes: Dictionary = {}
+
+
+## The item's visual scene, loaded once per path; null when it cannot be loaded.
+func visual_scene() -> PackedScene:
+	if not _visual_scenes.has(visual_scene_path):
+		_visual_scenes[visual_scene_path] = load(visual_scene_path) as PackedScene if not visual_scene_path.is_empty() else null
+	return _visual_scenes[visual_scene_path] as PackedScene
+
 
 func validation_errors() -> PackedStringArray:
 	var errors: PackedStringArray = []

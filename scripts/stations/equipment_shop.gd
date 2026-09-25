@@ -52,7 +52,7 @@ func refresh_rack() -> void:
 		anchor.position = Vector3(-0.7 + float(display_index % 3) * 0.7, 0.0, -0.12 - float(display_index / 3) * 0.28)
 		owned_tools_root.add_child(anchor)
 		if not definition.scene_path.is_empty():
-			var visual := (load(definition.scene_path) as PackedScene).instantiate() as Node3D
+			var visual := definition.scene().instantiate() as Node3D
 			visual.scale = Vector3.ONE * 0.6
 			anchor.add_child(visual)
 			var size := _bounds_in(anchor, visual).size

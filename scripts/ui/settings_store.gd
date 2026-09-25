@@ -23,7 +23,24 @@ const DEFAULT_VALUES := {
 	&"reduced_motion": false,
 	&"sprint_toggle": false,
 	&"crouch_toggle": false,
+	# Graphics. msaa: 0 off, 1 2x, 2 4x, 3 8x. shadow_quality: 0 off .. 4 ultra (RenderQuality).
+	&"msaa": 2,
+	&"render_scale": 1.0,
+	&"shadow_quality": 3,
+	&"ssao": true,
+	&"glow": true,
+	&"view_distance": 1.0,
+	&"vsync": true,
+	&"max_fps": 0,
 }
+# Ultra is the look before the performance pass; High is the default.
+const GRAPHICS_PRESETS := {
+	&"low": {&"msaa": 0, &"render_scale": 0.75, &"shadow_quality": 1, &"ssao": false, &"glow": false, &"view_distance": 0.7},
+	&"medium": {&"msaa": 1, &"render_scale": 1.0, &"shadow_quality": 2, &"ssao": false, &"glow": true, &"view_distance": 0.85},
+	&"high": {&"msaa": 2, &"render_scale": 1.0, &"shadow_quality": 3, &"ssao": true, &"glow": true, &"view_distance": 1.0},
+	&"ultra": {&"msaa": 2, &"render_scale": 1.0, &"shadow_quality": 4, &"ssao": true, &"glow": true, &"view_distance": 1.2},
+}
+const FRAME_CAPS := [0, 30, 60, 90, 120, 144, 165, 240]
 const REQUIRED_ACTIONS := [
 	&"move_left", &"move_right", &"move_forward", &"move_back",
 	&"look_left", &"look_right", &"look_up", &"look_down",
@@ -81,13 +98,47 @@ func set_value(key: StringName, value: Variant) -> bool:
 			value = clampf(float(value), 70.0, 110.0)
 		&"ui_scale":
 			value = clampf(float(value), 1.0, 1.5)
+		&"msaa":
+			value = clampi(int(value), 0, 3)
+		&"render_scale":
+			value = clampf(float(value), 0.5, 1.0)
+		&"shadow_quality":
+			value = clampi(int(value), 0, 4)
+		&"view_distance":
+			value = clampf(float(value), 0.6, 1.5)
+		&"max_fps":
+			value = int(value) if FRAME_CAPS.has(int(value)) else 0
 		_:
 			value = bool(value)
 
 	values[key] = value
-	_apply_display_settings()
+	_apply_display_settings(key)
 	settings_changed.emit(key, value)
 	return true
+
+
+## Sets every value of a graphics preset (low, medium, high, ultra).
+func apply_graphics_preset(preset: StringName) -> bool:
+	if not GRAPHICS_PRESETS.has(preset):
+		return false
+	var preset_values := GRAPHICS_PRESETS[preset] as Dictionary
+	for key in preset_values:
+		set_value(key, preset_values[key])
+	return true
+
+
+## The preset whose values all match the current settings, or &"custom".
+func graphics_preset() -> StringName:
+	for preset in GRAPHICS_PRESETS:
+		var matches := true
+		var preset_values := GRAPHICS_PRESETS[preset] as Dictionary
+		for key in preset_values:
+			if not is_equal_approx(float(get_value(key)), float(preset_values[key])):
+				matches = false
+				break
+		if matches:
+			return preset
+	return &"custom"
 
 
 func load_settings() -> Error:
@@ -365,9 +416,23 @@ func _remove_matching_event(action: StringName, event: InputEvent) -> void:
 			InputMap.action_erase_event(action, existing)
 
 
-func _apply_display_settings() -> void:
-	if is_inside_tree():
-		get_tree().root.content_scale_factor = float(get_value(&"ui_scale"))
+## Applies the window-wide display settings; with a key, only that one (sliders emit often).
+func _apply_display_settings(key: StringName = &"") -> void:
+	if not is_inside_tree():
+		return
+	var root := get_tree().root
+	if key.is_empty() or key == &"ui_scale":
+		root.content_scale_factor = float(get_value(&"ui_scale"))
+	if key.is_empty() or key == &"msaa":
+		root.msaa_3d = int(get_value(&"msaa")) as Viewport.MSAA
+	if key.is_empty() or key == &"render_scale":
+		# Bilinear is the only 3D scaler the Compatibility renderer offers; the UI stays native.
+		root.scaling_3d_mode = Viewport.SCALING_3D_MODE_BILINEAR
+		root.scaling_3d_scale = float(get_value(&"render_scale"))
+	if key.is_empty() or key == &"vsync":
+		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED if bool(get_value(&"vsync")) else DisplayServer.VSYNC_DISABLED)
+	if key.is_empty() or key == &"max_fps":
+		Engine.max_fps = int(get_value(&"max_fps"))
 
 
 func _on_joy_connection_changed(device_id: int, connected: bool) -> void:

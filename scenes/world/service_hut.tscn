@@ -103,10 +103,14 @@ position = Vector3(2.75, 1.5, 3)
 [node name="Collision" type="CollisionShape3D" parent="FrontRight"]
 shape = SubResource("Shape_front")
 
-[node name="InteriorLight" type="OmniLight3D" parent="."]
+[node name="InteriorLight" type="OmniLight3D" parent="." groups=["interior_lights"]]
 position = Vector3(0, 2.45, 0)
 light_color = Color(1, 0.95, 0.84, 1)
 light_energy = 1.1
+distance_fade_enabled = true
+distance_fade_begin = 40.0
+distance_fade_shadow = 15.0
+distance_fade_length = 8.0
 omni_range = 8.0
 shadow_enabled = true
 

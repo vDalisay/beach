@@ -42,7 +42,7 @@ func build() -> void:
 		visual.name = "Litter_%s" % str(key).replace(":", "_")
 		visual.multimesh = instances
 		visual.material_override = source.material
-		visual.visibility_range_end = 55.0
+		RenderQuality.set_detail_range(visual, 55.0)
 		visual.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		add_child(visual)
 		for index in records.size():
@@ -87,7 +87,7 @@ func _source_for(definition: ItemDefinition) -> Dictionary:
 	if _sources.has(definition.definition_id):
 		return _sources[definition.definition_id] as Dictionary
 	var result := {}
-	var scene := load(definition.visual_scene_path) as PackedScene
+	var scene := definition.visual_scene()
 	if scene != null:
 		var wrapper := scene.instantiate() as Node3D
 		if wrapper != null:

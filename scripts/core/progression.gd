@@ -201,7 +201,7 @@ func refresh_tool_visual() -> void:
 	var slot := int(record.active_slot)
 	var tool_id := equipped[slot] if slot >= 0 and slot < equipped.size() else &"stick"
 	var definition := offers.get(tool_id) as ToolDefinition
-	var scene: PackedScene = STICK_SCENE if tool_id == &"stick" else (load(definition.scene_path) as PackedScene if definition != null and not definition.scene_path.is_empty() else null)
+	var scene: PackedScene = STICK_SCENE if tool_id == &"stick" else (definition.scene() if definition != null else null)
 	var visual := player.hand_rig.set_tool_scene(scene)
 	if visual != null and tool_id == &"stick":
 		# Grip in the hand, spike angled forward and down towards the sand.

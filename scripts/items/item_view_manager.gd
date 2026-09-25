@@ -9,7 +9,22 @@ const STREAM_LOAD_RADIUS := 45.0
 const STREAM_UNLOAD_RADIUS := 70.0
 const BATCH_LOAD_RADIUS := 12.0
 const BATCH_UNLOAD_RADIUS := 24.0
-const STREAM_SPAWNS_PER_FRAME := 2
+const STREAM_REFRESH_SECONDS := 0.25
+# Streamed spawns run under a per-frame time budget; the cap bounds a frame's burst.
+const STREAM_SPAWNS_PER_FRAME := 8
+const STREAM_SPAWN_BUDGET_USEC := 1200
+# Stream candidates are bucketed in square cells so a refresh scans only the cells around the
+# player instead of every record: one grid for batched litter (12 m load radius) and one for the
+# rest (45 m). Moved records are re-bucketed when their view is released and, as a safety net, a
+# slice of all candidates is re-bucketed each refresh.
+const STREAM_CELL := 16.0
+const REBUCKET_PER_REFRESH := 128
+# Live views are checked for demotion and shadow budget a few at a time, round-robin.
+const VIEW_CHECKS_PER_FRAME := 48
+# Released views wait here, out of the physics space and hidden, for the next streamed record.
+const VIEW_POOL_LIMIT := 96
+# Views stop casting sun shadows this far beyond their quality budget, and start again inside it.
+const SHADOW_HYSTERESIS := 2.0
 
 var session: RunSession
 var definitions: Dictionary
@@ -21,6 +36,12 @@ var build_time_ms := 0.0
 var _stream_candidates: Array[StringName] = []
 var _stream_pending: Array[StringName] = []
 var _stream_elapsed := 0.0
+var _batched_cells: Dictionary = {}
+var _free_cells: Dictionary = {}
+var _cell_of: Dictionary = {}
+var _rebucket_cursor := 0
+var _maintenance_queue: Array[StringName] = []
+var _pool: Array[WorldItem] = []
 
 
 func configure(run_session: RunSession, item_definitions: Dictionary, recovery_anchors: Dictionary, player_node: Node3D = null) -> void:
@@ -51,6 +72,7 @@ func build_views() -> void:
 		var definition := definitions.get(record.definition_id) as ItemDefinition
 		if player != null and definition != null and definition.collision_profile != ItemDefinition.CollisionProfile.LARGE:
 			_stream_candidates.append(item_id)
+			_bucket(item_id, record)
 		if record.location == ItemRecord.Location.WORLD and (player == null or definition == null or definition.collision_profile == ItemDefinition.CollisionProfile.LARGE or not record.sleeping or _distance_to_player(record) <= _load_radius(record)):
 			_spawn_view(record)
 	build_time_ms = float(Time.get_ticks_usec() - started) / 1000.0
@@ -69,11 +91,13 @@ func _process(delta: float) -> void:
 	if player == null or session == null:
 		return
 	_stream_elapsed += delta
-	if _stream_elapsed >= 0.4:
+	if _stream_elapsed >= STREAM_REFRESH_SECONDS:
 		_stream_elapsed = 0.0
 		_refresh_stream()
+	_maintain_views()
+	var started := Time.get_ticks_usec()
 	var spawned := 0
-	while spawned < STREAM_SPAWNS_PER_FRAME and not _stream_pending.is_empty():
+	while spawned < STREAM_SPAWNS_PER_FRAME and not _stream_pending.is_empty() and (spawned == 0 or Time.get_ticks_usec() - started < STREAM_SPAWN_BUDGET_USEC):
 		var item_id: StringName = _stream_pending.pop_back()
 		if views.has(item_id):
 			continue
@@ -85,19 +109,98 @@ func _process(delta: float) -> void:
 
 func _refresh_stream() -> void:
 	_stream_pending.clear()
+	_rebucket_slice()
 	var pending_distances := {}
-	for item_id in _stream_candidates:
-		var record := session.state.items[item_id] as ItemRecord
-		if record.location == ItemRecord.Location.WORLD and not views.has(item_id):
-			var distance := _distance_to_player(record)
-			if distance <= _load_radius(record):
-				_stream_pending.append(item_id)
-				pending_distances[item_id] = distance
+	_scan_cells(_batched_cells, BATCH_LOAD_RADIUS, pending_distances)
+	_scan_cells(_free_cells, STREAM_LOAD_RADIUS, pending_distances)
 	_stream_pending.sort_custom(func(a: StringName, b: StringName) -> bool: return float(pending_distances[a]) > float(pending_distances[b]))
-	for item_id in views.keys():
-		var view := views[item_id] as WorldItem
+
+
+func _scan_cells(grid: Dictionary, radius: float, pending_distances: Dictionary) -> void:
+	var eye := Vector2(player.global_position.x, player.global_position.z)
+	var center := _cell_for(player.global_position)
+	var reach := ceili(radius / STREAM_CELL)
+	for offset_x in range(-reach, reach + 1):
+		for offset_z in range(-reach, reach + 1):
+			var cell: Variant = grid.get(center + Vector2i(offset_x, offset_z))
+			if cell == null:
+				continue
+			for item_id in cell as Array[StringName]:
+				if views.has(item_id):
+					continue
+				var record := session.state.items.get(item_id) as ItemRecord
+				if record == null or record.location != ItemRecord.Location.WORLD:
+					continue
+				var origin := record.last_world_transform.origin
+				var distance := Vector2(origin.x, origin.z).distance_to(eye)
+				if distance <= radius:
+					_stream_pending.append(item_id)
+					pending_distances[item_id] = distance
+
+
+## Demotes far resting views and applies the shadow budget, a slice of the live views per frame.
+func _maintain_views() -> void:
+	if _maintenance_queue.is_empty():
+		_maintenance_queue.assign(views.keys())
+	var eye := Vector2(player.global_position.x, player.global_position.z)
+	for step in mini(VIEW_CHECKS_PER_FRAME, _maintenance_queue.size()):
+		var item_id: StringName = _maintenance_queue.pop_back()
+		var view := views.get(item_id) as WorldItem
+		if view == null:
+			continue
 		if view.definition.collision_profile != ItemDefinition.CollisionProfile.LARGE and view.freeze and view.sleeping and not view.is_highlighted() and _distance_to_player(view.record) > _unload_radius(view.record):
 			_remove_view(item_id, true)
+			continue
+		_update_shadow(view, Vector2(view.global_position.x, view.global_position.z).distance_to(eye))
+
+
+## Sun-shadow budget: small litter and furniture cast only within their quality distance.
+func _update_shadow(view: WorldItem, distance: float) -> void:
+	var limit := RenderQuality.large_item_shadow_distance if view.definition.collision_profile == ItemDefinition.CollisionProfile.LARGE else RenderQuality.small_item_shadow_distance
+	if view.casts_shadow and distance > limit + SHADOW_HYSTERESIS:
+		view.set_shadow_casting(false)
+	elif not view.casts_shadow and distance < limit:
+		view.set_shadow_casting(true)
+
+
+## Re-applies the view-distance and shadow budgets to every live view after a Graphics change.
+func refresh_detail_ranges() -> void:
+	for item_id in views:
+		(views[item_id] as WorldItem).apply_detail_range()
+	if player != null:
+		var eye := Vector2(player.global_position.x, player.global_position.z)
+		for item_id in views:
+			var view := views[item_id] as WorldItem
+			_update_shadow(view, Vector2(view.global_position.x, view.global_position.z).distance_to(eye))
+
+
+func _cell_for(position: Vector3) -> Vector2i:
+	return Vector2i(floori(position.x / STREAM_CELL), floori(position.z / STREAM_CELL))
+
+
+func _bucket(item_id: StringName, record: ItemRecord) -> void:
+	var cell := _cell_for(record.last_world_transform.origin)
+	var previous: Variant = _cell_of.get(item_id)
+	if previous == cell:
+		return
+	# Whether an item has a batch instance is fixed at build, so it never changes grid.
+	var grid := _batched_cells if distant_visuals != null and distant_visuals.has_item(item_id) else _free_cells
+	if previous != null:
+		(grid[previous] as Array[StringName]).erase(item_id)
+	if not grid.has(cell):
+		grid[cell] = [] as Array[StringName]
+	(grid[cell] as Array[StringName]).append(item_id)
+	_cell_of[item_id] = cell
+
+
+func _rebucket_slice() -> void:
+	var count := _stream_candidates.size()
+	for step in mini(REBUCKET_PER_REFRESH, count):
+		_rebucket_cursor = (_rebucket_cursor + 1) % count
+		var item_id := _stream_candidates[_rebucket_cursor]
+		# A live view's record can lag its body; it is re-bucketed when the view is released.
+		if not views.has(item_id) and session.state.items.has(item_id):
+			_bucket(item_id, session.state.items[item_id] as ItemRecord)
 
 
 func _distance_to_player(record: ItemRecord) -> float:
@@ -197,11 +300,19 @@ func _spawn_view(record: ItemRecord) -> WorldItem:
 		return views.get(record.item_id) as WorldItem
 	if distant_visuals != null:
 		distant_visuals.set_item_visible(record.item_id, false)
-	var view := WORLD_ITEM_SCENE.instantiate() as WorldItem
-	add_child(view)
+	var view: WorldItem
+	if not _pool.is_empty():
+		view = _pool.pop_back()
+		view.process_mode = Node.PROCESS_MODE_INHERIT
+		view.show()
+	else:
+		view = WORLD_ITEM_SCENE.instantiate() as WorldItem
+		add_child(view)
+		view.fell_out_of_bounds.connect(_on_item_fell_out)
 	view.configure(record, definitions[record.definition_id], recovery_bounds.is_outside)
-	view.fell_out_of_bounds.connect(_on_item_fell_out)
 	views[record.item_id] = view
+	if player != null:
+		_update_shadow(view, _distance_to_player(record))
 	return view
 
 
@@ -214,10 +325,25 @@ func _remove_view(item_id: StringName, synchronize: bool) -> void:
 	views.erase(item_id)
 	if distant_visuals != null:
 		distant_visuals.set_item_visible(item_id, view.record.location == ItemRecord.Location.WORLD and view.record.sleeping)
+	if _cell_of.has(item_id) and session.state.items.has(item_id):
+		_bucket(item_id, session.state.items[item_id] as ItemRecord)
+	_release_view(view)
+
+
+## Pools a released view for the next streamed record; frees it when the pool is full.
+func _release_view(view: WorldItem) -> void:
+	if _pool.size() < VIEW_POOL_LIMIT and view.get_parent() == self and not view.is_queued_for_deletion():
+		view.release_to_pool()
+		_pool.append(view)
+		return
 	view.collision_layer = 0
 	view.collision_mask = 0
 	view.hide()
 	view.queue_free()
+
+
+func pooled_view_count() -> int:
+	return _pool.size()
 
 
 func _on_item_fell_out(item_id: StringName) -> void:

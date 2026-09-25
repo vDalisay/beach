@@ -9,6 +9,9 @@ const WORLD_LAYER := 1
 const LOOSE_LAYER := 4
 const FIXED_LAYER := 8
 const HOVER_SHADER := preload("res://shaders/hover_outline.gdshader")
+const MISSING_ASSET_PATH := "res://art/placeholders/missing_asset.tscn"
+# Small resting items stop drawing beyond this (scaled by the View distance setting).
+const SMALL_ITEM_DRAW_DISTANCE := 35.0
 
 static var _mesh_cache: Dictionary = {}
 static var _material_cache: Dictionary = {}
@@ -29,7 +32,13 @@ var _idle_physics_frames := 0
 var _highlighted := false
 var _outline_overlays: Array[MeshInstance3D] = []
 var _presentation_tween: Tween
+var _pulse_tween: Tween
 var _dirt_visuals: Dictionary = {}
+## Whether the visual currently casts sun shadows (ItemViewManager applies the distance budget).
+var casts_shadow := true
+# The instantiated visual's scene and profile; a pooled view keeps it when the next record matches.
+var _visual_key := ""
+var _shadow_meshes: Array[GeometryInstance3D] = []
 
 
 func _ready() -> void:
@@ -44,6 +53,9 @@ func configure(item_record: ItemRecord, item_definition: ItemDefinition, bounds_
 	outside_check = bounds_check
 	set_meta(&"item_id", item_id)
 	name = "Item_%s" % str(item_id).replace(":", "_")
+	visual_root.scale = Vector3.ONE
+	_reported_outside = false
+	_idle_physics_frames = 0
 	_configure_collision()
 	_configure_visual()
 	_rebuild_dirt_visuals()
@@ -100,9 +112,52 @@ func synchronize_record() -> void:
 
 func pulse() -> void:
 	visual_root.scale = Vector3.ONE
-	var tween := create_tween()
-	tween.tween_property(visual_root, "scale", Vector3.ONE * 1.08, 0.125)
-	tween.tween_property(visual_root, "scale", Vector3.ONE, 0.125)
+	_pulse_tween = create_tween()
+	_pulse_tween.tween_property(visual_root, "scale", Vector3.ONE * 1.08, 0.125)
+	_pulse_tween.tween_property(visual_root, "scale", Vector3.ONE, 0.125)
+
+
+## Parks this view for reuse by ItemViewManager: out of the physics space (processing disabled
+## removes the body and its dirt areas), hidden, and detached from its record.
+func release_to_pool() -> void:
+	if _pulse_tween != null and _pulse_tween.is_valid():
+		_pulse_tween.kill()
+	visual_root.scale = Vector3.ONE
+	set_highlighted(false)
+	# Outlines are rebuilt on the next highlight; some belong to dirt patches the next record drops.
+	for overlay in _outline_overlays:
+		if is_instance_valid(overlay):
+			overlay.free()
+	_outline_overlays.clear()
+	set_physics_process(false)
+	freeze = true
+	record = null
+	item_id = StringName()
+	remove_meta(&"item_id")
+	process_mode = Node.PROCESS_MODE_DISABLED
+	hide()
+
+
+func set_shadow_casting(enabled: bool) -> void:
+	if casts_shadow == enabled:
+		return
+	casts_shadow = enabled
+	var setting := GeometryInstance3D.SHADOW_CASTING_SETTING_ON if enabled else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	for geometry in _shadow_meshes:
+		geometry.cast_shadow = setting
+
+
+## Small items stop drawing beyond the View-distance budget; large props keep their authored range.
+func apply_detail_range() -> void:
+	if definition == null:
+		return
+	var large := definition.collision_profile == ItemDefinition.CollisionProfile.LARGE
+	var limit := SMALL_ITEM_DRAW_DISTANCE * RenderQuality.detail_distance_scale
+	for geometry in visual_root.find_children("*", "GeometryInstance3D", true, false):
+		if not geometry.has_meta(&"authored_range"):
+			geometry.set_meta(&"authored_range", (geometry as GeometryInstance3D).visibility_range_end)
+		var authored := float(geometry.get_meta(&"authored_range"))
+		(geometry as GeometryInstance3D).visibility_range_end = authored if large else (minf(authored, limit) if authored > 0.0 else limit)
 
 
 func set_highlighted(value: bool) -> void:
@@ -112,7 +167,8 @@ func set_highlighted(value: bool) -> void:
 	if value and _outline_overlays.is_empty():
 		_build_outline_overlays()
 	for overlay in _outline_overlays:
-		overlay.visible = value
+		if is_instance_valid(overlay):
+			overlay.visible = value
 
 
 func is_highlighted() -> bool:
@@ -230,32 +286,34 @@ func _configure_collision() -> void:
 
 
 func _configure_visual() -> void:
+	var visual_scene := definition.visual_scene()
+	var modelled := visual_scene != null and definition.visual_scene_path != MISSING_ASSET_PATH
+	var key := "%s|%d" % [definition.visual_scene_path, definition.collision_profile] if modelled else ""
+	if not key.is_empty() and key == _visual_key:
+		# A pooled view already shows this model; only the dirt and pose change.
+		return
 	for child in visual_root.get_children():
 		if child != fallback_mesh:
 			child.free()
-	var visual_scene := load(definition.visual_scene_path) as PackedScene
-	if visual_scene != null and definition.visual_scene_path != "res://art/placeholders/missing_asset.tscn":
+	_outline_overlays.clear()
+	_dirt_visuals.clear()
+	_visual_key = key
+	if modelled:
 		fallback_mesh.hide()
 		visual_root.add_child(visual_scene.instantiate())
-		_limit_small_item_draws(visual_root)
-		return
-	var profile := int(definition.collision_profile)
-	var size := profile_size(profile)
-	fallback_mesh.mesh = _shared_mesh(profile, size)
-	fallback_mesh.material_override = _shared_material(_material_key())
-	fallback_mesh.position.y = size.y * 0.5
-	fallback_mesh.show()
-	_limit_small_item_draws(visual_root)
-
-
-func _limit_small_item_draws(node: Node) -> void:
-	if definition.collision_profile == ItemDefinition.CollisionProfile.LARGE:
-		return
-	if node is GeometryInstance3D:
-		var geometry := node as GeometryInstance3D
-		geometry.visibility_range_end = minf(geometry.visibility_range_end, 35.0) if geometry.visibility_range_end > 0.0 else 35.0
-	for child in node.get_children():
-		_limit_small_item_draws(child)
+	else:
+		var profile := int(definition.collision_profile)
+		var size := profile_size(profile)
+		fallback_mesh.mesh = _shared_mesh(profile, size)
+		fallback_mesh.material_override = _shared_material(_material_key())
+		fallback_mesh.position.y = size.y * 0.5
+		fallback_mesh.show()
+	apply_detail_range()
+	_shadow_meshes.clear()
+	casts_shadow = true
+	for geometry in visual_root.find_children("*", "GeometryInstance3D", true, false):
+		if (geometry as GeometryInstance3D).cast_shadow != GeometryInstance3D.SHADOW_CASTING_SETTING_OFF:
+			_shadow_meshes.append(geometry as GeometryInstance3D)
 
 
 func _rebuild_dirt_visuals() -> void:

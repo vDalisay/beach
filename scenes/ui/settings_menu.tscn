@@ -28,113 +28,214 @@ theme_override_constants/separation = 12
 theme_override_font_sizes/font_size = 36
 text = "Settings"
 
-[node name="DeviceLabel" type="Label" parent="Margin/Layout"]
+[node name="Tabs" type="TabContainer" parent="Margin/Layout"]
 unique_name_in_owner = true
-text = "Showing: Keyboard & mouse"
-
-[node name="Scroll" type="ScrollContainer" parent="Margin/Layout"]
 size_flags_vertical = 3
+current_tab = 0
+
+[node name="Controls" type="ScrollContainer" parent="Margin/Layout/Tabs"]
+unique_name_in_owner = true
 horizontal_scroll_mode = 0
 follow_focus = true
+metadata/_tab_index = 0
 
-[node name="Content" type="VBoxContainer" parent="Margin/Layout/Scroll"]
+[node name="Content" type="VBoxContainer" parent="Margin/Layout/Tabs/Controls"]
 size_flags_horizontal = 3
 theme_override_constants/separation = 10
 
-[node name="OptionsHeading" type="Label" parent="Margin/Layout/Scroll/Content"]
+[node name="DeviceLabel" type="Label" parent="Margin/Layout/Tabs/Controls/Content"]
+unique_name_in_owner = true
+text = "Showing: Keyboard & mouse"
+
+[node name="OptionsHeading" type="Label" parent="Margin/Layout/Tabs/Controls/Content"]
 theme_override_font_sizes/font_size = 24
 text = "Controls & accessibility"
 
-[node name="MouseRow" type="HBoxContainer" parent="Margin/Layout/Scroll/Content"]
-[node name="Label" type="Label" parent="Margin/Layout/Scroll/Content/MouseRow"]
+[node name="MouseRow" type="HBoxContainer" parent="Margin/Layout/Tabs/Controls/Content"]
+[node name="Label" type="Label" parent="Margin/Layout/Tabs/Controls/Content/MouseRow"]
 size_flags_horizontal = 3
 text = "Mouse sensitivity"
-[node name="MouseSensitivity" type="HSlider" parent="Margin/Layout/Scroll/Content/MouseRow"]
+[node name="MouseSensitivity" type="HSlider" parent="Margin/Layout/Tabs/Controls/Content/MouseRow"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(420, 0)
 min_value = 0.0005
 max_value = 0.01
 step = 0.0005
-[node name="MouseSensitivityValue" type="Label" parent="Margin/Layout/Scroll/Content/MouseRow"]
+[node name="MouseSensitivityValue" type="Label" parent="Margin/Layout/Tabs/Controls/Content/MouseRow"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(72, 0)
 
-[node name="ControllerRow" type="HBoxContainer" parent="Margin/Layout/Scroll/Content"]
-[node name="Label" type="Label" parent="Margin/Layout/Scroll/Content/ControllerRow"]
+[node name="ControllerRow" type="HBoxContainer" parent="Margin/Layout/Tabs/Controls/Content"]
+[node name="Label" type="Label" parent="Margin/Layout/Tabs/Controls/Content/ControllerRow"]
 size_flags_horizontal = 3
 text = "Controller look sensitivity"
-[node name="ControllerSensitivity" type="HSlider" parent="Margin/Layout/Scroll/Content/ControllerRow"]
+[node name="ControllerSensitivity" type="HSlider" parent="Margin/Layout/Tabs/Controls/Content/ControllerRow"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(420, 0)
 min_value = 0.5
 max_value = 6.0
 step = 0.1
-[node name="ControllerSensitivityValue" type="Label" parent="Margin/Layout/Scroll/Content/ControllerRow"]
+[node name="ControllerSensitivityValue" type="Label" parent="Margin/Layout/Tabs/Controls/Content/ControllerRow"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(72, 0)
 
-[node name="DeadzoneRow" type="HBoxContainer" parent="Margin/Layout/Scroll/Content"]
-[node name="Label" type="Label" parent="Margin/Layout/Scroll/Content/DeadzoneRow"]
+[node name="DeadzoneRow" type="HBoxContainer" parent="Margin/Layout/Tabs/Controls/Content"]
+[node name="Label" type="Label" parent="Margin/Layout/Tabs/Controls/Content/DeadzoneRow"]
 size_flags_horizontal = 3
 text = "Stick deadzone"
-[node name="Deadzone" type="HSlider" parent="Margin/Layout/Scroll/Content/DeadzoneRow"]
+[node name="Deadzone" type="HSlider" parent="Margin/Layout/Tabs/Controls/Content/DeadzoneRow"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(420, 0)
 min_value = 0.05
 max_value = 0.5
 step = 0.01
-[node name="DeadzoneValue" type="Label" parent="Margin/Layout/Scroll/Content/DeadzoneRow"]
+[node name="DeadzoneValue" type="Label" parent="Margin/Layout/Tabs/Controls/Content/DeadzoneRow"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(72, 0)
 
-[node name="FovRow" type="HBoxContainer" parent="Margin/Layout/Scroll/Content"]
-[node name="Label" type="Label" parent="Margin/Layout/Scroll/Content/FovRow"]
+[node name="FovRow" type="HBoxContainer" parent="Margin/Layout/Tabs/Controls/Content"]
+[node name="Label" type="Label" parent="Margin/Layout/Tabs/Controls/Content/FovRow"]
 size_flags_horizontal = 3
 text = "Field of view"
-[node name="Fov" type="HSlider" parent="Margin/Layout/Scroll/Content/FovRow"]
+[node name="Fov" type="HSlider" parent="Margin/Layout/Tabs/Controls/Content/FovRow"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(420, 0)
 min_value = 70.0
 max_value = 110.0
 step = 1.0
-[node name="FovValue" type="Label" parent="Margin/Layout/Scroll/Content/FovRow"]
+[node name="FovValue" type="Label" parent="Margin/Layout/Tabs/Controls/Content/FovRow"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(72, 0)
 
-[node name="UiScaleRow" type="HBoxContainer" parent="Margin/Layout/Scroll/Content"]
-[node name="Label" type="Label" parent="Margin/Layout/Scroll/Content/UiScaleRow"]
+[node name="UiScaleRow" type="HBoxContainer" parent="Margin/Layout/Tabs/Controls/Content"]
+[node name="Label" type="Label" parent="Margin/Layout/Tabs/Controls/Content/UiScaleRow"]
 size_flags_horizontal = 3
 text = "UI scale"
-[node name="UiScale" type="HSlider" parent="Margin/Layout/Scroll/Content/UiScaleRow"]
+[node name="UiScale" type="HSlider" parent="Margin/Layout/Tabs/Controls/Content/UiScaleRow"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(420, 0)
 min_value = 1.0
 max_value = 1.5
 step = 0.05
-[node name="UiScaleValue" type="Label" parent="Margin/Layout/Scroll/Content/UiScaleRow"]
+[node name="UiScaleValue" type="Label" parent="Margin/Layout/Tabs/Controls/Content/UiScaleRow"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(72, 0)
 
-[node name="InvertY" type="CheckButton" parent="Margin/Layout/Scroll/Content"]
+[node name="InvertY" type="CheckButton" parent="Margin/Layout/Tabs/Controls/Content"]
 unique_name_in_owner = true
 text = "Invert vertical look"
-[node name="ReducedMotion" type="CheckButton" parent="Margin/Layout/Scroll/Content"]
+[node name="ReducedMotion" type="CheckButton" parent="Margin/Layout/Tabs/Controls/Content"]
 unique_name_in_owner = true
 text = "Reduced motion"
-[node name="SprintToggle" type="CheckButton" parent="Margin/Layout/Scroll/Content"]
+[node name="SprintToggle" type="CheckButton" parent="Margin/Layout/Tabs/Controls/Content"]
 unique_name_in_owner = true
 text = "Toggle sprint"
-[node name="CrouchToggle" type="CheckButton" parent="Margin/Layout/Scroll/Content"]
+[node name="CrouchToggle" type="CheckButton" parent="Margin/Layout/Tabs/Controls/Content"]
 unique_name_in_owner = true
 text = "Toggle crouch"
 
-[node name="BindingsHeading" type="Label" parent="Margin/Layout/Scroll/Content"]
+[node name="BindingsHeading" type="Label" parent="Margin/Layout/Tabs/Controls/Content"]
 theme_override_font_sizes/font_size = 24
 text = "Bindings"
 
-[node name="Bindings" type="VBoxContainer" parent="Margin/Layout/Scroll/Content"]
+[node name="Bindings" type="VBoxContainer" parent="Margin/Layout/Tabs/Controls/Content"]
 unique_name_in_owner = true
 theme_override_constants/separation = 6
+
+[node name="Graphics" type="ScrollContainer" parent="Margin/Layout/Tabs"]
+unique_name_in_owner = true
+visible = false
+horizontal_scroll_mode = 0
+follow_focus = true
+metadata/_tab_index = 1
+
+[node name="Content" type="VBoxContainer" parent="Margin/Layout/Tabs/Graphics"]
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="QualityHeading" type="Label" parent="Margin/Layout/Tabs/Graphics/Content"]
+theme_override_font_sizes/font_size = 24
+text = "Quality"
+
+[node name="PresetRow" type="HBoxContainer" parent="Margin/Layout/Tabs/Graphics/Content"]
+[node name="Label" type="Label" parent="Margin/Layout/Tabs/Graphics/Content/PresetRow"]
+size_flags_horizontal = 3
+text = "Graphics preset"
+[node name="GraphicsPreset" type="OptionButton" parent="Margin/Layout/Tabs/Graphics/Content/PresetRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 0)
+
+[node name="PresetHint" type="Label" parent="Margin/Layout/Tabs/Graphics/Content"]
+theme_override_colors/font_color = Color(0.7, 0.8, 0.82, 1)
+text = "High is the default. Ultra is the original look. Use Medium or Low on older graphics cards."
+autowrap_mode = 2
+
+[node name="MsaaRow" type="HBoxContainer" parent="Margin/Layout/Tabs/Graphics/Content"]
+[node name="Label" type="Label" parent="Margin/Layout/Tabs/Graphics/Content/MsaaRow"]
+size_flags_horizontal = 3
+text = "Anti-aliasing (MSAA)"
+[node name="Msaa" type="OptionButton" parent="Margin/Layout/Tabs/Graphics/Content/MsaaRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 0)
+
+[node name="RenderScaleRow" type="HBoxContainer" parent="Margin/Layout/Tabs/Graphics/Content"]
+[node name="Label" type="Label" parent="Margin/Layout/Tabs/Graphics/Content/RenderScaleRow"]
+size_flags_horizontal = 3
+text = "3D render scale"
+[node name="RenderScale" type="HSlider" parent="Margin/Layout/Tabs/Graphics/Content/RenderScaleRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(420, 0)
+min_value = 0.5
+max_value = 1.0
+step = 0.05
+[node name="RenderScaleValue" type="Label" parent="Margin/Layout/Tabs/Graphics/Content/RenderScaleRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(72, 0)
+
+[node name="ShadowRow" type="HBoxContainer" parent="Margin/Layout/Tabs/Graphics/Content"]
+[node name="Label" type="Label" parent="Margin/Layout/Tabs/Graphics/Content/ShadowRow"]
+size_flags_horizontal = 3
+text = "Shadows"
+[node name="ShadowQuality" type="OptionButton" parent="Margin/Layout/Tabs/Graphics/Content/ShadowRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 0)
+
+[node name="ViewDistanceRow" type="HBoxContainer" parent="Margin/Layout/Tabs/Graphics/Content"]
+[node name="Label" type="Label" parent="Margin/Layout/Tabs/Graphics/Content/ViewDistanceRow"]
+size_flags_horizontal = 3
+text = "Detail view distance"
+[node name="ViewDistance" type="HSlider" parent="Margin/Layout/Tabs/Graphics/Content/ViewDistanceRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(420, 0)
+min_value = 0.6
+max_value = 1.5
+step = 0.05
+[node name="ViewDistanceValue" type="Label" parent="Margin/Layout/Tabs/Graphics/Content/ViewDistanceRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(72, 0)
+
+[node name="Ssao" type="CheckButton" parent="Margin/Layout/Tabs/Graphics/Content"]
+unique_name_in_owner = true
+text = "Ambient occlusion (SSAO)"
+[node name="Glow" type="CheckButton" parent="Margin/Layout/Tabs/Graphics/Content"]
+unique_name_in_owner = true
+text = "Glow"
+
+[node name="DisplayHeading" type="Label" parent="Margin/Layout/Tabs/Graphics/Content"]
+theme_override_font_sizes/font_size = 24
+text = "Display"
+
+[node name="Vsync" type="CheckButton" parent="Margin/Layout/Tabs/Graphics/Content"]
+unique_name_in_owner = true
+text = "VSync"
+
+[node name="FrameCapRow" type="HBoxContainer" parent="Margin/Layout/Tabs/Graphics/Content"]
+[node name="Label" type="Label" parent="Margin/Layout/Tabs/Graphics/Content/FrameCapRow"]
+size_flags_horizontal = 3
+text = "Frame rate limit"
+[node name="FrameCap" type="OptionButton" parent="Margin/Layout/Tabs/Graphics/Content/FrameCapRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 0)
 
 [node name="NoticeLabel" type="Label" parent="Margin/Layout"]
 unique_name_in_owner = true

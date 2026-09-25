@@ -22,6 +22,7 @@ script = ExtResource("1_dirt")
 
 [node name="Mesh" type="MeshInstance3D" parent="."]
 unique_name_in_owner = true
+cast_shadow = 0
 mesh = SubResource("DirtMesh")
 
 [node name="Collision" type="CollisionShape3D" parent="."]

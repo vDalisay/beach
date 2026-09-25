@@ -76,7 +76,7 @@ func _create_attachment(record: ItemRecord) -> void:
 	var collision := CollisionShape3D.new()
 	collision.shape = shape
 	area.add_child(collision)
-	var scene := load((session.definitions[record.definition_id] as ItemDefinition).visual_scene_path) as PackedScene
+	var scene := (session.definitions[record.definition_id] as ItemDefinition).visual_scene()
 	if scene != null:
 		var visual := scene.instantiate() as Node3D
 		area.add_child(visual)

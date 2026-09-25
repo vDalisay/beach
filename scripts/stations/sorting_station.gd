@@ -429,7 +429,7 @@ func _refresh_proxies() -> void:
 		proxy.position = Vector3((index % CELL_COLUMNS - 9.5) * 0.22, 0.855, (index / CELL_COLUMNS - 5.5) * 0.22)
 		proxy.set_meta(&"item_id", item_id)
 		proxy_root.add_child(proxy)
-		var scene := load(definition.visual_scene_path) as PackedScene
+		var scene := definition.visual_scene()
 		if scene != null and definition.visual_scene_path != "res://art/placeholders/missing_asset.tscn":
 			var visual := scene.instantiate() as Node3D
 			var source_root := visual.get_node_or_null("Visual") as Node3D
@@ -465,7 +465,7 @@ func _refresh_valuable_views() -> void:
 		var item_id := StringName(str(tray[index]))
 		var record := session.state.items[item_id] as ItemRecord
 		var definition := session.definitions[record.definition_id] as ItemDefinition
-		var scene := load(definition.visual_scene_path) as PackedScene
+		var scene := definition.visual_scene()
 		if scene == null:
 			continue
 		var visual := scene.instantiate() as Node3D

@@ -611,7 +611,7 @@ func _rebuild_slotted_views() -> void:
 
 func _create_visual(definition: ItemDefinition) -> Node3D:
 	var root := Node3D.new()
-	var packed := load(definition.visual_scene_path) as PackedScene
+	var packed := definition.visual_scene()
 	if packed != null and definition.visual_scene_path != "res://art/placeholders/missing_asset.tscn":
 		root.add_child(packed.instantiate())
 		return root

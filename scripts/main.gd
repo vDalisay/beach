@@ -103,6 +103,11 @@ func _open_run(initial_state: RunState, definitions: Dictionary, manifest_hash: 
 	var beach := BEACH_SCENE.instantiate() as Node3D
 	beach.name = "Beach"
 	run_root.add_child(beach)
+	# Graphics budgets are set before any item view or restoration visual reads them.
+	var render_quality := RenderQuality.new()
+	render_quality.name = "RenderQuality"
+	run_root.add_child(render_quality)
+	render_quality.configure(settings_store, beach, session)
 	var restoration := RestorationSection.new()
 	restoration.name = "RestorationSection"
 	run_root.add_child(restoration)

@@ -102,7 +102,7 @@ func refresh_hand_visuals() -> void:
 	if has_large and not visible_refs.is_empty():
 		var large_id := StringName(str(visible_refs[0].get("id", "")))
 		var large_definition := _definition_for_item(large_id)
-		var large_visual := hand_rig.set_large_prop_scene(load(large_definition.visual_scene_path) as PackedScene)
+		var large_visual := hand_rig.set_large_prop_scene(large_definition.visual_scene())
 		_scale_hand_visual(large_visual, large_definition)
 		_attach_dirt_visuals(large_visual, large_id, large_definition)
 	else:
@@ -294,7 +294,7 @@ func _scene_for_ref(object_ref: Dictionary) -> PackedScene:
 	if str(object_ref.get("kind", "")) == "bag":
 		return DISPOSAL_BAG_SCENE
 	var definition := _definition_for_item(StringName(str(object_ref.get("id", ""))))
-	return load(definition.visual_scene_path) as PackedScene if definition != null else null
+	return definition.visual_scene() if definition != null else null
 
 
 func _style_hand_visual(node: Node3D, object_ref: Dictionary) -> void:

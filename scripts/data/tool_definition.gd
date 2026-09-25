@@ -16,6 +16,16 @@ extends Resource
 @export var effect_text := ""
 @export var implemented := false
 
+# Kept loaded so switching tools does not parse the tool scene again each time.
+static var _scenes: Dictionary = {}
+
+
+## The tool's scene, loaded once per path; null when there is none.
+func scene() -> PackedScene:
+	if not _scenes.has(scene_path):
+		_scenes[scene_path] = load(scene_path) as PackedScene if not scene_path.is_empty() else null
+	return _scenes[scene_path] as PackedScene
+
 
 func validation_errors() -> PackedStringArray:
 	var errors: PackedStringArray = []
