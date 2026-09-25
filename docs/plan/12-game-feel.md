@@ -1,6 +1,6 @@
 # Game feel — hover, hands, placement, tools and completion
 
-Planned 24 September 2026 on branch `claude/game-feel-juice-plan`, created from `main` at `b190cea`. **Status: specification only. No J packet is implemented yet.**
+Planned 24 September 2026 on branch `claude/game-feel-juice-plan`, created from `main` at `b190cea`. **Status:** J00–J14 implemented; evidence, retained tuning and open issues are in [J-feel](../handoffs/J-feel.md). J13's physical-controller check is blocked on hardware, and FIN-08 stays open.
 
 This plan makes the existing cleanup loop feel good to play:
 

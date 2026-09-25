@@ -122,5 +122,8 @@ func _emit_motes(delta: float) -> void:
 		_mote_budget -= 1.0
 		var direction := (-basis.z + basis.x * _mote_rng.randf_range(-0.35, 0.35) + basis.y * _mote_rng.randf_range(-0.2, 0.2)).normalized()
 		var start := player.camera.global_position + direction * _mote_rng.randf_range(1.5, range_meters())
+		if reduced:
+			# Reduced motion keeps every particle within 1.5 m of where it appears.
+			start = nozzle + (start - nozzle).limit_length(1.4)
 		var to_nozzle := nozzle - start
 		motes.emit(start, to_nozzle.normalized() * FEEL.vacuum_mote_speed, _mote_rng.randf_range(0.02, 0.035), to_nozzle.length() / FEEL.vacuum_mote_speed)

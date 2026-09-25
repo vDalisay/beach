@@ -2,7 +2,7 @@
 
 Evidence record for the [game-feel plan](../plan/12-game-feel.md), packets J00–J14. One section per packet, newest entries at the top of each section. Follow [AGENTS.md](../../AGENTS.md): record what was shown working in the real game or an existing lab. A tween existing in code is not evidence.
 
-**Status: in progress.** The plan was written 24 September 2026 on `claude/game-feel-juice-plan` from `main` at `b190cea`. On 25 September 2026 the branch was rebased onto `main` at `e3883f4` before implementation, because `main` had replaced the hand rig (per-socket FOV `View` nodes and IK-driven Synty arms), the tool scenes and `restoration_section.gd`. Packets that touch those files follow the plan's intent on the current code; each entry states where the code departs from a packet listing and why.
+**Status: J00–J14 done.** J13's physical-controller check is blocked on hardware, and FIN-08 stays open under its own "Done when" ([J14](#j14--acceptance)). The plan was written 24 September 2026 on `claude/game-feel-juice-plan` from `main` at `b190cea`. On 25 September 2026 the branch was rebased onto `main` at `e3883f4` before implementation, because `main` had replaced the hand rig (per-socket FOV `View` nodes and IK-driven Synty arms), the tool scenes and `restoration_section.gd`. Packets that touch those files follow the plan's intent on the current code; each entry states where the code departs from a packet listing and why.
 
 | Packet | Status | Evidence |
 |---|---|---|
@@ -20,7 +20,7 @@ Evidence record for the [game-feel plan](../plan/12-game-feel.md), packets J00�
 | J11 Restoration | Done | [J11](#j11--restoration) |
 | J12 Finale | Done | [J12](#j12--finale) |
 | J13 Rumble (optional) | Done in code; physical pad blocked on hardware | [J13](#j13--rumble-optional) |
-| J14 Acceptance | Open | — |
+| J14 Acceptance | Done | [J14](#j14--acceptance) |
 
 ## Entry template
 
@@ -482,6 +482,185 @@ Observed before any change: the can hover is a thin white hull; the placed chair
   - The controller-disconnect stop uses the player's existing connection to `controller_disconnected`.
 - **Retained tuning:** none; the J00 rumble table is used as is.
 - **Open issues:** physical-controller validation, as above.
+
+## J14 — Acceptance
+
+- **Build:** J13 commit + J14 working tree. Godot 4.6.1 Mono, Compatibility renderer, `beach-content-8`, save schema 1.
+- **Device:** as stated at the top. This is development-GPU evidence only; target-hardware certification remains FIN-10.
+
+### Recording
+
+[Feel recording](images/J-feel/j14-feel.mp4) (49.5 s) and [beat stills](images/J-feel/j14-feel-beats.png).
+
+- **Capture:** Movie Maker at 1920×1080 and 30 fps, encoded to H.264 like every other clip here.
+- **Source:** `tests/record_feedback.gd` on seed `feedback-sequence`, exit 0 with `failures=0`. It keeps its ownership assertions and adds one per beat.
+- **Beats, in the packet's order:**
+  1. Hover a can, then collect it with the stick.
+  2. A blocked target: the next can with the bag full.
+  3. Hold and throw the chair.
+  4. Pick it back up and place it: the ghost, the arc and drop, the settle.
+  5. The set's shine with +$15.
+  6. A stain cleaned to "Clean!".
+  7. Sorting at S1: the cascade, arcs into the bins, stamps, seals and rack drops.
+  8. Deposits and the truck call: phone, lift-off, receipt and coins.
+  9. The starter shore's restoration wave.
+  10. The finale.
+- **Staging:**
+  - The finale follows ACCELERATED completion of the rest of the beach, as `validate_full_run.gd` and `validate_wildlife.gd` stage it.
+  - The cloth is staged into the hands.
+  - The other nine starter props are committed to slots.
+  - The starter waste still in the world goes straight onto the S1 table.
+  - A camera cut after the truck call shows the restoring shore, which the hut hides from the hotline.
+  - The blocked target comes after the stick collect, because a full bag is the blocking reason.
+- **Before and after:** the J00 stills are the "before" images.
+
+| Beat | Before (J00) | After (J14) |
+|---|---|---|
+| Stick at rest and HUD | ![](images/J-feel/before-stick-rest.png) | ![](images/J-feel/after-stick-rest.png) |
+| Hover on a can | ![](images/J-feel/before-hover-can.png) | ![](images/J-feel/after-hover-can.png) |
+| Hover on glass | ![](images/J-feel/before-hover-glass.png) | [glass hover in sun, shade and underwater](images/J-feel/j14-conditions.png) |
+| Holding a chair | ![](images/J-feel/before-hold-chair.png) | ![](images/J-feel/after-hold-chair.png) |
+| Ghost over a chair slot | ![](images/J-feel/before-ghost-chair.png) | ![](images/J-feel/after-ghost-chair.png) |
+| Group completion, 0.3 s in | ![](images/J-feel/before-group-sweep.png) | ![](images/J-feel/after-group-sweep.png) |
+| After placement | ![](images/J-feel/before-after-place.png) | ![](images/J-feel/after-after-place.png) |
+
+### Reduced-motion audit (plan §8)
+
+Each row was walked in the main scene with `reduced_motion` on, in the packet's own pass (linked), and again as one sequence: `record_feedback.gd -- --reduced`, `failures=0`.
+
+| Effect | Reduced behaviour observed | Result |
+|---|---|---|
+| Hover | The outline appears at rest width (peak scale 1.000, hop 0.000 m), with no rim breathing. The blocked dashes remain ([J01](#j01--hover)). | Pass |
+| Reticle and label | State changes are instant, with no pop or shake. Blocked shows as amber dashes. The label appears in place ([J02](#j02--reticle-and-label)). | Pass |
+| Viewmodel | Sway, landing and breathing stay at identity in every gait. Clips play at 50 % with no overshoot, and there is no tool drop on a swap ([J03](#j03--viewmodel)). The equip raise plays at the same 50 %, not the 40 % §8 names. | Pass |
+| Collect | The view is freed at once, and the bag fill still updates ([J04](#j04--pickup-and-throw)). | Pass |
+| Prop pickup and remove | Straight travel over the same duration, with no lift or wiggle ([J04](#j04--pickup-and-throw)). | Pass |
+| Throw impact | Puff at half count, no squash ([J04](#j04--pickup-and-throw)). | Pass |
+| Placement | Straight travel keeps its duration; no squash, ring, dust or wobble ([J05](#j05--placement)). | Pass |
+| Ghost | Appears at rest with still scan lines, and snaps between slots (0 glides) ([J05](#j05--placement)). | Pass |
+| Group sweep and clean gleam | No band. "+$15" and "Clean!" fade in place ([J07](#j07--completion-shine)). | Pass |
+| Tools | No jitter, sweep or rock. Motes at half rate. Rings kept, with no contraction ([J06](#j06--tools)). | Pass |
+| Sorting table | Proxies appear at once; the cursor snaps; stamps update without motion ([J08](#j08--sorting-table)). | Pass |
+| HUD | Numbers are set at once, with no bumps, slides or coins. The money line flashes once ([J09](#j09--hud), [J10](#j10--collection-and-money)). | Pass |
+| Restoration | Instant reveal. The banner keeps its distance, and the pointer shows without a pulse. No wave, pop-in, glints or beacon ([J11](#j11--restoration)). | Pass |
+| Finale | No flash, stamp or confetti. The panel and card fade in, and the rows show final numbers ([J12](#j12--finale)). | Pass |
+| Particles generally | Half counts. No particle leaves 1.5 m: bounded from each emitter's speed, spread, drag and lifetime, and measured for the vacuum motes. | Pass after a fix |
+
+- **Fix:** the vacuum's suction motes spawned up to the vacuum's range (2.17 m measured) from the nozzle, even at half rate. With reduced motion they now start within 1.4 m of it (1.34 m measured).
+- **Other emitters:** the farthest is about 0.8 m (the buried-find and sand-sift dust, and the bubbles).
+- **Gameplay unaffected:**
+  - The reduced `record_feedback.gd` run hits every beat on the same frame as the normal run.
+  - `validate_carry.gd` and `validate_completion.gd` pass with `reduced_motion` preset in their settings files.
+  - `validate_placement.gd` passes, including its own reduced-motion pass.
+
+### FOV, display and conditions audit
+
+| Condition | Check | Result |
+|---|---|---|
+| FOV 70 and 110 | See the aim-point test below. | Pass |
+| 1280×720, 1920×1080, 21:9 window; UI 100 % | See the busy-HUD test below. | Pass, one known overlap |
+| 3840×2160 offscreen (`tests/capture_4k_ui.gd`) | HUD, booklet and pause render at full size, and the text and coin glyph stay crisp ([4K](images/J-feel/j14-4k.png)). | Pass |
+| UI 150 % (1280×720, 1920×1080, 21:9) | See the busy-HUD test below. | Aim point: pass after a fix. Overlaps: open |
+| Bright noon, shade (a ray to the sun is blocked), underwater, surface crossing | See the conditions test below. | Pass |
+| Controller-only and mouse-only (injected input) | See the input test below. | Pass |
+
+- **FOV 70 and 110.** [FOV sheet](images/J-feel/j14-fov.png).
+  - **Method:** for each sample the frame was frozen and rendered with and without the hand rig, and changed pixels within 18 px of the screen centre were counted.
+  - **Coverage:** 90 samples of walking, sprinting, crouch walking, twelve hand clips, a chair carried (idle and walking), two small props carried, and floating and swimming.
+  - **Result:** 89 samples changed 0 pixels. Carrying two props at 110 while walking changed 3 pixels, consistent with a carried prop's shadow on the sand; the model itself stays clear of the aim point.
+- **Busy HUD at 100 %.** Everything on screen at once: the target label, a long restoration notice, the receipt with ten coins in flight, the feedback toast, the pointer at an edge and the scanner summary, then the results panel.
+  - Everything fits the screen, nothing covers the aim point, and the results panel fits.
+  - The 21:9 window has no overlaps at all.
+  - At 16:9, the target label reaches under the scanner summary when the aimed item sits right of centre. The label is now drawn above the summary.
+- **Busy HUD at 150 %.** The UI space is 853×480 at 16:9 and 1137×480 at 21:9.
+  - Nothing covers the aim point, and the toast, receipt and results panel fit.
+  - The 392×195 scanner summary still overlaps the notice, toast, pointer and label when they all show together (open issues).
+- **Conditions.** [Conditions sheet](images/J-feel/j14-conditions.png) for sun, shade and underwater.
+  - The action, glass and blocked hover styles, and the ghost over a shelf slot, are readable in each condition, with no wash-out.
+  - The waves were covered in [J11](#j11--restoration): the sand at noon, underwater, and the shallows wall crossing the surface.
+- **Input.** Mouse only, controller only, and both on the same frame:
+  - A collect sends exactly one poke and one bag catch.
+  - A blocked click sends exactly one rejection.
+  - The vacuum reticle spins while the button or trigger is held and stops on release.
+
+### Fixes found by the audits
+
+In their owning packets' files:
+
+- **J06:** reduced-motion vacuum motes stay within 1.4 m of the nozzle.
+- **J09 notice lane:**
+  - It is 450 px wide, sized to its content, and runs at 5 % of the height plus 150 px. That clears the receipt, the progress panel and, at 100 %, the scanner summary.
+  - On a UI shorter than a two-line notice needs above the aim point (150 % scale), it moves just below the aim point. Before, it covered the aim point at every 150 % configuration.
+- **J09 feedback toast:**
+  - It sits 20 px lower, so it clears the low notice lane at 150 %; it stays clear of the bag panel and meters.
+  - Each toast now has its own 2 s timer. Before, a timer left from an earlier identical message hid a newer toast early, for example on two "Bag full" clicks. A persistent error still outlasts any pending feedback timer.
+- **J10:** the receipt's gold total moved onto the title row. The receipt is back to 104 px, clear of the scanner summary, which the taller receipt had overlapped by 21 px.
+- **Draw order:** the target label is drawn above the scanner overlay.
+- **J04 travel, found by the full check run:** `FeelMotion.travel` captured the stick's tip node in its tween lambda. When the tip was freed mid-flight (a tool swap), Godot logged "Lambda capture at index 5 was freed" on every step and passed null. The flight then lost its last known tip and jumped onto a plain arc. The nodes now sit in a captured dictionary. `validate_buried.gd`, which hit this since J06, now logs no errors.
+- **Checks since the fixes:** `validate_completion.gd` (720p lanes), `validate_scanner.gd`, `validate_ui.gd`, `validate_payment.gd` and the J10 layout probe pass.
+
+### Performance
+
+- **J00 route:** `validate_physics.gd -- --profile --c04-dense`, 600 frames, two runs each.
+
+  | Build | Median | p95 | Max draws | Nodes | Physics mean |
+  |---|---|---|---|---|---|
+  | J00 | 7.24 / 7.27 ms | 18.43 / 18.58 ms | 3,659 | 9,577 | 1.06 / 1.05 ms |
+  | J14 | 7.27 / 7.29 ms | 17.50 / 17.08 ms | 3,674 | 9,627 | 1.03 / 1.11 ms |
+
+  - At rest, p95 does not regress (budget +0.5 ms), and max draws rise by 15 (budget 40).
+  - The 50 extra nodes are the permanent presentation nodes the J packets add: particle pools, the coin flyer, the pointer and the placement blob.
+- **Effect burst:** real time, in the crowded arrival view, four runs. The vacuum is held 5 s, the last set completes (shine), then a truck call brings the receipt, coins and the restoration wave.
+  - **Frame time:** idle p95 8.54–8.66 ms. The burst p95 was 9.02–9.30 ms, +0.5 to +0.7 ms against the 1.5 ms budget. The vacuum alone added about 0.5 ms, and the set plus the call about 0.7 ms.
+  - **Nodes:** 8,547 before; 8,532–8,533 at the end, at +3 s and at +10 s. The vacuumed views are gone, and every effect node frees itself within 3 s.
+  - **Draws:**
+    - The set shine adds 20 draws.
+    - The truck call peaks at +379 draws. With the UI hidden it still peaks at +347, and with every feel effect off (reduced motion, UI hidden) at +389. So the spike belongs to the collection and restoration themselves; its source is not isolated here.
+    - The feel effects' own share is within noise in the world view and about 50 draws in the UI.
+    - Draws settle back to the idle level within 10 s.
+  - **No reductions needed:** every budget holds, so none of the §9 reductions were applied.
+
+### Art-swap re-tune list (for FIN-05)
+
+| Asset role | What to re-tune |
+|---|---|
+| A06 stick | `FEEL.tool_tips[&"stick"]`, `stick_tip_fraction`, the grip in `refresh_tool_visual`, and the outline on the new mesh |
+| A07V vacuum, A07S sand cleaner | `tool_tips`, `vacuum_stretch`, jitter amplitude, the `flash_tool` look, and the mote spawn cone (reduced motion keeps motes within 1.4 m) |
+| A08 detector | Tip, sweep degrees, coil flash |
+| A10 cloth | Wipe clip amplitude |
+| A17 hands | Arm pivots and clip amplitudes at FOV 70 and 110 (rerun the J14 aim-point test); optional finger curl if the rig has bones |
+| A12–A16 litter and props | Outline continuity (welded normals), the glass rim-only list, hover lift amounts, the ghost look, and the group shine on the new surfaces (J07 counts surfaces) |
+| A01–A04 wildlife and coral | Bloom exclusions for animal anchors; the coral recolour schedule, including the coral-garden shader's wave front (`GARDEN_WAVE_FEATHER`) |
+| Final HUD art | The notice lane (`NOTICE_*` in `main.gd`) and the 150 % layout of the scanner summary |
+
+### Status
+
+- **Checks re-run on the final build:** all 28 `tests/validate_*.gd` checks and `run_checks.gd`, all exit 0 with `failures=0`.
+  - The only error lines are the two exit-time texture-leak messages seen in earlier entries and the save check's intended write failure to a blocked directory.
+  - The first full pass hit the lambda-capture error that the travel fix above removes. The 15 checks that ran before that fix were run again after it, with no error lines.
+  - `validate_full_run.gd` took 50–53 s and `validate_release_seeds.gd` 99 s.
+  - `validate_save.gd` and the seven checks from `validate_sorting.gd` on ran against an empty user-data folder (`APPDATA` pointed at a scratch folder); `validate_save.gd` took 72 s there.
+  - Against the shared `user://test_runs/`, `validate_save.gd`'s second Save and quit spent more than 3 minutes in the title menu's save listing and was stopped. `validate_sorting.gd` lists its own folder three times the same way. See the open issues.
+- **Retained tuning:** see the table below; J14 changed no `FeelTuning` value. New script constants are listed in the J11 and J14 entries.
+- **Departures from the packet:**
+  - The recording ships as `images/J-feel/j14-feel.mp4`, not `images/J-feel.avi`. The Movie Maker AVI is 266 MB, and every other clip in the repository is MP4.
+  - `record_feedback.gd` gained staging calls for the new beats, a `--reduced` flag and beat markers, beyond waits and aim poses. Its assertions are unchanged.
+  - The wide window is 1920×810, which gives the same 1707×720 UI space as 2560×1080 on this 1920×1080 monitor.
+  - Controller evidence uses injected input; physical devices remain FIN-04 and J13 work.
+- **Open issues:**
+  - At 150 % UI, the scanner summary (392×195, right-middle) overlaps the notice, toast, pointer and target label when they show together; the aim point stays clear. This needs a 150 % HUD layout, such as a shorter scanner summary, in FIN-04 and FIN-08.
+  - At 100 %, the target label can pass under the scanner summary when the aimed item is right of centre; the label is drawn on top.
+  - The truck collection's restoration raises draws by about 390 for a moment even with every feel effect off. This is worth a look in FIN-08's cost record.
+  - J13's physical controller validation is blocked on hardware.
+  - Pre-existing, flagged in earlier entries:
+    - The autosave on a group reward stalls the main thread 2.4–6.5 s on the full beach.
+    - Aiming at an empty, unclaimed shared shelf costs about 30 ms per frame (`_shared_claim_is_safe`).
+    - A 200-item unload spends about 535 ms building proxies.
+    - `validate_interaction.gd -- --capture` fails its input-edge check because the PNG save stalls a frame; it fails the same way on J00.
+  - Pre-existing, found in the final check run: the save checks never clear their save roots, and `user://test_runs/` is shared by every checkout of the project.
+    - `test_runs` now holds 7.7 GB. `test_runs/p24`, shared by `validate_save.gd` and `validate_save_physics.gd`, has 200 runs in 2.1 GB. `test_runs/c02`, used by `validate_sorting.gd`, has 40 runs in 751 MB.
+    - A Save and quit returns to the title, where `SaveService.list_slots()` reads and parses every generation of every run, 7.5 MB each on the full beach. That is why `validate_save.gd` now takes minutes; `validate_sorting.gd` lists its folder three times.
+    - Clearing those folders restores the checks. The title menu lists players' saves the same way, so many saved runs would stall it too.
 
 ## Retained tuning
 

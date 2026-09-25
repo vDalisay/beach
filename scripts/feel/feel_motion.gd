@@ -98,33 +98,43 @@ static func travel(node: Node3D, space: Node3D, end_local: Transform3D, seconds:
 	var stretch: Vector3 = options.get("stretch", Vector3.ZERO)
 	var easing := StringName(str(options.get("ease", "in_out")))
 	var state := {}
+	# The nodes live in a Dictionary rather than as lambda captures: a captured object freed
+	# mid-flight (the stick's tip on a tool swap) would reach the lambda as null with an engine
+	# error on every step, while a freed Dictionary entry just fails is_instance_valid.
+	var refs := {"node": node, "space": space, "visual": visual, "via": via, "via_anchor": via_anchor}
+	var has_via := via != null
 	t.tween_callback(func() -> void:
-		if not is_instance_valid(node) or not is_instance_valid(space):
+		if not is_instance_valid(refs.node) or not is_instance_valid(refs.space):
 			return
-		state["start"] = node.transform
-		state["visual_scale"] = visual.scale if is_instance_valid(visual) else Vector3.ONE
-		state["visual_position"] = visual.position if is_instance_valid(visual) else Vector3.ZERO
-		var up := space.global_basis.orthonormalized().inverse() * Vector3.UP
+		var moving := refs.node as Node3D
+		var frame := refs.space as Node3D
+		var shown: Node3D = refs.visual as Node3D if is_instance_valid(refs.visual) else null
+		state["start"] = moving.transform
+		state["visual_scale"] = shown.scale if shown != null else Vector3.ONE
+		state["visual_position"] = shown.position if shown != null else Vector3.ZERO
+		var up := frame.global_basis.orthonormalized().inverse() * Vector3.UP
 		state["up"] = up.normalized() if up.length_squared() > 0.0001 else Vector3.UP
-		state["floor"] = node.global_position.y + 0.03
+		state["floor"] = moving.global_position.y + 0.03
 	)
 	t.tween_method(func(progress: float) -> void:
-		if not is_instance_valid(node) or not is_instance_valid(space) or not state.has("start"):
+		if not is_instance_valid(refs.node) or not is_instance_valid(refs.space) or not state.has("start"):
 			return
+		var moving := refs.node as Node3D
+		var frame := refs.space as Node3D
 		var start: Transform3D = state["start"]
 		var up: Vector3 = state["up"]
 		var e := ease_named(progress, easing)
 		var p0 := start.origin
 		var p1 := end_local.origin
 		var position := Vector3.ZERO
-		if via != null:
-			if is_instance_valid(via) and via.is_inside_tree():
-				var tip_world := via.global_position
+		if has_via:
+			if is_instance_valid(refs.via) and (refs.via as Node3D).is_inside_tree():
+				var tip_world := (refs.via as Node3D).global_position
 				var floor_y := float(state["floor"])
-				if via_anchor != null and is_instance_valid(via_anchor) and tip_world.y < floor_y:
-					var grip := via_anchor.global_position
+				if is_instance_valid(refs.via_anchor) and tip_world.y < floor_y:
+					var grip := (refs.via_anchor as Node3D).global_position
 					tip_world = grip.lerp(tip_world, clampf((grip.y - floor_y) / maxf(grip.y - tip_world.y, 0.001), 0.0, 1.0)) if grip.y > floor_y else Vector3(tip_world.x, floor_y, tip_world.z)
-				state["tip"] = space.global_transform.affine_inverse() * tip_world
+				state["tip"] = frame.global_transform.affine_inverse() * tip_world
 			var tip: Vector3 = state.get("tip", p0)
 			if progress < via_fraction:
 				position = p0.lerp(tip, ease_named(progress / via_fraction, &"out"))
@@ -138,14 +148,15 @@ static func travel(node: Node3D, space: Node3D, end_local: Transform3D, seconds:
 		var rotation := start.basis.orthonormalized().slerp(end_local.basis.orthonormalized(), e)
 		if spin_turns != 0.0:
 			rotation = rotation * Basis(spin_axis.normalized(), TAU * spin_turns * e)
-		node.transform = Transform3D(rotation, position)
-		if is_instance_valid(visual):
+		moving.transform = Transform3D(rotation, position)
+		if is_instance_valid(refs.visual):
+			var shown := refs.visual as Node3D
 			var shrink := smoothstep(shrink_from, 1.0, progress)
 			var target_scale := stretch if stretch != Vector3.ZERO else Vector3.ONE * shrink_to
-			visual.scale = (state["visual_scale"] as Vector3).lerp(target_scale, shrink)
-			if visual != node:
+			shown.scale = (state["visual_scale"] as Vector3).lerp(target_scale, shrink)
+			if shown != moving:
 				# A child visual root (after a yoink) settles back onto the travelling node.
-				visual.position = (state["visual_position"] as Vector3).lerp(Vector3.ZERO, e)
+				shown.position = (state["visual_position"] as Vector3).lerp(Vector3.ZERO, e)
 	, 0.0, 1.0, maxf(seconds, 0.01))
 	if finished.is_valid():
 		t.tween_callback(finished)

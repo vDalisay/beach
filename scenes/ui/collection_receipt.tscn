@@ -28,11 +28,16 @@ grow_horizontal = 0
 layout_mode = 2
 theme_override_constants/separation = 5
 
-[node name="Title" type="Label" parent="Panel/Rows"]
+[node name="TitleRow" type="HBoxContainer" parent="Panel/Rows"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Panel/Rows/TitleRow"]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 21
 text = "COLLECTION COMPLETE"
+vertical_alignment = 1
 
 [node name="Details" type="Label" parent="Panel/Rows"]
 unique_name_in_owner = true
@@ -40,7 +45,7 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 17
 text = "0 items collected"
 
-[node name="Total" type="Label" parent="Panel/Rows"]
+[node name="Total" type="Label" parent="Panel/Rows/TitleRow"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.847059, 0.352941, 1)
@@ -48,4 +53,4 @@ theme_override_colors/font_outline_color = Color(0.08, 0.06, 0.02, 0.9)
 theme_override_constants/outline_size = 6
 theme_override_font_sizes/font_size = 30
 text = "+$0"
-horizontal_alignment = 1
+horizontal_alignment = 2

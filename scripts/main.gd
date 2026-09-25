@@ -8,6 +8,12 @@ const BEACH_SCENE := preload("res://scenes/world/beach.tscn")
 const PLAYER_SCENE := preload("res://scenes/player/player.tscn")
 const BEACH_DEFINITION := preload("res://data/world/beach_01.tres")
 const FEEL := preload("res://data/feel/feel_tuning.tres")
+# The notice lane runs under the top HUD row (5 % of the height plus NOTICE_TOP). When a two-line
+# notice there would come within AIM_CLEARANCE of the aim point, the lane moves just below it.
+const NOTICE_TOP := 150.0
+const NOTICE_HALF_WIDTH := 225.0
+const NOTICE_TWO_LINES := 62.0
+const AIM_CLEARANCE := 24.0
 
 @onready var status_label: Label = %StatusLabel
 @onready var seed_input: LineEdit = %SeedInput
@@ -75,6 +81,7 @@ var _notice_style_gold: StyleBoxFlat
 var _last_totals := {}
 var _money_pending := 0
 var _money_hold_serial := 0
+var _toast_serial := 0
 # Restorations committed together are announced at the end of the frame: one banner for a batch.
 var _restoration: RestorationSection
 var _pending_sections: Array[StringName] = []
@@ -497,6 +504,7 @@ func _quit_without_saving() -> void:
 
 
 func show_error(message: String) -> void:
+	_toast_serial += 1
 	error_label.text = message
 	error_label.add_theme_color_override("font_color", Color(1.0, 0.72, 0.64))
 	error_panel.show()
@@ -532,9 +540,13 @@ func _show_gameplay_feedback(message: String) -> void:
 		var t := FeelMotion.replace(error_panel, &"toast", FeelMotion.tween(error_panel).set_parallel(true))
 		t.tween_property(error_panel, "modulate:a", 1.0, 0.1)
 		t.tween_method(func(pixels: float) -> void: FeelMotion.nudge_y(error_panel, pixels), 6.0, 0.0, 0.1).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	# Each toast gets its own 2 s: an older timer for the same text must not cut a newer one short,
+	# and none may clear a persistent error shown since.
+	_toast_serial += 1
+	var serial := _toast_serial
 	var shown_message := message
 	get_tree().create_timer(2.0).timeout.connect(func() -> void:
-		if is_instance_valid(error_label) and error_label.text == shown_message:
+		if is_instance_valid(error_label) and serial == _toast_serial and error_label.text == shown_message:
 			clear_error()
 	)
 
@@ -939,6 +951,7 @@ func _show_next_notice() -> void:
 ## Tier glyph and motion: info for tips, a check for sets, a star (gold border, shine) for
 ## restoration. Visibility is set synchronously; only alpha and position animate.
 func _present_notice(priority: int) -> void:
+	_place_notice_lane()
 	notice_icon.kind = FeelIcon.Kind.STAR if priority >= 2 else (FeelIcon.Kind.CHECK if priority == 1 else FeelIcon.Kind.INFO)
 	notice_icon.color = FEEL.money_color if priority >= 2 else (FEEL.ghost_color if priority == 1 else Color.WHITE)
 	if priority >= 2:
@@ -958,6 +971,21 @@ func _present_notice(priority: int) -> void:
 	if priority >= 2:
 		FeelMotion.bump_control(guidance_panel, 1.05, 0.2)
 		_shine(guidance_panel)
+
+
+## On a short UI (a 16:9 screen at 150 % scale leaves 480 px) the lane under the top HUD row would
+## reach the aim point with a two-line notice, so it runs just below the aim point instead. The
+## slide and shake move relative to whichever lane is in use.
+func _place_notice_lane() -> void:
+	var height := get_viewport().get_visible_rect().size.y
+	var low := 0.05 * height + NOTICE_TOP + NOTICE_TWO_LINES > height * 0.5 - AIM_CLEARANCE
+	var anchor := 0.5 if low else 0.05
+	var top := AIM_CLEARANCE if low else NOTICE_TOP
+	guidance_panel.anchor_top = anchor
+	guidance_panel.anchor_bottom = anchor
+	guidance_panel.set_meta(&"feel_layout", Vector4(-NOTICE_HALF_WIDTH, top, NOTICE_HALF_WIDTH, top + 40.0))
+	FeelMotion.nudge_x(guidance_panel, 0.0)
+	FeelMotion.nudge_y(guidance_panel, 0.0)
 
 
 func _clear_notices() -> void:
