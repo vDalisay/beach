@@ -37,6 +37,7 @@ const FEEL := preload("res://data/feel/feel_tuning.tres")
 @onready var money_label: Label = %MoneyLabel
 @onready var bag_bar: ProgressBar = %BagBar
 @onready var notice_icon: FeelIcon = %NoticeIcon
+@onready var coin_flyer: CoinFlyer = $UI/CoinFlyer
 @onready var context_panel: PanelContainer = %ContextPanel
 @onready var context_label: Label = %ContextLabel
 @onready var guidance_panel: PanelContainer = %GuidancePanel
@@ -69,9 +70,15 @@ var _last_bag_count := -1
 var _bag_styles: Array[StyleBoxFlat] = []
 var _notice_style_default: StyleBox
 var _notice_style_gold: StyleBoxFlat
+# Money shown while coins fly: amounts still in the air are held back from the display.
+var _last_totals := {}
+var _money_pending := 0
+var _money_hold_serial := 0
 
 
 func _ready() -> void:
+	collection_receipt.settings = settings_store
+	collection_receipt.total_ready.connect(_on_receipt_total_ready)
 	for color in [FEEL.bag_color_normal, FEEL.bag_color_warn, FEEL.bag_color_full]:
 		var style := StyleBoxFlat.new()
 		style.bg_color = color
@@ -191,6 +198,7 @@ func _open_run(initial_state: RunState, definitions: Dictionary, manifest_hash: 
 	run_root.add_child(collection)
 	collection.configure(session)
 	collection.receipt_created.connect(collection_receipt.show_receipt)
+	collection.receipt_created.connect(_on_receipt_created)
 	collection.receipt_created.connect(func(_receipt: Dictionary) -> void:
 		_show_guidance(session, &"collection", "Truck collection credits trash and pays for correctly sorted items.")
 	)
@@ -246,6 +254,8 @@ func _open_run(initial_state: RunState, definitions: Dictionary, manifest_hash: 
 	player.cue_played.connect(_on_player_cue)
 	session.group_completed.connect(func(payload: Dictionary) -> void:
 		player.play_cue(&"set_complete", payload)
+		if int(payload.get("reward", 0)) > 0:
+			_hold_money(int(payload.reward))
 		if _pending_group_count == 0:
 			_pending_group_family = str(payload.get("family_id", "props")).replace("_", " ").capitalize()
 			call_deferred("_flush_group_notice")
@@ -351,9 +361,11 @@ func clear_run() -> void:
 	_clear_notices()
 	progress_panel.hide()
 	context_panel.hide()
+	coin_flyer.clear()
 	_shown.clear()
 	_shown_session = null
 	_money_hold_until = 0
+	_money_pending = 0
 	_last_bag_count = -1
 	if _progress_tween != null and _progress_tween.is_valid():
 		_progress_tween.kill()
@@ -473,8 +485,7 @@ func clear_error() -> void:
 	FeelMotion.replace(error_panel, &"toast", null)
 	error_panel.hide()
 	error_panel.modulate.a = 1.0
-	if error_panel.has_meta(&"base_position"):
-		error_panel.position = error_panel.get_meta(&"base_position")
+	FeelMotion.nudge_y(error_panel, 0.0)
 
 
 func _on_controller_disconnected(_device_id: int) -> void:
@@ -495,14 +506,11 @@ func _show_gameplay_feedback(message: String) -> void:
 	error_panel.show()
 	if not was_visible and not FeelMotion.reduced(settings_store):
 		# The toast eases in: a short fade and a 6 px rise.
-		if not error_panel.has_meta(&"base_position"):
-			error_panel.set_meta(&"base_position", error_panel.position)
-		var base: Vector2 = error_panel.get_meta(&"base_position")
 		error_panel.modulate.a = 0.0
-		error_panel.position.y = base.y + 6.0
+		FeelMotion.nudge_y(error_panel, 6.0)
 		var t := FeelMotion.replace(error_panel, &"toast", FeelMotion.tween(error_panel).set_parallel(true))
 		t.tween_property(error_panel, "modulate:a", 1.0, 0.1)
-		t.tween_property(error_panel, "position:y", base.y, 0.1).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		t.tween_method(func(pixels: float) -> void: FeelMotion.nudge_y(error_panel, pixels), 6.0, 0.0, 0.1).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	var shown_message := message
 	get_tree().create_timer(2.0).timeout.connect(func() -> void:
 		if is_instance_valid(error_label) and error_label.text == shown_message:
@@ -561,6 +569,9 @@ func _update_progress(session: RunSession) -> void:
 
 
 func _render_progress(totals: Dictionary) -> void:
+	if totals.is_empty():
+		return
+	_last_totals = totals
 	var complete := roundi(float(_shown.get("complete", 0.0)))
 	var required := int(totals.required)
 	progress_label.text = "Completed %s / %s\nRemaining %s\nProps %s / %s\nTrash collected %s / %s" % [_comma(complete), _comma(required), _comma(required - complete), _comma(roundi(float(_shown.get("props", 0.0)))), _comma(int(totals.props_total)), _comma(roundi(float(_shown.get("waste", 0.0)))), _comma(int(totals.waste_total))]
@@ -574,24 +585,23 @@ func _react_to_progress(start: Dictionary, target: Dictionary, first: bool, redu
 		return
 	var money_gain := float(target["money"]) - float(start["money"])
 	if reduced:
-		if money_gain > 0.0 and not _money_held():
-			money_label.modulate = Color(1.3, 1.25, 1.0)
-			FeelMotion.replace(money_label, &"flash", FeelMotion.tween(money_label)).tween_property(money_label, "modulate", Color.WHITE, 0.3)
+		if money_gain > 0.0:
+			_react_money.call_deferred(roundi(money_gain), roundi(float(target["money"])))
 		return
 	if float(target["complete"]) > float(start["complete"]):
 		_shine(completion_bar)
 		FeelMotion.bump_control(completion_bar, 1.04, 0.14)
-	if money_gain > 0.0 and not _money_held():
-		FeelMotion.bump_control(money_label, FEEL.bump_scale, FEEL.bump_seconds)
-		_float_money(roundi(money_gain), roundi(float(target["money"])))
+	if money_gain > 0.0:
+		_react_money.call_deferred(roundi(money_gain), roundi(float(target["money"])))
 
 
 ## "+$N" rises from the money line and fades (at most three at once). It starts past the width
 ## the money text will have once the roll ends, so the growing number never runs into it.
 func _float_money(amount: int, final_money := -1) -> void:
-	for floater in _money_floaters.duplicate():
-		if not is_instance_valid(floater):
-			_money_floaters.erase(floater)
+	# By index: erasing a freed label from a typed array is an engine error.
+	for index in range(_money_floaters.size() - 1, -1, -1):
+		if not is_instance_valid(_money_floaters[index]):
+			_money_floaters.remove_at(index)
 	if _money_floaters.size() >= 3 or amount <= 0:
 		return
 	var floater := Label.new()
@@ -620,6 +630,75 @@ func _money_held() -> bool:
 	return Time.get_ticks_msec() < _money_hold_until
 
 
+func _react_money(gain: int, final_money: int) -> void:
+	if _money_held() or not is_instance_valid(run_root):
+		return
+	if FeelMotion.reduced(settings_store):
+		_flash_money()
+		return
+	FeelMotion.bump_control(money_label, FEEL.bump_scale, FEEL.bump_seconds)
+	_float_money(gain, final_money)
+
+
+func _flash_money() -> void:
+	money_label.modulate = Color(1.3, 1.25, 1.0)
+	FeelMotion.replace(money_label, &"flash", FeelMotion.tween(money_label)).tween_property(money_label, "modulate", Color.WHITE, 0.3)
+
+
+## Holds `amount` back from the money line until its coins land (or a safety timeout).
+func _hold_money(amount: int) -> void:
+	if not is_instance_valid(run_root) or amount <= 0:
+		return
+	var wallet := int(((run_root as RunSession).state.players[&"local"] as Dictionary).money)
+	_money_pending += amount
+	_money_hold_until = Time.get_ticks_msec() + 5000
+	_money_hold_serial += 1
+	var serial := _money_hold_serial
+	_shown["money"] = float(wallet - _money_pending)
+	_render_progress(_last_totals)
+	get_tree().create_timer(5.2, true, false, true).timeout.connect(func() -> void:
+		if is_instance_valid(self) and serial == _money_hold_serial and _money_pending > 0:
+			_release_money(_money_pending)
+	)
+
+
+## Lands `amount`: the display settles to the true wallet minus whatever is still in the air.
+func _release_money(amount: int) -> void:
+	_money_pending = maxi(_money_pending - amount, 0)
+	if _money_pending == 0:
+		_money_hold_until = 0
+	if not is_instance_valid(run_root):
+		return
+	var wallet := int(((run_root as RunSession).state.players[&"local"] as Dictionary).money)
+	_shown["money"] = float(wallet - _money_pending)
+	_render_progress(_last_totals)
+	if amount > 0:
+		if FeelMotion.reduced(settings_store):
+			_flash_money()
+		else:
+			_float_money(amount, wallet - _money_pending)
+
+
+func _on_receipt_created(receipt: Dictionary) -> void:
+	_hold_money(int(receipt.get("total_pay", 0)))
+
+
+func _on_receipt_total_ready(total: int, from_global: Vector2) -> void:
+	if total <= 0 or FeelMotion.reduced(settings_store) or not is_instance_valid(run_root):
+		_release_money(total)
+		return
+	_fly_coins(from_global, total, clampi(total / FEEL.coin_value, FEEL.coin_min, FEEL.coin_max))
+
+
+## Coins arc from `from_global` into the money line; each arrival steps the display and bumps it.
+func _fly_coins(from_global: Vector2, amount: int, count: int) -> void:
+	coin_flyer.fly(from_global, money_label, count, func(_index: int, total_count: int) -> void:
+		_shown["money"] = float(_shown.get("money", 0.0)) + float(amount) / float(total_count)
+		_render_progress(_last_totals)
+		FeelMotion.bump_control(money_label, FEEL.bump_scale, FEEL.bump_seconds)
+	, func() -> void: _release_money(amount))
+
+
 func _shine(control: Control) -> void:
 	var material := control.material as ShaderMaterial
 	if material == null or FeelMotion.reduced(settings_store):
@@ -628,19 +707,14 @@ func _shine(control: Control) -> void:
 	FeelMotion.replace(control, &"shine", FeelMotion.tween(control)).tween_method(func(value: float) -> void: material.set_shader_parameter("progress", value), -0.3, 1.3, FEEL.bar_shine_seconds)
 
 
-## A quick horizontal shake that ends exactly at the panel's resting position.
+## A quick horizontal shake that ends exactly at the panel's laid-out position. It moves only the
+## horizontal offsets, so it composes with the toast's vertical ease-in.
 func _shake(panel: Control) -> void:
 	if FeelMotion.reduced(settings_store):
 		return
-	if not panel.has_meta(&"shake_base"):
-		panel.set_meta(&"shake_base", panel.position)
-	var base: Vector2 = panel.get_meta(&"shake_base")
 	var t := FeelMotion.replace(panel, &"shake", FeelMotion.tween(panel))
-	t.tween_method(func(elapsed: float) -> void: panel.position.x = base.x + FeelMotion.shake_offset(elapsed, 0.2, 5.0), 0.0, 0.2, 0.2)
-	t.tween_callback(func() -> void:
-		panel.position = base
-		panel.remove_meta(&"shake_base")
-	)
+	t.tween_method(func(elapsed: float) -> void: FeelMotion.nudge_x(panel, FeelMotion.shake_offset(elapsed, 0.2, 5.0)), 0.0, 0.2, 0.2)
+	t.tween_callback(func() -> void: FeelMotion.nudge_x(panel, 0.0))
 
 
 func _on_player_cue(cue: StringName, info: Dictionary) -> void:
@@ -717,10 +791,17 @@ func _flush_group_notice() -> void:
 		return
 	var label := "%s set complete" % _pending_group_family if _pending_group_count == 1 else "%d prop sets complete" % _pending_group_count
 	var reward := " · +$%d" % _pending_group_reward if _pending_group_reward > 0 else " · restored again"
+	var reward_amount := _pending_group_reward
 	_pending_group_count = 0
 	_pending_group_reward = 0
 	_pending_group_family = ""
 	_queue_notice(label + reward, 2.5, &"", null, 1)
+	if reward_amount > 0:
+		# First-time set rewards send a few coins from the notice to the wallet.
+		if FeelMotion.reduced(settings_store):
+			_release_money(reward_amount)
+		else:
+			_fly_coins(guidance_panel.get_global_rect().get_center(), reward_amount, clampi(reward_amount / 5, 1, 3))
 
 
 func _show_next_notice() -> void:
@@ -776,15 +857,13 @@ func _present_notice(priority: int) -> void:
 	if FeelMotion.reduced(settings_store):
 		FeelMotion.replace(guidance_panel, &"notice", null)
 		guidance_panel.modulate.a = 1.0
+		FeelMotion.nudge_y(guidance_panel, 0.0)
 		return
-	if not guidance_panel.has_meta(&"base_position"):
-		guidance_panel.set_meta(&"base_position", guidance_panel.position)
-	var base: Vector2 = guidance_panel.get_meta(&"base_position")
 	guidance_panel.modulate.a = 0.0
-	guidance_panel.position.y = base.y - FEEL.notice_rise_px
+	FeelMotion.nudge_y(guidance_panel, -FEEL.notice_rise_px)
 	var t := FeelMotion.replace(guidance_panel, &"notice", FeelMotion.tween(guidance_panel).set_parallel(true))
 	t.tween_property(guidance_panel, "modulate:a", 1.0, FEEL.notice_in_seconds)
-	t.tween_property(guidance_panel, "position:y", base.y, FEEL.notice_in_seconds).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	t.tween_method(func(pixels: float) -> void: FeelMotion.nudge_y(guidance_panel, pixels), -FEEL.notice_rise_px, 0.0, FEEL.notice_in_seconds).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	if priority >= 2:
 		FeelMotion.bump_control(guidance_panel, 1.05, 0.2)
 		_shine(guidance_panel)
@@ -793,8 +872,7 @@ func _present_notice(priority: int) -> void:
 func _clear_notices() -> void:
 	FeelMotion.replace(guidance_panel, &"notice", null)
 	guidance_panel.modulate.a = 1.0
-	if guidance_panel.has_meta(&"base_position"):
-		guidance_panel.position = guidance_panel.get_meta(&"base_position")
+	FeelMotion.nudge_y(guidance_panel, 0.0)
 	_notice_serial += 1
 	_notice_queue.clear()
 	_current_notice = {}

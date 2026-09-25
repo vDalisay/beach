@@ -16,7 +16,7 @@ Evidence record for the [game-feel plan](../plan/12-game-feel.md), packets J00�
 | J07 Completion shine | Done | [J07](#j07--completion-shine) |
 | J08 Sorting table | Done | [J08](#j08--sorting-table) |
 | J09 HUD | Done | [J09](#j09--hud) |
-| J10 Collection and money | Open | — |
+| J10 Collection and money | Done | [J10](#j10--collection-and-money) |
 | J11 Restoration | Open | — |
 | J12 Finale | Open | — |
 | J13 Rumble (optional) | Open | — |
@@ -300,6 +300,47 @@ Observed before any change: the can hover is a thin white hull; the placed chair
 - **Open issues:** both pre-existing; the packet keeps these panels' anchors and offsets unchanged, so they go to the J14 display audit:
   - At 1280×720 with 150 % UI scale, the notice panel (y 268–379 px) reaches the screen centre and covers the reticle and target label.
   - At plain 1280×720, its right edge (x 915) overlaps the scanner summary (x 870–1262) by 45 px while both are up.
+
+## J10 — Collection and money
+
+- **Build:** J09 commit + J10 working tree.
+- **Scene / seed:** `scenes/main.tscn`, `first-shore`, station S1, at 1280×720 and at 1280×720 with 150 % UI scale.
+- **Setup:**
+  - Ten waste items (five PMD, five glass) are collected with `try_collect`, then unloaded, sorted and sealed through S1's station calls. Both bags are held and deposited with `try_deposit_bag`, one per container.
+  - The call goes through the hotline's interact handler, as a click does, and is then repeated with nothing left to collect.
+  - First-time set: the three props of `sports:snack_edge/surfboard` are committed straight to slots (staged, as `validate_completion.gd` does), then published with `finalize_action`.
+  - Pause and quit mid-flight (staged): $40 is added to the wallet and carried by four coins, the way a receipt's total is. Then the game pauses for 1 s, or quits to the menu and starts a new run.
+  - A layout probe shows a toast with a rejection in the same frame, a notice and a display-only receipt at 100 %, 150 % and back to 100 % UI scale in one run.
+  - Traces and clip run at `--fixed-fps 60`, with autosave suppressed.
+- **Observed:** [collection sheet](images/J-feel/j10-collection.png) and [collection clip](images/J-feel/j10-collection.mp4):
+  - Deposit: the fill springs 0.029 → 0.085 → 0.107 → 0.109 toward its 0.1 height (the BACK ease overshoots) while the container rocks (1.2°, 0.5°, −1.2°, 0.6° in 3-frame samples) and dust puffs from the opening.
+  - Call: the phone rocks (−2.0° and −2.7° in the 0.1 s trace, still by 0.3 s) and a gold ring spreads at its base. Both fills dip and sink (0.11 → 0.10 → 0.06 → 0 by 0.42 s) with glints and dust; the containers shake and their labels pop.
+  - Receipt: it slides in from the right as the title stamps. The details type out (visible ratio 0.18 → 0.44 → 0.66 → 0.84 → 1.0 by 0.7 s) while the gold total waits at +$0. The total then counts +$6 → +$16 → +$19 → +$20 by 1.0 s and pops.
+  - Coins: three coins leave the total at 1.3 s and arc to the money line. The line held at $0 steps to $7 as the first lands and reaches $20 by 2.02 s, bumping on each arrival, and "+$20" floats. State money was $20 from the commit; `details_label.text` was final at once.
+  - Empty call: the "Nothing to collect" toast, one short phone shake at half angle, no ring.
+  - First-time set: three coins fly from the "Surfboard set complete · +$15" notice. The money line holds at $20, then steps to $30 and $35 by 0.8 s.
+  - Pause mid-flight: the coins keep flying under the pause menu; at the end of the 1 s pause the line reads $75, the wallet.
+  - Quit mid-flight: 0 coins after quitting and 0 in the next run, which opens at $0.
+  - Screen checks: coin paths stay on screen (bounding box x 90–1032, y 80–227 of 1280×720; at 150 %, x 68–627, y 68–215 of 853×480). The receipt never overlapped the notice lane in any frame of the call or the set.
+  - Feedback toast: a 440 × 48 strip centred above the bag panel (y 532–580 of 720; at 150 %, y 292–340 of 480), clear of the bag panel at both scales. See the first fix below.
+- **Reduced motion:** the receipt appears in place with the full text and final total, and the money line shows $20 on the first sample and flashes once. No coins fly. A deposit sets the fill (0.100) with no wobble, the call empties the fills at once, and the phone does not move; only its label pops. Particle counts halve.
+- **Checks run:** `validate_payment.gd`, `validate_sealing.gd`, `validate_completion.gd` (the 720p lanes with the taller receipt), `validate_ui.gd`, `validate_scanner.gd` and `validate_save_physics.gd` (the error panel on a failed load), all exit 0. The only error lines are the two exit-time GL texture-leak messages that the J06–J09 runs of the same checks also print.
+- **Fixes found while validating:**
+  - Pre-existing: the feedback toast (`ErrorPanel`, which gameplay feedback reuses) named the bottom-wide preset but left `anchor_top` at 0. It ran from 120 px above the top of the screen to 32 px above the bottom: a dark sheet over most of the view with the message in the middle. It is now bottom-centred and 440 px wide, with its bottom edge 140 px above the screen bottom. That clears the bag panel, the detector meter and the oxygen meter at 100 % and 150 %. The literal intent, a strip 240 px in from each side at the bottom, would have covered the right end of the bag panel.
+  - J09 follow-up: the notice and toast slides, and the new receipt slide, stored an absolute position the first time they ran and returned to it. After a mid-run UI-scale change, the receipt would have slid back to x 830 on a screen 853 px wide. Slides and shakes now move the control's offsets relative to its scene layout (`FeelMotion.nudge_x` and `nudge_y`), so they follow resizes. The layout probe finds the toast, notice and receipt inside the screen at 100 % → 150 % → 100 %.
+  - J09 follow-up: a rejection's shake that starts in the same frame as the toast's 6 px rise captured the risen position and restored it, leaving the toast 6 px low. The shake now moves only the horizontal offsets. After a toast plus rejection, the probe reads the toast's offsets back equal to its layout.
+  - J09 follow-up: pruning expired "+$N" floaters erased freed labels from a typed array, which is an engine error each time. It was in the J09 probe logs too. They are now pruned by index, and the J10 runs log no errors.
+- **Departures from the packet:**
+  - `CoinFlyer.fly` does not clear earlier flights, so a receipt's coins and a set's coins may overlap. `clear()` cancels every flight through an epoch counter, without running their callbacks.
+  - Held money stacks. `_hold_money(amount)` adds to `_money_pending`, and each landing releases only its own amount (`_shown.money = wallet − pending`), so a set reward during a receipt's flight does not release the receipt's hold early. A 5.2 s timer that also runs while paused releases whatever is still held.
+  - Each coin adds `amount / n` to the displayed money rather than setting `base + amount × (i + 1) / n`, so it composes with the stacked holds.
+  - The plain money reaction (roll, bump, floater) waits until the end of the frame. A receipt or set reward committed in the same `finalize_action` then holds the money first, and the coins carry the gain.
+  - Slides use layout offsets instead of the J09 base-position meta pattern (see the fixes).
+  - The hotline's ring is money gold; the packet leaves its colour open.
+- **Retained tuning:** none.
+- **Open issues:**
+  - The results-screen safety (`coin_flyer.clear()` and a release when results open) lands with J12, as the packet says.
+  - At 150 % UI scale, the toast's right end (x 646 of 853) passes under the sorting table's side panel (from x 563). Short messages stay clear; a long one would be partly hidden. This goes to the J14 display audit.
 
 ## Retained tuning
 

@@ -196,6 +196,28 @@ static func shake_offset(elapsed: float, seconds: float, pixels: float) -> float
 	return sin(elapsed * 55.0) * pixels * decay
 
 
+## An anchored control's offsets as its scene lays them out. UI slides and shakes move relative
+## to these instead of a cached position, so a resize or UI-scale change never strands a panel.
+static func layout_offsets(control: Control) -> Vector4:
+	if not control.has_meta(&"feel_layout"):
+		control.set_meta(&"feel_layout", Vector4(control.offset_left, control.offset_top, control.offset_right, control.offset_bottom))
+	return control.get_meta(&"feel_layout")
+
+
+## Shifts an anchored control sideways from its laid-out place; 0 puts it back exactly.
+static func nudge_x(control: Control, pixels: float) -> void:
+	var layout := layout_offsets(control)
+	control.offset_left = layout.x + pixels
+	control.offset_right = layout.z + pixels
+
+
+## Shifts an anchored control up or down from its laid-out place; 0 puts it back exactly.
+static func nudge_y(control: Control, pixels: float) -> void:
+	var layout := layout_offsets(control)
+	control.offset_top = layout.y + pixels
+	control.offset_bottom = layout.w + pixels
+
+
 ## Count-up duration for a numeric change.
 static func count_seconds(delta_value: float) -> float:
 	return clampf(FEEL.count_min_seconds + log(maxf(absf(delta_value), 1.0)) * 0.1, FEEL.count_min_seconds, FEEL.count_max_seconds)
