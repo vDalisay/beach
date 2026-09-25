@@ -41,6 +41,9 @@ func try_clean(player_id: StringName, item_id: StringName, patch_id: StringName,
 	var view := session.item_view_manager.view_for(item_id) if session.item_view_manager != null else null
 	if view != null:
 		view.clean_dirt_patch(patch_id)
+	var done := record.dirty_patches_remaining.is_empty()
+	if player != null:
+		player.play_cue(&"clean_done" if done else &"clean", {"item_id": str(item_id)})
 	interactor.clear_target()
 	return ActionResult.accepted(PackedStringArray([str(item_id)]), {
 		"item_id": str(item_id),
@@ -78,3 +81,4 @@ func _on_primary_requested(target: Dictionary) -> void:
 	})
 	if not result.ok:
 		feedback_requested.emit(result.message)
+		player.play_cue(&"rejected", {"reason": result.message})

@@ -43,6 +43,7 @@ var _shadow_meshes: Array[GeometryInstance3D] = []
 var effects: ItemViewManager
 var _impact_armed_until := 0
 var _last_speed := 0.0
+var _hover_held_until := 0
 
 
 func _ready() -> void:
@@ -173,7 +174,14 @@ func outline_overlay_count() -> int:
 	return HoverHighlight.overlay_count(visual_root)
 
 
+## Lets another presentation (a reveal pop) own the visual root for a moment; hover lifts wait.
+func hold_hover(seconds: float) -> void:
+	_hover_held_until = Time.get_ticks_msec() + int(seconds * 1000.0)
+
+
 func _animate_hover(active: bool) -> void:
+	if Time.get_ticks_msec() < _hover_held_until:
+		return
 	var t := FeelMotion.replace(visual_root, &"hover", FeelMotion.tween(self))
 	if not active:
 		t.tween_property(visual_root, "scale", Vector3.ONE, FEEL.hover_out_seconds)
@@ -278,7 +286,10 @@ func clean_dirt_patch(patch_id: StringName) -> void:
 	var patch: Variant = _dirt_visuals[patch_id]
 	_dirt_visuals.erase(patch_id)
 	if is_instance_valid(patch):
-		(patch as DirtVisual).clean()
+		var reduced := effects.reduced_motion() if effects != null else false
+		if effects != null:
+			effects.feel_sparkles((patch as DirtVisual).global_position + Vector3.UP * 0.03, 1 if reduced else 2)
+		(patch as DirtVisual).clean(reduced)
 
 
 func set_dirt_interactive(value: bool) -> void:

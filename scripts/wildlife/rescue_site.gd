@@ -1,6 +1,8 @@
 class_name RescueSite
 extends Node3D
 
+const FEEL := preload("res://data/feel/feel_tuning.tres")
+
 @onready var animal: Node3D = %Animal
 @onready var attachment_root: Node3D = %Attachments
 @onready var status_label: Label3D = %Status
@@ -33,6 +35,20 @@ func attachment_area(item_id: StringName) -> Area3D:
 	return attachment_areas.get(item_id) as Area3D
 
 
+## Removes and returns the attachment's visual (not its Area3D) so it can be presented.
+func detach_attachment_visual(item_id: StringName) -> Node3D:
+	var area := attachment_area(item_id)
+	if area == null:
+		return null
+	for child in area.get_children():
+		if child is Node3D and not (child is CollisionShape3D):
+			var from := (child as Node3D).global_transform
+			area.remove_child(child)
+			child.set_meta(&"from_transform", from)
+			return child as Node3D
+	return null
+
+
 func remove_attachment(item_id: StringName) -> void:
 	var area := attachment_area(item_id)
 	if area != null:
@@ -55,9 +71,26 @@ func refresh() -> void:
 	status_label.modulate = Color("ffdd8a")
 
 
-func release_animal() -> void:
+## The rescue lands: "FREED" pops, the animal breathes out a stream of bubbles and a ring
+## spreads, then the label fades while the animal sets off. Loads never replay this.
+func release_animal(reduced := false) -> void:
 	refresh()
-	_start_route()
+	var animator := animal.get_node_or_null("Animator") as TurtleAnimator
+	if animator != null:
+		animator.exhale()
+	FeelRing.spawn(self, animal.global_position + Vector3.UP * 0.05, 0.3, 1.4, 0.6, FEEL.wave_color_reef, 0.08)
+	var t := FeelMotion.replace(status_label, &"freed", FeelMotion.tween(status_label))
+	if not reduced:
+		status_label.scale = Vector3.ONE * 0.4
+		t.tween_property(status_label, "scale", Vector3.ONE * 1.25, 0.12).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		t.tween_property(status_label, "scale", Vector3.ONE, 0.12).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
+	t.tween_interval(FEEL.freed_label_seconds)
+	t.tween_property(status_label, "modulate:a", 0.0, 0.4)
+	t.tween_callback(func() -> void:
+		status_label.hide()
+		status_label.modulate.a = 1.0
+	)
+	_start_route(false)
 
 
 func _create_attachment(record: ItemRecord) -> void:
@@ -87,10 +120,11 @@ func _create_attachment(record: ItemRecord) -> void:
 	attachment_areas[record.item_id] = area
 
 
-func _start_route() -> void:
+func _start_route(hide_label := true) -> void:
 	if _route_tween != null and _route_tween.is_running():
 		return
-	status_label.hide()
+	if hide_label:
+		status_label.hide()
 	var animator := animal.get_node_or_null("Animator") as TurtleAnimator
 	if animator != null:
 		animator.face_motion = true

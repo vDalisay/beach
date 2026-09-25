@@ -30,14 +30,19 @@ func configure(owner_item_id: StringName, owner_patch_id: StringName, anchor: Ve
 		monitorable = false
 
 
-func clean() -> void:
+## The stain smears sideways and fades as the cloth passes (a fade only under reduced motion).
+func clean(reduced := false) -> void:
 	collision_layer = 0
 	collision_mask = 0
-	var tween := create_tween().set_parallel(true)
-	tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	tween.tween_property(mesh, "transparency", 1.0, 0.18)
-	tween.tween_property(self, "scale", _base_scale * 0.72, 0.18)
-	tween.chain().tween_callback(queue_free)
+	var t := FeelMotion.tween(self)
+	if reduced:
+		t.tween_property(mesh, "transparency", 1.0, 0.18)
+	else:
+		t.set_parallel(true)
+		t.tween_property(mesh, "transparency", 1.0, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		t.tween_property(self, "scale", _base_scale * Vector3(1.35, 0.6, 1.0), 0.22).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+		t.tween_property(self, "position", position + transform.basis.x.normalized() * 0.03, 0.22)
+	t.chain().tween_callback(queue_free)
 
 
 ## Hover grows the stain visual (not its target collider) and outlines it; a stain the current

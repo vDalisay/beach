@@ -4,13 +4,18 @@ extends Node
 signal feedback_requested(message: String)
 
 const TOOL_ID := &"vacuum"
+const FEEL := preload("res://data/feel/feel_tuning.tres")
 
 var session: RunSession
 var player: BeachPlayer
 var definition: ToolDefinition
+## Suction motes drifting into the nozzle while the vacuum runs (presentation only).
+var motes: ParticlePool
 var _elapsed := 0.0
 var _started := false
 var _blocked_until_release := false
+var _mote_budget := 0.0
+var _mote_rng := RandomNumberGenerator.new()
 
 
 func configure(run_session: RunSession, player_body: BeachPlayer) -> void:
@@ -19,6 +24,14 @@ func configure(run_session: RunSession, player_body: BeachPlayer) -> void:
 	definition = session.progression.offers[TOOL_ID] as ToolDefinition
 	session.vacuum_tool = self
 	process_physics_priority = 1
+	if motes == null:
+		motes = ParticlePool.create(ParticlePool.Kind.DUST, 48)
+		motes.drag = 0.0
+		motes.rise = 0.0
+		motes.grow = -0.6
+		motes.tint = Color(FEEL.dust_color, 0.8)
+		add_child(motes)
+	_mote_rng.seed = 1  # cosmetic stream, never gameplay
 	set_physics_process(true)
 
 
@@ -63,6 +76,7 @@ func try_collect_next() -> ActionResult:
 		})
 		if result.ok:
 			player.carry.present_collected(view.item_id, &"vacuum")
+			player.play_cue(&"vacuum_tick")
 			return result
 	return ActionResult.rejected(ActionResult.Reason.WRONG_STATE, "No eligible litter in cone")
 
@@ -75,6 +89,8 @@ func _physics_process(delta: float) -> void:
 		return
 	if _blocked_until_release:
 		return
+	player.hand_rig.set_tool_activity(&"vacuum", 1.0)
+	_emit_motes(delta)
 	_elapsed += delta
 	if not _started:
 		_started = true
@@ -92,4 +108,19 @@ func _attempt_tick() -> void:
 	var result := try_collect_next()
 	if not result.ok and result.reason == ActionResult.Reason.CAPACITY:
 		feedback_requested.emit("Bag full")
+		player.play_cue(&"vacuum_full", {"reason": "Bag full"})
 		_blocked_until_release = true
+
+
+## Motes appear along the cone and flow into the visible nozzle, arriving as they fade.
+func _emit_motes(delta: float) -> void:
+	var reduced := FeelMotion.reduced(player.settings_store)
+	_mote_budget += delta * FEEL.vacuum_mote_rate * (0.5 if reduced else 1.0)
+	var nozzle := player.hand_rig.tool_tip().global_position
+	var basis := player.camera.global_basis
+	while _mote_budget >= 1.0:
+		_mote_budget -= 1.0
+		var direction := (-basis.z + basis.x * _mote_rng.randf_range(-0.35, 0.35) + basis.y * _mote_rng.randf_range(-0.2, 0.2)).normalized()
+		var start := player.camera.global_position + direction * _mote_rng.randf_range(1.5, range_meters())
+		var to_nozzle := nozzle - start
+		motes.emit(start, to_nozzle.normalized() * FEEL.vacuum_mote_speed, _mote_rng.randf_range(0.02, 0.035), to_nozzle.length() / FEEL.vacuum_mote_speed)

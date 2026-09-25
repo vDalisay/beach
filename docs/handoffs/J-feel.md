@@ -12,7 +12,7 @@ Evidence record for the [game-feel plan](../plan/12-game-feel.md), packets J00�
 | J03 Viewmodel | Done | [J03](#j03--viewmodel) |
 | J04 Pickup and throw | Done | [J04](#j04--pickup-and-throw) |
 | J05 Placement | Done | [J05](#j05--placement) |
-| J06 Tools | Open | — |
+| J06 Tools | Done | [J06](#j06--tools) |
 | J07 Completion shine | Open | — |
 | J08 Sorting table | Open | — |
 | J09 HUD | Open | — |
@@ -189,6 +189,31 @@ Observed before any change: the can hover is a thin white hull; the placed chair
 - **Open issues:** two pre-existing costs, not changed here and flagged as separate tasks:
   - A group-completion reward triggers an autosave through `wallet_changed`. One `save_slot` on the full beach (5,740 items) took 2.4–6.5 s on the main thread. Any placement travel in flight then finishes in a single step after the stall.
   - Aiming at an empty, unclaimed shared shelf costs about 30 ms per physics frame, because `_shared_claim_is_safe` scans every item record on each preview. The frame rate drops while lining up such a shelf. Godot's catch-up delta (at most 0.133 s per frame) then shortens the visible travel: real-time traces of the first shelf placement and the capture finished in 30–60 ms. The fixed-FPS traces above show the intended timing.
+
+## J06 — Tools
+
+- **Build:** J05 commit + J06 working tree.
+- **Scene / seed:** `scenes/main.tscn`, `first-shore`.
+- **Setup:** ownership is staged by the probe: the tool is added to `owned_tools`, put in slot 1 with the stick in slot 2, the tool visual is refreshed and the change is published like `try_equip`. The scanner is learned through the real booklet purchase after collecting a plastic bottle. Actions use the real entry points: `request_primary` for the cloth and stick, and `try_click` for the knife, detector and sand cleaner (the routes `player.gd` uses). The vacuum trigger is held with `Input.action_press`. The bag is filled with `try_collect` for the full-bag cases. Traces and clips run at `--fixed-fps 60`; the vacuum profile runs in real time. The probe suppresses autosave (see J05).
+- **Observed:** [tools sheet](images/J-feel/j06-tools.png) and [tools clip](images/J-feel/j06-tools.mp4) (1080p, recorded with short holds before each action). Sections: cloth 0:00, knife 0:05, detector 0:12, sand cleaner 0:24, vacuum 0:28, scanner 0:37, stick 0:40. For the clip only, the vacuum bag is staged ten items short of capacity so the hold ends in the choke.
+  - Stick: at rest the spike tip sits at the same screen point (59 %, 89 %) at FOV 70 and 110, because main's per-socket View correction holds the tool in screen space, so no retune was needed. It stabs and collects at both FOVs and crouched from knee height. Clicking empty air sends `whiff` (a 60 % poke, with no reticle pop). With a full bag, clicking a can sends `rejected` ("Bag full"): the reject clip plays and the bag wobbles.
+  - Cloth: on a two-stain lounger, each stain smears sideways to 1.35 × 0.60 while fading out over 0.22 s, with 2 glints. The cues are `clean`, then `clean_done` on the last stain; J07 adds the gleam.
+  - Knife: shallows turtle `rescue:11`, at the water line. The first cut, with bag room, flies the cut litter into the bag (caught 0.31 s later) with 6 white snip glints. With the bag full, the second cut drops the litter: the attached model pops away and a puff marks the drop point. The turtle is freed: "FREED" pops 0.4 → 1.25 → 1.0, the turtle breathes out bubbles and a reef-coloured ring spreads 0.3 → 1.4 m. The label holds for 1.6 s, then fades and hides while the turtle sets off. Cutting at the submerged reef site `rescue:08` adds 6 bubbles.
+  - Detector: approaching the most isolated find (5.4 m from its neighbour) from 4 m to 0.5 m, strength rose 0.22 → 0.83 and the ping interval shrank from 0.76 s to 0.65, 0.54, 0.45 and 0.38 s. Each ping spreads a yellow ring from the signal, flashes the coil and brightens the meter; the surface marker no longer throbs. On reveal: 14 sand quads, 6 glints and a collapsing ring. The find rises from −0.25 m to 0.06 m in 0.22 s and bounces to rest by 0.38 s. The valuable (lost keys) also spins one full turn, ends at exactly 0 and shows gold glints.
+  - Sand cleaner: the preview is a rotating 24-dash ring. It shows intensity 0.55 over empty sand and 1.0 over litter (a presentation hint counted every 0.1 s). On a sift it collected 6 items (the cap) with a 16-quad sand puff. The ring contracted 1.0 → 0.2 while fading over 0.3 s, then came back. The items streamed into the bag 35 ms apart (six catches between 0.30 and 0.50 s).
+  - Vacuum: held for 5 s in the densest pile, it collected 13 items at the unchanged 0.125 s interval before the pile ran out. Motes flowed into the nozzle, peaking at 13 live (cap 48), with a recoil per item and the hum jitter. Moving on to more litter filled the bag to 20/20: `vacuum_full` fired, the choke clip played and suction stopped until release.
+  - Scanner: with the plastic filter (871 matches), the pulse's sonar ring spreads from the player to 30 m over 0.9 s. The visible marker pops 0.6 → 1.12 → 1.0.
+- **Reduced motion:** stains fade only (scale stays 1, one glint). FREED shows without the pop; the ring and bubbles stay. Detector pings keep their rings but lose the tool flash, and the reveal keeps its burst at half count (7 quads, 3 glints) with no pop or spin. The sand ring keeps still dashes and does not contract, and the sift puff is 8 quads. Vacuum motes run at half rate (peak 7). Scanner markers appear without the pop. Clips play at 50 % and the tool jitter, sweep and rock are off (J03).
+- **Checks run:** `validate_tool_filters.gd`, `validate_buried.gd`, `validate_rescue.gd`, `validate_dirt.gd`, `validate_scanner.gd` and `validate_purchases.gd`, all exit 0.
+- **Profile:** vacuum held in the densest pile (real time, two runs), each compared with 300 idle frames at the same spot after the views finished streaming. Idle: median 7.46 / 7.52 ms, p95 8.30 / 8.43 ms. Held: median 7.83 / 7.85 ms, p95 8.91 / 8.89 ms. Draws rose from 5,092 to 5,161 (motes, flights and bag catches). The node count went from 10,439 before to 10,348 while held (collected views freed); motes add no nodes. The J00 baseline is the dense physics lab (p95 18.4 ms), so the same-spot comparison is the one that counts.
+- **Departures from the packet:**
+  - The reveal pop runs on the visual root's hover channel and holds hover lifts for 0.4 s (`WorldItem.hold_hover`). Otherwise the hover that starts on the freshly revealed item, in the same frame, would cut the pop short.
+  - FREED eases up with QUAD to peak at exactly 1.25; `TRANS_BACK` overshot to 1.33.
+  - Scanner markers pop on the pulse's first refresh: `_pop_markers` is set before `_refresh(result)`, where the packet set it after `pulse_succeeded`.
+  - The sand cleaner's other failure branches (not aimed at sand, bag full) also send the reject cue and tint the ring amber. The detector's "no signal" click also sends the reject cue.
+  - Cloth glints halve under reduced motion, like every other sparkle.
+- **Retained tuning:** none.
+- **Open issues:** none.
 
 ## Retained tuning
 

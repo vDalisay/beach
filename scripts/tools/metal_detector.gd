@@ -4,6 +4,7 @@ extends Node3D
 signal feedback_requested(message: String)
 
 const TOOL_ID := &"detector"
+const FEEL := preload("res://data/feel/feel_tuning.tres")
 
 var session: RunSession
 var player: BeachPlayer
@@ -15,6 +16,7 @@ var strength_bar: ProgressBar
 var marker: MeshInstance3D
 var nearest_find: ItemRecord
 var _scan_elapsed := 0.0
+var _ping_elapsed := 0.0
 
 
 func configure(run_session: RunSession, player_body: BeachPlayer, buried_finds: BuriedFind, detector_meter: Control) -> void:
@@ -53,6 +55,7 @@ func try_click() -> ActionResult:
 	if not is_active():
 		return ActionResult.rejected(ActionResult.Reason.TOOL_REQUIRED, "Equip the metal detector")
 	if nearest_find == null or nearest_find.location != ItemRecord.Location.BURIED:
+		player.play_cue(&"rejected", {"reason": "No buried signal within 4 m"})
 		return ActionResult.rejected(ActionResult.Reason.WRONG_STATE, "No buried signal within 4 m")
 	var result := finds.try_reveal(&"local", nearest_find.item_id)
 	if result.ok:
@@ -60,8 +63,10 @@ func try_click() -> ActionResult:
 		feedback_requested.emit("Uncovered %s · switch to stick to collect" % revealed.display_name)
 		nearest_find = null
 		_scan_elapsed = 1.0
+		player.play_cue(&"reveal")
 	else:
 		feedback_requested.emit(result.message)
+		player.play_cue(&"rejected", {"reason": result.message})
 	return result
 
 
@@ -80,6 +85,7 @@ func _physics_process(delta: float) -> void:
 		distance_label.text = "NO SIGNAL · move along the shore"
 		strength_bar.value = 0
 		marker.hide()
+		player.hand_rig.set_tool_activity(&"detector", 0.3)
 		return
 	var distance := player.global_position.distance_to(nearest_find.dig_surface_position)
 	var strength := clampf(1.0 - distance / definition.range, 0.0, 1.0)
@@ -87,4 +93,20 @@ func _physics_process(delta: float) -> void:
 	strength_bar.value = strength * 100.0
 	marker.global_position = nearest_find.dig_surface_position + Vector3.UP * 0.045
 	marker.visible = true
-	marker.scale = Vector3.ONE * (1.0 + strength * 0.16 * sin(Time.get_ticks_msec() * 0.012))
+	# The ping rings carry the rhythm now; the surface marker holds still.
+	marker.scale = Vector3.ONE
+	player.hand_rig.set_tool_activity(&"detector", 0.3 + 0.7 * strength)
+	_ping_elapsed += delta
+	if _ping_elapsed >= lerpf(FEEL.detector_ping_far_seconds, FEEL.detector_ping_near_seconds, strength):
+		_ping_elapsed = 0.0
+		_ping(strength)
+
+
+## One ping: a ring spreads from the signal, the coil flashes and the meter brightens. Rings are
+## positional feedback and stay under reduced motion; the tool flash does not.
+func _ping(strength: float) -> void:
+	FeelRing.spawn(self, marker.global_position + Vector3.UP * 0.01, 0.2, FEEL.detector_ring_radius, 0.5, FEEL.detector_color, 0.05)
+	player.hand_rig.flash_tool(FEEL.detector_color, 0.12)
+	strength_bar.modulate = Color(1.35, 1.25, 1.0)
+	FeelMotion.replace(strength_bar, &"ping", FeelMotion.tween(strength_bar)).tween_property(strength_bar, "modulate", Color.WHITE, 0.15)
+	player.play_cue(&"detector_ping", {"strength": strength})

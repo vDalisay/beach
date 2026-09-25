@@ -5,6 +5,7 @@ signal feedback_requested(message: String)
 
 const TOOL_ID := &"knife"
 const SITE_SCENE := preload("res://scenes/wildlife/rescue_site.tscn")
+const FEEL := preload("res://data/feel/feel_tuning.tres")
 
 var session: RunSession
 var player: BeachPlayer
@@ -38,9 +39,12 @@ func try_click() -> ActionResult:
 	var item_id := StringName(str(target.get("id", "")))
 	if item_id.is_empty() or not session.state.items.has(item_id) or (session.state.items[item_id] as ItemRecord).location != ItemRecord.Location.ATTACHED:
 		feedback_requested.emit("Aim at an animal attachment")
+		player.play_cue(&"rejected", {"reason": "Aim at an animal attachment"})
 		return ActionResult.rejected(ActionResult.Reason.BLOCKED_TARGET, "Aim at an animal attachment")
 	var result := try_cut(item_id)
 	feedback_requested.emit("Animal freed; attached litter retained for collection" if result.ok and bool(result.receipt.get("animal_freed", false)) else ("Attachment cut into bag" if result.ok and str(result.receipt.destination) == "bag" else ("Bag full — switch to stick to collect dropped attachment" if result.ok else result.message)))
+	if not result.ok:
+		player.play_cue(&"rejected", {"reason": result.message})
 	return result
 
 
@@ -97,18 +101,47 @@ func try_cut(item_id: StringName) -> ActionResult:
 	record.container_id = &""
 	record.slot_id = &""
 	record.rescuer_id = &"local"
+	var at := area.global_position
+	var visual := site.detach_attachment_visual(item_id)
 	site.remove_attachment(item_id)
 	var remaining := 0
 	for attachment_text in rescue.attachment_ids:
 		if (session.state.items[StringName(str(attachment_text))] as ItemRecord).location == ItemRecord.Location.ATTACHED:
 			remaining += 1
 	var freed := remaining == 0
+	var reduced := FeelMotion.reduced(player.settings_store)
 	if freed:
 		rescue.released = true
-		site.release_animal()
+		site.release_animal(reduced)
 	session.finalize_action(PackedStringArray([str(item_id)]))
+	_present_cut(item_id, site, at, visual, destination, drop_pose, reduced)
+	if freed:
+		player.play_cue(&"animal_freed", {"site_id": str(site_id)})
 	player.interactor.clear_target()
 	return ActionResult.accepted(PackedStringArray([str(item_id)]), {"site_id": str(site_id), "item_id": str(item_id), "destination": destination, "animal_freed": freed, "remaining": remaining})
+
+
+## Presentation only: snip glints (bubbles underwater), then the cut litter either flies into
+## the bag or pops away where it drops.
+func _present_cut(item_id: StringName, site: RescueSite, at: Vector3, visual: Node3D, destination: String, drop_pose: Transform3D, reduced: bool) -> void:
+	var manager := session.item_view_manager
+	if at.y < WorldItem.WATER_LEVEL - 0.05 and manager.bubbles != null:
+		manager.bubbles.burst(at, Vector3.UP, 3 if reduced else 6, 0.5, 0.2, Vector2(0.01, 0.025), 1.4)
+	manager.feel_sparkles(at, 3 if reduced else 6, Color.WHITE)
+	player.play_cue(&"cut", {"item_id": str(item_id)})
+	if visual == null:
+		return
+	var from: Transform3D = visual.get_meta(&"from_transform")
+	if destination == "bag":
+		player.carry.present_visual(item_id, visual, from, player.hand_rig.bag_socket, FEEL.bag_end_scale,
+			func() -> void: player.play_cue(&"bag_catch"))
+		return
+	site.add_child(visual)
+	visual.global_transform = from
+	var t := FeelMotion.tween(visual)
+	t.tween_property(visual, "scale", Vector3.ZERO, 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+	t.tween_callback(visual.queue_free)
+	manager.feel_puff(drop_pose.origin, reduced)
 
 
 func _nearby_drop_pose(site: RescueSite, point: Vector3, item_definition: ItemDefinition) -> Transform3D:

@@ -2,6 +2,7 @@ class_name BuriedFind
 extends Node3D
 
 const DIG_REACH := 1.5
+const FEEL := preload("res://data/feel/feel_tuning.tres")
 
 var session: RunSession
 var player: BeachPlayer
@@ -96,10 +97,32 @@ func _clear_reveal_pose(record: ItemRecord) -> Transform3D:
 	return Transform3D.IDENTITY
 
 
+## Presentation only: sand bursts from the dig point, a collapsing ring marks it and the find
+## pops up out of the sand (valuables spin once). Reduced motion keeps the burst and ring.
 func _animate_lift(item_id: StringName) -> void:
 	await get_tree().physics_frame
-	var view := session.item_view_manager.view_for(item_id)
-	if view == null or (player.settings_store != null and bool(player.settings_store.get_value(&"reduced_motion"))):
+	var record := session.state.items.get(item_id) as ItemRecord
+	var manager := session.item_view_manager
+	if record == null or manager == null:
 		return
+	var definition := session.definitions[record.definition_id] as ItemDefinition
+	var at := record.dig_surface_position
+	var valuable := definition.kind == ItemDefinition.Kind.VALUABLE
+	var reduced := manager.reduced_motion()
+	if manager.dust != null:
+		manager.dust.burst(at + Vector3.UP * 0.02, Vector3.UP, 7 if reduced else 14, 1.4, 0.6, Vector2(0.03, 0.06), 0.6, FEEL.sand_color)
+	manager.feel_sparkles(at + Vector3.UP * 0.15, 3 if reduced else 6, FEEL.sparkle_colors[1] if valuable else Color(0, 0, 0, 0))
+	FeelRing.spawn(self, at + Vector3.UP * 0.02, 0.9, 0.1, 0.25, FEEL.detector_color, 0.05)
+	var view := manager.view_for(item_id)
+	if view == null or reduced:
+		return
+	# The pop owns the visual root for its length; a hover lift would cut it short.
+	view.hold_hover(0.4)
 	view.visual_root.position.y = -0.3
-	view.create_tween().tween_property(view.visual_root, "position:y", 0.0, 0.35)
+	var t := FeelMotion.replace(view.visual_root, &"hover", FeelMotion.tween(view))
+	t.tween_property(view.visual_root, "position:y", FEEL.reveal_pop_height, 0.22).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	t.tween_property(view.visual_root, "position:y", 0.0, 0.16).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	if valuable:
+		var spin := FeelMotion.replace(view.visual_root, &"spin", FeelMotion.tween(view))
+		spin.tween_property(view.visual_root, "rotation:y", TAU, 0.38)
+		spin.tween_callback(func() -> void: view.visual_root.rotation.y = 0.0)

@@ -220,6 +220,36 @@ func set_tool_activity(kind: StringName, amount: float) -> void:
 		animator.set_activity(kind, amount)
 
 
+## A brief additive flash over the held tool (the detector coil on each ping). Skipped under
+## reduced motion.
+func flash_tool(color: Color, seconds := 0.12) -> void:
+	if not is_instance_valid(_tool_instance) or (animator != null and FeelMotion.reduced(animator.settings)):
+		return
+	var material := StandardMaterial3D.new()
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.albedo_color = color
+	var meshes: Array[MeshInstance3D] = []
+	_collect_meshes(_tool_instance, meshes)
+	for mesh in meshes:
+		mesh.material_overlay = material
+	var t := FeelMotion.replace(_tool_instance, &"flash", FeelMotion.tween(_tool_instance))
+	t.tween_property(material, "albedo_color:a", 0.0, seconds)
+	t.tween_callback(func() -> void:
+		for mesh in meshes:
+			if is_instance_valid(mesh) and mesh.material_overlay == material:
+				mesh.material_overlay = null
+	)
+
+
+func _collect_meshes(node: Node, result: Array[MeshInstance3D]) -> void:
+	for child in node.get_children():
+		if child is MeshInstance3D:
+			result.append(child as MeshInstance3D)
+		_collect_meshes(child, result)
+
+
 func set_bag_fill(ratio: float) -> void:
 	if animator != null:
 		animator.set_bag_fill(ratio)

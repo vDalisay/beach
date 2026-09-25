@@ -7,6 +7,7 @@ signal pulse_succeeded
 const MARKER_SCENE := preload("res://scenes/ui/scanner_marker.tscn")
 const MARKER_LIMIT := 8
 const NEAR_RANGE := 30.0
+const FEEL := preload("res://data/feel/feel_tuning.tres")
 
 var session: RunSession
 var player: BeachPlayer
@@ -16,6 +17,7 @@ var marker_layer: Control
 var markers: Array[PanelContainer] = []
 var _expires_at := 0
 var _refresh_at := 0
+var _pop_markers := false
 
 
 func configure(run_session: RunSession, player_body: BeachPlayer, scanner_overlay: Control) -> void:
@@ -138,8 +140,12 @@ func pulse() -> ActionResult:
 	_expires_at = Time.get_ticks_msec() + 6000
 	_refresh_at = 0
 	overlay.show()
+	# The markers this pulse shows pop in; later refreshes only move them.
+	_pop_markers = true
 	_refresh(result)
 	pulse_succeeded.emit()
+	FeelRing.spawn(player.get_parent(), player.global_position + Vector3.UP * 0.05, 0.5, FEEL.scanner_ring_radius, FEEL.scanner_ring_seconds, FEEL.scanner_color, 0.35)
+	player.play_cue(&"scanner_pulse")
 	return ActionResult.accepted(PackedStringArray(), {"count": (result.ids as PackedStringArray).size(), "filter": str(result.filter)})
 
 
@@ -194,6 +200,24 @@ func _refresh(existing: Dictionary = {}) -> void:
 		title = "SCAN · %s\nNo remaining matches" % filter_label(StringName(str(result.filter)))
 	title += "\n◆ Hints may be occluded; move close to interact"
 	summary.text = title
+	if _pop_markers:
+		_pop_markers = false
+		if not FeelMotion.reduced(player.settings_store):
+			_pop_visible_markers()
+
+
+func _pop_visible_markers() -> void:
+	var index := 0
+	for marker in markers:
+		if not marker.visible:
+			continue
+		marker.pivot_offset = marker.size * 0.5
+		marker.scale = Vector2.ONE * 0.6
+		var t := FeelMotion.replace(marker, &"pop", FeelMotion.tween(marker))
+		t.tween_interval(index * 0.03)
+		t.tween_property(marker, "scale", Vector2.ONE * 1.08, 0.1).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		t.tween_property(marker, "scale", Vector2.ONE, 0.08).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
+		index += 1
 
 
 func _show_marker(index: int, target: Dictionary, distance: float, screen: Vector2) -> void:
