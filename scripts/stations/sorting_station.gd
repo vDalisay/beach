@@ -13,6 +13,7 @@ const CATEGORIES: Array[StringName] = [&"pmd", &"organic", &"general", &"glass"]
 const CATEGORY_NAMES := ["PMD", "Organic", "General", "Glass"]
 const PROXY_COLORS := [Color("4aa9e9"), Color("78a84c"), Color("777b82"), Color("78d4c5")]
 const BAG_SCENE := preload("res://scenes/items/disposal_bag.tscn")
+const FEEL := preload("res://data/feel/feel_tuning.tres")
 
 @export var station_id: StringName = &"sorting:S1"
 @onready var tabletop: StaticBody3D = %Tabletop
@@ -30,6 +31,14 @@ var _saved_hand_visible := true
 var _roof: Node3D
 var _proxies: Dictionary = {}
 var _bag_views: Dictionary = {}
+## Presentation only: glints at bin openings and the tray, the hovered and dragged proxies and the
+## fill level inside each bin. None of this is saved.
+var sparkles: ParticlePool
+var _hover_cell := -1
+var _drag_proxy: Node3D
+var _drag_cell := -1
+var _drag_velocity := Vector3.ZERO
+var _bin_fills: Array[MeshInstance3D] = []
 
 
 func configure(run_session: RunSession, player_body: BeachPlayer, sorting_view: SortingView) -> void:
@@ -45,14 +54,19 @@ func configure(run_session: RunSession, player_body: BeachPlayer, sorting_view: 
 		player.interactor.interact_requested.connect(_on_interact_requested)
 	if not session.bags_changed.is_connected(_on_bags_changed):
 		session.bags_changed.connect(_on_bags_changed)
+	if sparkles == null:
+		sparkles = ParticlePool.create(ParticlePool.Kind.SPARKLE, 48, true)
+		add_child(sparkles)
 	for index in range(CATEGORIES.size()):
 		var area := bin_areas.get_child(index) as Area3D
 		_build_bin_walls(area)
+		_build_bin_fill(area, index)
 		area.body_entered.connect(_on_bin_body_entered.bind(CATEGORIES[index], area))
+	_update_bin_fills(false)
 	_refresh_proxies()
 	_refresh_valuable_views()
 	for bag_key in session.state.bag_records:
-		_refresh_bag_view(StringName(str(bag_key)))
+		_refresh_bag_view(StringName(str(bag_key)), false)
 
 
 func table_record() -> Dictionary:
@@ -152,7 +166,8 @@ func try_unload(player_id: StringName) -> ActionResult:
 	player_record.valuable_bag = [] as Array[StringName]
 	player_record.bag_order = [] as Array[StringName]
 	session.finalize_action(changed)
-	_contents_committed()
+	_cascade(_contents_committed())
+	player.play_cue(&"unload")
 	return ActionResult.accepted(changed, {"waste": waste.size(), "valuables": valuables.size()})
 
 
@@ -185,6 +200,9 @@ func try_sell_valuable(player_id: StringName, item_id: StringName) -> ActionResu
 	session.state.valuable_sales.append(receipt)
 	session.finalize_action(PackedStringArray([str(item_id)]), PackedStringArray(), PackedStringArray([str(player_id)]))
 	_contents_committed()
+	_burst(tray_items.global_position + Vector3.UP * 0.1, 8, FEEL.sparkle_colors[1])
+	FeelFloater.spawn(self, tray_items.global_position + Vector3.UP * 0.35, "+$%d" % amount, FEEL.money_color, _reduced())
+	player.play_cue(&"sell")
 	return ActionResult.accepted(PackedStringArray([str(item_id)]), receipt)
 
 
@@ -224,6 +242,12 @@ func try_sort(item_id: StringName, category: StringName, physical_area: Area3D =
 		return ActionResult.rejected(ActionResult.Reason.WRONG_STATE, "Already in that bin")
 	if (destination.items as Array).size() >= BIN_CAPACITY:
 		return ActionResult.rejected(ActionResult.Reason.CAPACITY, "%s bin is full" % CATEGORY_NAMES[CATEGORIES.find(category)])
+	# Presentation only: the table proxy leaves with the item instead of vanishing.
+	var source_cell := record.slot_id if record.location == ItemRecord.Location.TABLE else StringName()
+	var flying: Node3D = null
+	if not source_cell.is_empty() and _proxies.has(source_cell):
+		flying = _proxies[source_cell] as Node3D
+		_proxies.erase(source_cell)
 	if record.location == ItemRecord.Location.TABLE:
 		(table_record().cells as Dictionary).erase(record.slot_id)
 	elif record.location == ItemRecord.Location.BIN:
@@ -245,6 +269,8 @@ func try_sort(item_id: StringName, category: StringName, physical_area: Area3D =
 			bag_ids.append(str(sealed.bag_id))
 	session.finalize_action(changed, PackedStringArray(), PackedStringArray(), bag_ids)
 	_contents_committed()
+	_present_sort(flying, category)
+	player.play_cue(&"sort", {"correct": correct})
 	return ActionResult.accepted(changed, {"correct": correct, "category": str(category), "sealed_bag_id": bag_ids[0] if not bag_ids.is_empty() else ""})
 
 
@@ -264,6 +290,7 @@ func try_unsort(item_id: StringName) -> ActionResult:
 	var cell := first_free_cell()
 	if cell.is_empty():
 		return ActionResult.rejected(ActionResult.Reason.CAPACITY, "Table is full; move directly to another bin")
+	var from_category := StringName(str(record.container_id).trim_prefix("%s:" % station_id))
 	(source.items as Array).erase(item_id)
 	(table_record().cells as Dictionary)[cell] = item_id
 	record.location = ItemRecord.Location.TABLE
@@ -271,7 +298,7 @@ func try_unsort(item_id: StringName) -> ActionResult:
 	record.slot_id = cell
 	var changed := PackedStringArray([str(item_id)])
 	session.finalize_action(changed)
-	_contents_committed()
+	_present_unsort(_contents_committed(), from_category)
 	return ActionResult.accepted(changed, {"cell_id": str(cell)})
 
 
@@ -290,6 +317,9 @@ func try_seal(category: StringName) -> ActionResult:
 		changed.append(str(item_id))
 	session.finalize_action(changed, PackedStringArray(), PackedStringArray(), PackedStringArray([str(sealed.bag_id)]))
 	_contents_committed()
+	_update_bin_fills(true)
+	_bump(_bin_model(category))
+	player.play_cue(&"seal")
 	return ActionResult.accepted(changed, {"bag_id": str(sealed.bag_id), "count": changed.size(), "correct_count": sealed.correct_count})
 
 
@@ -404,14 +434,17 @@ func _is_bag_item(item_id: StringName, player_id: StringName, expected_kind: Ite
 	return record.location == ItemRecord.Location.BAG and record.holder_id == player_id and definition != null and definition.kind == expected_kind
 
 
-func _contents_committed() -> void:
-	_refresh_proxies()
+func _contents_committed() -> Array[Node3D]:
+	var created := _refresh_proxies()
 	_refresh_valuable_views()
 	($OutputRack/RackLabel as Label3D).text = "SEALED BAGS %d/8" % (rack_record().slots as Dictionary).size()
 	contents_changed.emit()
+	return created
 
 
-func _refresh_proxies() -> void:
+## Rebuilds proxies for changed cells and returns the ones it created.
+func _refresh_proxies() -> Array[Node3D]:
+	var created: Array[Node3D] = []
 	var cells := table_record().cells as Dictionary
 	for cell_key in _proxies.keys():
 		var proxy := _proxies[cell_key] as Node3D
@@ -427,7 +460,7 @@ func _refresh_proxies() -> void:
 		var record := session.state.items[item_id] as ItemRecord
 		var definition := session.definitions[record.definition_id] as ItemDefinition
 		var proxy := Node3D.new()
-		proxy.position = Vector3((index % CELL_COLUMNS - 9.5) * 0.22, 0.855, (index / CELL_COLUMNS - 5.5) * 0.22)
+		proxy.position = _cell_position(index)
 		proxy.set_meta(&"item_id", item_id)
 		proxy_root.add_child(proxy)
 		var scene := definition.visual_scene()
@@ -456,6 +489,8 @@ func _refresh_proxies() -> void:
 			mesh.material_override = material
 			proxy.add_child(mesh)
 		_proxies[cell] = proxy
+		created.append(proxy)
+	return created
 
 
 func _refresh_valuable_views() -> void:
@@ -505,11 +540,11 @@ func _build_bin_walls(area: Area3D) -> void:
 
 func _on_bags_changed(bag_ids: PackedStringArray) -> void:
 	for bag_text in bag_ids:
-		_refresh_bag_view(StringName(bag_text))
+		_refresh_bag_view(StringName(bag_text), true)
 	($OutputRack/RackLabel as Label3D).text = "SEALED BAGS %d/8" % (rack_record().slots as Dictionary).size()
 
 
-func _refresh_bag_view(bag_id: StringName) -> void:
+func _refresh_bag_view(bag_id: StringName, animate := false) -> void:
 	var bag := session.state.bag_records.get(bag_id, {}) as Dictionary
 	if bag.is_empty() or StringName(str(bag.get("station_id", ""))) != station_id:
 		return
@@ -526,6 +561,8 @@ func _refresh_bag_view(bag_id: StringName) -> void:
 		view.configure(bag, session.item_view_manager.recovery_bounds.is_outside)
 		view.fell_out_of_bounds.connect(_on_bag_fell_out)
 		_bag_views[bag_id] = view
+		if animate and location == "RACK":
+			_drop_onto_rack(view)
 	else:
 		view.restore_from_record()
 
@@ -576,5 +613,260 @@ func _on_bin_body_entered(body: Node3D, category: StringName, area: Area3D) -> v
 	var result := try_sort((body as WorldItem).item_id, category, area)
 	if result.ok:
 		feedback_requested.emit("Sorted into %s" % CATEGORY_NAMES[CATEGORIES.find(category)])
+		# The swish: a ring at the opening on top of the bin bump and glints.
+		FeelRing.spawn(self, area.global_position + Vector3.UP * 0.05, 0.2, 0.55, 0.3, FEEL.shine_core_color, 0.04)
 	else:
 		feedback_requested.emit(result.message)
+
+
+# --- Presentation (never saved) ------------------------------------------------------------
+
+## Hover: the proxy under the cursor or focus lifts and grows slightly; the previous one settles.
+func set_hover_cell(index: int) -> void:
+	if index == _hover_cell:
+		return
+	var reduced := _reduced()
+	var previous := _proxy_at(_hover_cell)
+	if previous != null and previous != _drag_proxy and not _is_unloading(previous):
+		if reduced:
+			FeelMotion.replace(previous, &"hover", null)
+			previous.position = _cell_position(_hover_cell)
+			previous.scale = Vector3.ONE
+		else:
+			var back := FeelMotion.replace(previous, &"hover", FeelMotion.tween(previous).set_parallel(true))
+			back.tween_property(previous, "position", _cell_position(_hover_cell), 0.08)
+			back.tween_property(previous, "scale", Vector3.ONE, 0.08)
+	_hover_cell = index
+	var proxy := _proxy_at(index)
+	if proxy == null or proxy == _drag_proxy or _is_unloading(proxy):
+		return
+	if reduced:
+		FeelMotion.replace(proxy, &"hover", null)
+		proxy.scale = Vector3.ONE * FEEL.proxy_hover_scale
+		return
+	var t := FeelMotion.replace(proxy, &"hover", FeelMotion.tween(proxy).set_parallel(true))
+	t.tween_property(proxy, "position", _cell_position(index) + Vector3(0, FEEL.proxy_hover_lift, 0), 0.1).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	t.tween_property(proxy, "scale", Vector3.ONE * FEEL.proxy_hover_scale, 0.1).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+## Drag: the proxy lifts off the table and follows the pointer; a sort picks it up from there.
+func begin_drag(index: int) -> bool:
+	var proxy := _proxy_at(index)
+	if proxy == null:
+		return false
+	for channel in [&"unload", &"hover", &"drag"]:
+		FeelMotion.replace(proxy, channel, null)
+	proxy.show()
+	proxy.scale = Vector3.ONE * FEEL.proxy_hover_scale
+	_drag_proxy = proxy
+	_drag_cell = index
+	_drag_velocity = Vector3.ZERO
+	return true
+
+
+func drag_to(screen_point: Vector2, delta: float) -> void:
+	if not is_instance_valid(_drag_proxy):
+		return
+	var origin := table_camera.project_ray_origin(screen_point)
+	var normal := table_camera.project_ray_normal(screen_point)
+	if absf(normal.y) < 0.0001:
+		return
+	var plane_y := to_global(Vector3(0, 0.855 + FEEL.drag_height, 0)).y
+	var hit := origin + normal * ((plane_y - origin.y) / normal.y)
+	var before := _drag_proxy.global_position
+	_drag_proxy.global_position = before.lerp(hit, 1.0 - exp(-30.0 * maxf(delta, 0.0)))
+	_drag_velocity = (_drag_proxy.global_position - before) / maxf(delta, 0.001)
+	if _reduced():
+		_drag_proxy.rotation = Vector3.ZERO
+		return
+	var tilt := deg_to_rad(FEEL.drag_tilt_degrees)
+	_drag_proxy.rotation.z = -clampf(_drag_velocity.x * 0.05, -tilt, tilt)
+	_drag_proxy.rotation.x = clampf(_drag_velocity.z * 0.05, -tilt, tilt)
+
+
+func end_drag(return_home := true) -> void:
+	var proxy := _drag_proxy
+	var index := _drag_cell
+	_drag_proxy = null
+	_drag_cell = -1
+	_drag_velocity = Vector3.ZERO
+	if not return_home or not is_instance_valid(proxy) or _proxy_at(index) != proxy:
+		return
+	if _reduced():
+		proxy.position = _cell_position(index)
+		proxy.rotation = Vector3.ZERO
+		proxy.scale = Vector3.ONE
+		return
+	var t := FeelMotion.replace(proxy, &"drag", FeelMotion.tween(proxy).set_parallel(true))
+	t.tween_property(proxy, "position", _cell_position(index), 0.16).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	t.tween_property(proxy, "rotation", Vector3.ZERO, 0.16).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	t.tween_property(proxy, "scale", Vector3.ONE, 0.16).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+func _reduced() -> bool:
+	return player != null and FeelMotion.reduced(player.settings_store)
+
+
+func _cell_position(index: int) -> Vector3:
+	return Vector3((index % CELL_COLUMNS - 9.5) * 0.22, 0.855, (index / CELL_COLUMNS - 5.5) * 0.22)
+
+
+func _proxy_at(index: int) -> Node3D:
+	if index < 0:
+		return null
+	var proxy := _proxies.get(cell_id(index)) as Node3D
+	return proxy if is_instance_valid(proxy) else null
+
+
+func _is_unloading(proxy: Node3D) -> bool:
+	if not proxy.has_meta(&"feel_tween_unload"):
+		return false
+	var tween: Variant = proxy.get_meta(&"feel_tween_unload")
+	return tween is Tween and (tween as Tween).is_running()
+
+
+func _bin_area(category: StringName) -> Area3D:
+	return bin_areas.get_child(CATEGORIES.find(category)) as Area3D
+
+
+func _bin_model(category: StringName) -> Node3D:
+	return _bin_area(category).get_node_or_null("SyntyBin") as Node3D
+
+
+## Unload: the bag's contents rain onto their cells in a quick staggered cascade that settles
+## within `unload_cascade_max` however many items there are.
+func _cascade(created: Array[Node3D]) -> void:
+	if created.is_empty() or _reduced():
+		return
+	var settle := FEEL.unload_fall_seconds + 0.1
+	var step := minf(FEEL.unload_stagger, maxf(FEEL.unload_cascade_max - settle, 0.0) / float(created.size()))
+	for index in created.size():
+		var proxy := created[index]
+		var rest := proxy.position
+		proxy.hide()
+		proxy.position = rest + Vector3(0, FEEL.unload_drop_height, 0)
+		proxy.scale = Vector3.ONE * 0.6
+		var t := FeelMotion.replace(proxy, &"unload", FeelMotion.tween(proxy))
+		t.tween_interval(index * step)
+		t.tween_callback(proxy.show)
+		t.tween_property(proxy, "position", rest, FEEL.unload_fall_seconds).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		t.parallel().tween_property(proxy, "scale", Vector3.ONE, FEEL.unload_fall_seconds)
+		t.tween_callback(func() -> void: proxy.scale = Vector3(1.1, 0.85, 1.1))
+		t.tween_property(proxy, "scale", Vector3.ONE, 0.1).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+## Sort: the proxy arcs into its bin; the bin bumps, glints puff from the opening and the fill
+## rises (or drops, when the bin just sealed). A world throw or bin-to-bin move lands at once.
+func _present_sort(flying: Node3D, category: StringName) -> void:
+	var area := _bin_area(category)
+	var land := func() -> void:
+		if is_instance_valid(flying):
+			flying.queue_free()
+		_bump(_bin_model(category))
+		_burst(area.global_position + Vector3.UP * 0.1, 6)
+		_update_bin_fills(true)
+	if flying == null or _reduced():
+		land.call()
+		return
+	if _drag_proxy == flying:
+		_drag_proxy = null
+		_drag_cell = -1
+	for channel in [&"unload", &"hover", &"drag"]:
+		FeelMotion.replace(flying, channel, null)
+	flying.show()
+	_fly_proxy(flying, area.global_position + Vector3.UP * 0.35, FEEL.sort_travel_seconds, 0.4, land)
+
+
+## Return: the new table proxy arcs back from the bin to its cell and settles with a squash.
+func _present_unsort(created: Array[Node3D], from_category: StringName) -> void:
+	_update_bin_fills(true)
+	if created.is_empty() or _reduced() or CATEGORIES.find(from_category) < 0:
+		return
+	var area := _bin_area(from_category)
+	for proxy in created:
+		var home := proxy.position
+		proxy.global_position = area.global_position + Vector3.UP * 0.35
+		proxy.scale = Vector3.ONE * 0.4
+		var settle := func() -> void: FeelMotion.squash_land(proxy, Vector3(1.1, 0.85, 1.1), Vector3(0.97, 1.05, 0.97), 0.16)
+		var t := FeelMotion.replace(proxy, &"unload", FeelMotion.tween(proxy))
+		FeelMotion.travel(proxy, proxy_root, Transform3D(Basis.IDENTITY, home), FEEL.sort_travel_seconds, {"arc": 0.25, "shrink_to": 1.0, "shrink_from": 0.0}, settle, t)
+
+
+func _fly_proxy(proxy: Node3D, target_global: Vector3, seconds: float, shrink_to: float, on_arrival: Callable) -> void:
+	FeelMotion.travel(proxy, proxy_root, Transform3D(Basis.IDENTITY, proxy_root.to_local(target_global)), seconds, {"arc": 0.0 if _reduced() else 0.25, "shrink_to": shrink_to, "shrink_from": 0.5}, on_arrival)
+
+
+## A new rack bag drops onto its shelf and bounces; its body stays where the record says.
+func _drop_onto_rack(view: DisposalBag) -> void:
+	if _reduced():
+		return
+	for part_name in ["SyntyBag", "BagMesh", "BagLabel"]:
+		var part := view.get_node_or_null(part_name) as Node3D
+		if part == null or not part.visible:
+			continue
+		var rest_y := part.position.y
+		part.position.y = rest_y + FEEL.rack_drop_height
+		FeelMotion.replace(part, &"drop", FeelMotion.tween(part)).tween_property(part, "position:y", rest_y, 0.35).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	_bump($OutputRack/RackLabel as Node3D)
+
+
+## Squash-bump back to the authored scale (the Synty bins are not at ONE).
+func _bump(node: Node3D) -> void:
+	if node == null or _reduced():
+		return
+	if not node.has_meta(&"rest_scale"):
+		node.set_meta(&"rest_scale", node.scale)
+	var rest: Vector3 = node.get_meta(&"rest_scale")
+	node.scale = rest * FEEL.bin_bump
+	FeelMotion.replace(node, &"bump", FeelMotion.tween(node)).tween_property(node, "scale", rest, 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+func _burst(at: Vector3, count: int, color := Color(0, 0, 0, 0)) -> void:
+	if sparkles == null:
+		return
+	var amount := maxi(1, count / 2) if _reduced() else count
+	sparkles.burst(at, Vector3.UP, amount, 0.5, 0.35, Vector2(0.04, 0.07), 0.45, color if color.a > 0.0 else FEEL.sparkle_colors[0])
+
+
+func _build_bin_fill(area: Area3D, index: int) -> void:
+	var box := BoxMesh.new()
+	box.size = Vector3(0.72, 1.0, 0.46)
+	var material := StandardMaterial3D.new()
+	material.albedo_color = (PROXY_COLORS[index] as Color).darkened(0.15)
+	material.roughness = 0.9
+	var fill := MeshInstance3D.new()
+	fill.name = "BinFill"
+	fill.mesh = box
+	fill.material_override = material
+	fill.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	fill.visible = false
+	area.add_child(fill)
+	_bin_fills.append(fill)
+
+
+## The fill inside each bin tracks its count; it grows up from the bin floor.
+func _update_bin_fills(animate: bool) -> void:
+	var reduced := _reduced()
+	for index in _bin_fills.size():
+		var fill := _bin_fills[index]
+		var count := (bin_record(CATEGORIES[index]).items as Array).size()
+		var height := 0.62 * float(count) / float(BIN_CAPACITY)
+		var target_scale := Vector3(1.0, maxf(height, 0.001), 1.0)
+		var target_y := -0.74 + height * 0.5
+		if not animate or reduced:
+			FeelMotion.replace(fill, &"fill", null)
+			fill.scale = target_scale
+			fill.position.y = target_y
+			fill.visible = height > 0.0
+			continue
+		if is_equal_approx(fill.scale.y, target_scale.y) and fill.visible == (height > 0.0):
+			continue
+		var growing := target_scale.y > fill.scale.y
+		if height > 0.0:
+			fill.visible = true
+		var t := FeelMotion.replace(fill, &"fill", FeelMotion.tween(fill).set_parallel(true))
+		var trans := Tween.TRANS_BACK if growing else Tween.TRANS_QUAD
+		t.tween_property(fill, "scale", target_scale, 0.2).set_trans(trans).set_ease(Tween.EASE_OUT)
+		t.tween_property(fill, "position:y", target_y, 0.2).set_trans(trans).set_ease(Tween.EASE_OUT)
+		if height <= 0.0:
+			t.chain().tween_callback(fill.hide)

@@ -14,7 +14,7 @@ Evidence record for the [game-feel plan](../plan/12-game-feel.md), packets J00�
 | J05 Placement | Done | [J05](#j05--placement) |
 | J06 Tools | Done | [J06](#j06--tools) |
 | J07 Completion shine | Done | [J07](#j07--completion-shine) |
-| J08 Sorting table | Open | — |
+| J08 Sorting table | Done | [J08](#j08--sorting-table) |
 | J09 HUD | Open | — |
 | J10 Collection and money | Open | — |
 | J11 Restoration | Open | — |
@@ -236,6 +236,44 @@ Observed before any change: the can hover is a thin white hull; the placed chair
 - **Departures from the packet:** none in code. `P27-group-sweep.png` is not tracked on this branch, so the new look is recorded here rather than by replacing it. `shaders/group_sweep.gdshader` and its `.uid` are deleted; nothing references them.
 - **Retained tuning:** none.
 - **Open issues:** none.
+
+## J08 — Sorting table
+
+- **Build:** J07 commit + J08 working tree.
+- **Scene / seed:** `scenes/main.tscn`, `first-shore`, station S1.
+- **Setup:**
+  - Twenty waste items (five per category) are collected with `try_collect`. One buried valuable is staged into the bag the way `validate_sorting.gd` does it.
+  - Table actions go through the real view: `_unload`, mouse events into `_input` (hover and drags), focus actions, the bin list and Return, and the tray and Sell.
+  - The probe zooms the table camera to 3.5 and pans to the first rows, so they sit clear of the guidance banner.
+  - The manual seal and the 50th sort use the same station calls the table's buttons make (`try_seal`, `try_sort`), with the player on the floor facing the rack, because the overhead table camera shows the rack only as a board. The other 49 glass items are committed straight into the bin (staged).
+  - The world throw uses `ItemViewManager.throw_item` from 0.65 m above the PMD opening, as `validate_sorting.gd` does.
+  - The 200-item profile stages bag capacity 240. Traces run at `--fixed-fps 60` and the profile in real time.
+- **Observed:** [table sheet](images/J-feel/j08-table.png) and [table clip](images/J-feel/j08-table.mp4):
+  - Unload: the 20 proxies drop in 12 ms apart from 0.45 m, starting at 0.6 scale. All are visible by 0.27 s and settled with their squash by 0.57 s.
+  - Hover: the item under the pointer lifts 0.031 m and grows to 1.12; the one it left returns to 0 and 1.0.
+  - Focus: the bracket cursor closes on the next cell over 20 → 12.1 → 7.4 → 4.5 → 2.7 → 1.6 px in successive frames, breathes ±1.5 px and pinches on select.
+  - Drag: the proxy lifts 0.12 m, follows the pointer and tilts with its motion (−3.9°, −10.2° mid-drag). The bin under the pointer swells toward 1.06; it was at 1.03 at release, still rising.
+  - Sort: on release the proxy arcs into the bin while shrinking to 0.4. The Synty bin bumps and returns to its authored (1.5, 0.74, 1.0) scale, six glints puff from the opening and the 3D fill and button bar rise. A check stamps on the correct bin (`FeelIcon.CHECK`) and a question mark on the wrong one, then fades after 0.8 s; the hint text still says it in words.
+  - Return: the new table proxy arcs from the bin back to its cell, growing from 0.4, and settles with a squash.
+  - Seal: the bin's fill drops, the sealed bag drops 0.5 m onto its rack shelf and bounces, and the rack label bumps. At the staged 50th glass item the fill emptied and a second bag landed.
+  - Sell: eight gold glints and "+$10" rise from the tray.
+  - World throw: a can dropped through the PMD opening was sorted, with a ring at the opening, the bin bump and glints.
+  - At 1280×720 and 150 % UI scale, the stamps sit inside their buttons' top-right corners and the cursor stays on the table.
+  - J01 follow-up: a sealed bag on the rack takes the hover outline and the "GLASS disposal bag · 1 sealed items · 1 hand" label ([still](images/J-feel/j08-rack-hover.png)).
+- **Reduced motion:** unload proxies appear at once (all settled on the first frame), hover only scales, the cursor snaps and drag keeps its lift but has no tilt. The swell is instant; fills, bars and stamps update without motion; there is no bin bump or rack bounce, and glints are halved. The world-throw ring stays.
+- **Checks run:** `validate_sorting.gd`, `validate_sealing.gd`, `validate_payment.gd` and `validate_ui.gd`, all exit 0. Their state assertions are unchanged.
+- **Profile:** 200-item unload in real time, two runs. The cascade settled at 0.90 s both times. Frames during it: median 6.0 ms, p95 6.1 ms, max 15.0 / 15.1 ms. The unload call itself took about 535 ms both times, and 539 ms with reduced motion (no cascade), so that cost is the existing proxy build (200 scene instantiations), not this packet.
+- **Departures from the packet:**
+  - The cascade step is `min(unload_stagger, (unload_cascade_max − fall − squash) / count)`, so the last proxy also finishes by 0.9 s. With the packet's formula the starts spread over 0.9 s and a 200-item unload settles at about 1.2 s.
+  - The view also calls `drag_to` from `_process` while dragging, so the lifted proxy keeps easing to the pointer and its tilt settles between mouse events.
+  - Hover skips a proxy that is still falling in the cascade; `begin_drag` and a sort end any cascade or hover tween on that proxy.
+  - Fills shrink with QUAD rather than BACK, which would overshoot below zero height.
+  - The rack drop moves the bag's `SyntyBag`, `BagMesh` and `BagLabel` together from their authored heights.
+  - The bag rigid body and record are untouched.
+- **Retained tuning:** none.
+- **Open issues:**
+  - Pre-existing: at 1280×720 and 150 % UI scale, the HUD progress panel overlaps the left bin buttons at the table (noted for J09).
+  - Pausing mid-drag uses `_cancel_drag`, which now returns the proxy home with a pause-safe tween. Resume behaviour was not replayed in this entry; J14 covers pause and save flows.
 
 ## Retained tuning
 

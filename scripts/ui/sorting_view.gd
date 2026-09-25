@@ -1,6 +1,8 @@
 class_name SortingView
 extends Control
 
+const FEEL := preload("res://data/feel/feel_tuning.tres")
+
 @onready var status: Label = %Status
 @onready var unload_button: Button = %UnloadButton
 @onready var exit_button: Button = %ExitButton
@@ -30,6 +32,15 @@ var panning := false
 var last_mouse := Vector2.ZERO
 var bin_buttons: Array[Button] = []
 var focus_before_pause: Control
+# Presentation: the bracket cursor glides between cells and pinches on select; bin buttons carry
+# a fill bar and a brief correct/wrong stamp.
+var _cursor := Vector2.ZERO
+var _cursor_ready := false
+var _pinch := 0.0
+var _drag_point := Vector2.ZERO
+var _fill_bars: Array[ColorRect] = []
+var _last_counts: Array[int] = [0, 0, 0, 0]
+var _stamps: Dictionary = {}
 
 
 func _ready() -> void:
@@ -48,6 +59,17 @@ func _ready() -> void:
 	bin_list.item_selected.connect(_on_bin_item_selected)
 	for index in range(bin_buttons.size()):
 		bin_buttons[index].pressed.connect(_on_bin_pressed.bind(index))
+		var fill := ColorRect.new()
+		fill.name = "Fill"
+		fill.color = (SortingStation.PROXY_COLORS[index] as Color).lightened(0.2)
+		fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		fill.anchor_top = 1.0
+		fill.anchor_bottom = 1.0
+		fill.offset_top = -4.0
+		fill.offset_bottom = 0.0
+		fill.size.x = 0.0
+		bin_buttons[index].add_child(fill)
+		_fill_bars.append(fill)
 	focus_mode = Control.FOCUS_ALL
 	for button in [unload_button, seal_button, return_button, sell_button, bin_buttons[0]]:
 		button.focus_neighbor_left = button.get_path_to(self)
@@ -74,6 +96,9 @@ func open(active_station: SortingStation) -> void:
 		settings.bindings_changed.connect(_refresh_prompts)
 	show()
 	set_process(true)
+	_cursor_ready = false
+	for index in _last_counts.size():
+		_last_counts[index] = (station.bin_record(SortingStation.CATEGORIES[index]).items as Array).size()
 	_refresh()
 	_refresh_prompts()
 	grab_focus()
@@ -105,6 +130,10 @@ func resume_from_pause() -> void:
 
 
 func close() -> void:
+	if station != null:
+		station.end_drag(true)
+		station.set_hover_cell(-1)
+	_swell_bin(-1)
 	pressed_cell = -1
 	dragging = false
 	drag_preview.hide()
@@ -123,6 +152,16 @@ func _process(delta: float) -> void:
 	var pan := Input.get_vector(&"look_left", &"look_right", &"look_up", &"look_down")
 	if pan.length_squared() > 0.04:
 		_pan(Vector2(pan.x, pan.y) * delta * 2.0)
+	var target := _cell_screen(focused_cell)
+	if not _cursor_ready or FeelMotion.reduced(station.player.settings_store):
+		_cursor = target
+		_cursor_ready = true
+	else:
+		_cursor = _cursor.lerp(target, 1.0 - exp(-FEEL.cursor_follow_hz * delta))
+	_pinch = move_toward(_pinch, 0.0, delta * 6.0)
+	if dragging:
+		# Keep the lifted proxy easing toward the pointer between motion events.
+		station.drag_to(_drag_point, delta)
 	queue_redraw()
 
 
@@ -158,10 +197,18 @@ func _input(event: InputEvent) -> void:
 			_pan((last_mouse - motion.position) * station.table_camera.size / size.y)
 			last_mouse = motion.position
 		elif pressed_cell >= 0 and motion.position.distance_to(press_position) > 6.0:
+			if not dragging:
+				station.set_hover_cell(-1)
+				station.begin_drag(pressed_cell)
 			dragging = true
+			_drag_point = motion.position
+			station.drag_to(motion.position, get_process_delta_time())
+			_swell_bin(_bin_at(motion.position))
 			drag_preview.text = _name_of(station.item_at(pressed_cell))
 			drag_preview.position = motion.position + Vector2(16, 12)
 			drag_preview.show()
+		elif not dragging:
+			station.set_hover_cell(_cell_at(motion.position))
 		return
 	if event is InputEventJoypadMotion:
 		if event.is_action_pressed(&"primary"):
@@ -224,12 +271,22 @@ func _input(event: InputEvent) -> void:
 	get_viewport().set_input_as_handled()
 
 
+## The focus cursor: four corner brackets that glide between cells, breathe gently and pinch
+## when you select.
 func _draw() -> void:
 	if station == null or not visible or inspecting_bin or not has_focus():
 		return
-	var center := _cell_screen(focused_cell)
+	var reduced := FeelMotion.reduced(station.player.settings_store)
 	var radius := clampf(0.22 * size.y / station.table_camera.size * 0.48, 10.0, 26.0)
-	draw_rect(Rect2(center - Vector2.ONE * radius, Vector2.ONE * radius * 2.0), Color.WHITE, false, 2.0)
+	var half := radius * (1.0 - 0.2 * _pinch)
+	if not reduced:
+		half += sin(Time.get_ticks_msec() * 0.001 * TAU * 0.8) * 1.5
+	var arm := maxf(half * 0.45, 4.0)
+	for corner: Vector2 in [Vector2(-1, -1), Vector2(1, -1), Vector2(1, 1), Vector2(-1, 1)]:
+		var tip := _cursor + corner * half
+		var points := PackedVector2Array([tip - Vector2(corner.x * arm, 0.0), tip, tip - Vector2(0.0, corner.y * arm)])
+		draw_polyline(points, Color(0, 0, 0, 0.55), 4.0, true)
+		draw_polyline(points, Color.WHITE, 2.0, true)
 
 
 func _unload() -> void:
@@ -256,6 +313,9 @@ func _back() -> void:
 
 
 func _cancel_drag() -> void:
+	if station != null:
+		station.end_drag(true)
+	_swell_bin(-1)
 	pressed_cell = -1
 	dragging = false
 	drag_preview.hide()
@@ -269,26 +329,32 @@ func _mouse_release(point: Vector2) -> void:
 	pressed_cell = -1
 	dragging = false
 	drag_preview.hide()
+	_swell_bin(-1)
+	_pinch = 1.0
 	if item_id.is_empty():
+		station.end_drag(true)
 		return
 	if was_dragging:
-		for index in range(bin_buttons.size()):
-			if bin_buttons[index].get_global_rect().has_point(point):
-				_sort(item_id, index)
-				return
+		var index := _bin_at(point)
+		if index >= 0:
+			station.end_drag(not _sort(item_id, index))
+			return
+		station.end_drag(true)
 		_say("Returned %s to its cell" % _name_of(item_id))
 	elif _cell_at(point) == focused_cell:
 		_sort(item_id, selected_category)
 
 
-func _sort(item_id: StringName, category_index: int) -> void:
+func _sort(item_id: StringName, category_index: int) -> bool:
 	var result := station.try_sort(item_id, SortingStation.CATEGORIES[category_index])
 	if result.ok:
 		_say("%s → %s: %s" % [_name_of(item_id), SortingStation.CATEGORY_NAMES[category_index], "correct" if bool(result.receipt.correct) else "wrong category — you can correct it before sealing"])
 		selected_bin_item = &""
+		_stamp(category_index, bool(result.receipt.correct))
 	else:
 		_say(result.message)
 	_refresh()
+	return result.ok
 
 
 func _return_selected() -> void:
@@ -375,6 +441,7 @@ func _move_focus(dx: int, dy: int) -> void:
 		tray_list.grab_focus()
 		return
 	focused_cell = row * SortingStation.CELL_COLUMNS + column
+	station.set_hover_cell(focused_cell)
 	_show_item(station.item_at(focused_cell))
 	queue_redraw()
 
@@ -393,6 +460,7 @@ func _select_focused() -> void:
 			_sort(selected_bin_item, selected_category)
 		return
 	var item_id := station.item_at(focused_cell)
+	_pinch = 1.0
 	if item_id.is_empty():
 		_say("Empty cell")
 		return
@@ -405,10 +473,15 @@ func _refresh() -> void:
 	var player_record := station.session.state.players[&"local"] as Dictionary
 	var bag_count := (player_record.trash_bag as Array).size() + (player_record.valuable_bag as Array).size()
 	status.text = "Table %d/%d  •  Bag %d  •  Rack %d/%d" % [SortingStation.CELL_COUNT - station.free_cell_count(), SortingStation.CELL_COUNT, bag_count, (station.rack_record().slots as Dictionary).size(), SortingStation.RACK_CAPACITY]
+	var reduced := FeelMotion.reduced(station.player.settings_store)
 	for index in range(bin_buttons.size()):
 		var count := (station.bin_record(SortingStation.CATEGORIES[index]).items as Array).size()
 		bin_buttons[index].text = "%s %d/%d" % [SortingStation.CATEGORY_NAMES[index], count, SortingStation.BIN_CAPACITY]
 		bin_buttons[index].modulate = Color.WHITE if index == selected_category else Color(0.72, 0.72, 0.72)
+		_update_fill_bar(index, count, reduced)
+		if count > _last_counts[index] and not reduced:
+			FeelMotion.bump_control(bin_buttons[index], 1.06, 0.16)
+		_last_counts[index] = count
 	selected_bin_label.text = "%s bin%s" % [SortingStation.CATEGORY_NAMES[selected_category], " · INSPECT" if inspecting_bin else ""]
 	bin_list.clear()
 	for item_value in station.bin_record(SortingStation.CATEGORIES[selected_category]).items:
@@ -489,3 +562,60 @@ func _say(message: String) -> void:
 func _on_contents_changed() -> void:
 	if station != null and visible:
 		_refresh()
+
+
+func _bin_at(point: Vector2) -> int:
+	for index in range(bin_buttons.size()):
+		if bin_buttons[index].get_global_rect().has_point(point):
+			return index
+	return -1
+
+
+## While dragging, the bin under the pointer swells slightly.
+func _swell_bin(active: int) -> void:
+	for index in range(bin_buttons.size()):
+		var button := bin_buttons[index]
+		button.pivot_offset = button.size * 0.5
+		var target := 1.06 if index == active else 1.0
+		if is_equal_approx(button.scale.x, target):
+			continue
+		if station != null and FeelMotion.reduced(station.player.settings_store):
+			button.scale = Vector2.ONE * target
+			continue
+		FeelMotion.replace(button, &"bump", FeelMotion.tween(button)).tween_property(button, "scale", Vector2.ONE * target, 0.08)
+
+
+func _update_fill_bar(index: int, count: int, reduced: bool) -> void:
+	if index >= _fill_bars.size():
+		return
+	var bar := _fill_bars[index]
+	var width := bin_buttons[index].size.x * float(count) / float(SortingStation.BIN_CAPACITY)
+	if reduced or not is_visible_in_tree():
+		FeelMotion.replace(bar, &"fill", null)
+		bar.size.x = width
+		return
+	FeelMotion.replace(bar, &"fill", FeelMotion.tween(bar)).tween_property(bar, "size:x", width, 0.2).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+
+## A check (correct) or question mark (wrong) stamps onto the bin button, then fades. The shape
+## carries the meaning; the hint text still says it in words.
+func _stamp(index: int, correct: bool) -> void:
+	var button := bin_buttons[index]
+	var old: Variant = _stamps.get(index)
+	if old != null and is_instance_valid(old):
+		(old as Node).queue_free()
+	var icon := FeelIcon.new()
+	icon.kind = FeelIcon.Kind.CHECK if correct else FeelIcon.Kind.QUESTION
+	icon.color = FEEL.ghost_color if correct else FEEL.hover_blocked_color
+	icon.size = Vector2(24, 24)
+	icon.position = Vector2(button.size.x - 26.0, 2.0)
+	icon.pivot_offset = icon.size * 0.5
+	button.add_child(icon)
+	_stamps[index] = icon
+	var t := FeelMotion.tween(icon)
+	if not FeelMotion.reduced(station.player.settings_store):
+		icon.scale = Vector2.ONE * 1.6
+		t.tween_property(icon, "scale", Vector2.ONE, 0.16).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	t.tween_interval(FEEL.stamp_seconds)
+	t.tween_property(icon, "modulate:a", 0.0, 0.25)
+	t.tween_callback(icon.queue_free)
