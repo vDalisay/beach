@@ -14,3 +14,4 @@ collision_profile = 0
 float_mode = 1
 base_sale_value = 1
 eligible_spawn_tags = Array[StringName]([&"sand", &"deck", &"seabed"])
+lying_chance = 0.85

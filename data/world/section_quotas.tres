@@ -2,7 +2,7 @@
 
 [resource]
 resource_name = "beach_01_section_quotas_v1"
-metadata/content_version = "beach-content-8"
+metadata/content_version = "beach-content-9"
 metadata/sections = {
 &"arrival:start": {"pmd": 40, "organic": 13, "general": 18, "glass": 9, "props": 10},
 &"arrival:dunes": {"pmd": 285, "organic": 95, "general": 127, "glass": 63, "props": 20},

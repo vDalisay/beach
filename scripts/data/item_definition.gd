@@ -21,6 +21,8 @@ enum FloatMode { FLOAT, SINK, NEUTRAL }
 @export var eligible_spawn_tags: Array[StringName] = []
 @export_range(1, 100) var spawn_weight := 1
 @export var dirt_patch_anchors: Array[Vector3] = []
+## Share of resting items of this type that lie on their side (bottles, cans, cups); presentation only.
+@export_range(0.0, 1.0, 0.05) var lying_chance := 0.0
 
 # Loaded visuals stay referenced here. A PackedScene nothing holds is freed, and the next load()
 # parses the wrapper scene again: about 2 ms for every streamed item view.

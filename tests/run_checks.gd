@@ -343,8 +343,8 @@ func check_manifest_generation() -> void:
 	check(hashes.size() == 10, "ten fixed seeds produce ten distinct valid layouts")
 	if fixture.is_empty():
 		return
-	check(str(fixture.content_hash) == "4712283664ce031103f232807f8c9348d7601db1c1783999b9cdfd1ebcefa60f", "fixture content hash is pinned")
-	check(str(fixture.manifest_hash) == "6d6a84fa1b520dfa9603e2900cf1534169b37953a01755825a41be6ccd6f8622", "fixture manifest hash is pinned")
+	check(str(fixture.content_hash) == "e4f857a080bd43eb206bff6bb4001ffc20587e0e1e28c8913725716431448c0b", "fixture content hash is pinned")
+	check(str(fixture.manifest_hash) == "9cd0b9d2dea7f8b73f40de41b8fe6fbdad32ff3d918c05dbde20b17ba550f221", "fixture manifest hash is pinned")
 	var catalog_present := {}
 	for row_value in fixture.rows:
 		catalog_present[StringName(str((row_value as Dictionary).definition_id))] = true
@@ -358,8 +358,8 @@ func check_manifest_generation() -> void:
 	check(not generator.normalize_seed("bad\nseed").ok, "control characters are rejected")
 	check(not generator.normalize_seed("é".repeat(33)).ok, "seed limit counts UTF-8 bytes")
 	var stream := generator.derive_stream(str(normalized.seed), "reef_west:coral", "buried", str(fixture.content_hash))
-	check(stream.canonical == "[\"manifest-1\",\"4712283664ce031103f232807f8c9348d7601db1c1783999b9cdfd1ebcefa60f\",\"Côte, \\\"Azure\\\" 🌊\",\"reef_west:coral\",\"buried\"]", "Unicode stream canonical bytes are pinned")
-	check(stream.hash == "783412f8b8fbabad03e718b79158a8bb974986fb5c2bc16b73c7f362ef6e55d3" and int(stream.rng_seed) == 541348052675312314, "Unicode stream SHA-256 and 60-bit seed are pinned")
+	check(stream.canonical == "[\"manifest-1\",\"e4f857a080bd43eb206bff6bb4001ffc20587e0e1e28c8913725716431448c0b\",\"Côte, \\\"Azure\\\" 🌊\",\"reef_west:coral\",\"buried\"]", "Unicode stream canonical bytes are pinned")
+	check(stream.hash == "828370bbaf8901f847c74cab3290fd5d9bd6bdd0fb8ffe37661664ae5c1e0763" and int(stream.rng_seed) == 587780274892869663, "Unicode stream SHA-256 and 60-bit seed are pinned")
 
 	var state := generator.create_run_state(fixture, "manifest-check")
 	check(state.required_total == 5700 and state.items.size() == 5740, "manifest creates one record per stable ID")

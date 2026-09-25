@@ -195,6 +195,17 @@
       "label_height": 6.0
     },
     {
+      "id": "foliage_grass_clump",
+      "label": "Dune grass",
+      "wrapper_scene": "res://art/synty/wrappers/foliage_grass_clump.tscn",
+      "components": [
+        {"name": "Plant", "source_scene": "SM_Env_Grass_Clump_01_LOD0.tscn"}
+      ],
+      "visual_position": [0.0, 0.0, 0.0],
+      "gallery_position": [-9.0, 0.0, -26.0],
+      "label_height": 2.0
+    },
+    {
       "id": "water_test",
       "label": "Compatibility water test",
       "wrapper_scene": "res://art/synty/wrappers/water_test.tscn",

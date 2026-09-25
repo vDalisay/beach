@@ -37,6 +37,9 @@ func recover_item(item_id: StringName) -> bool:
 	for anchor in anchors:
 		for offset in _candidate_offsets():
 			var candidate := (anchor.position as Vector3) + offset
+			if candidate.z < Coastline.shore_z(candidate.x) - 2.0:
+				# Rest on the sand around the anchor, which follows the beach relief.
+				candidate.y = Coastline.surface_y(candidate.x, candidate.z)
 			if _clear_of_items(item_id, candidate, radius):
 				record.last_world_transform = Transform3D(record.last_world_transform.basis, candidate)
 				record.linear_velocity = Vector3.ZERO

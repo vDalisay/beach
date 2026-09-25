@@ -2,11 +2,12 @@ class_name ManifestGenerator
 extends RefCounted
 
 const GENERATOR_VERSION := "manifest-1"
-const CONTENT_VERSION := "beach-content-8"
+const CONTENT_VERSION := "beach-content-9"
 const REEF_DRESSING := preload("res://scripts/world/reef_dressing.gd")
 const BEACH_PATH := "res://data/world/beach_01.tres"
 const QUOTAS_PATH := "res://data/world/section_quotas.tres"
 const ANCHORS_PATH := "res://data/world/spawn_anchors.tres"
+const LAYOUT_PATH := "res://data/world/beach_layout.tres"
 const CATALOG_DIR := "res://data/items"
 const CATEGORY_KEYS := [&"pmd", &"organic", &"general", &"glass"]
 const WALK_ROUTE_CLEARANCE_MM := 1800
@@ -17,6 +18,8 @@ const LOOKOUT_HALF_SIZE_MM := 2000
 const BURIED_PIER_BOUNDS_MM := [52000, 34000, 96000]
 const SHALLOW_RESCUE_MIN_Z_MM := 54000
 const WASTE_CLUSTER_BONUS := 0.9
+## Rescue attachments float this far above the seabed, where the tangled animal sits.
+const ATTACHMENT_LIFT_MM := 250
 const RESCUE_COUNTS := {
 	&"pier:moorings": 4,
 	&"shallows:west": 4,
@@ -48,15 +51,26 @@ func generate(
 	if not content_errors.is_empty():
 		return _failure(content_errors)
 
+	var layout := load(LAYOUT_PATH) as Resource
+	if layout == null or str(layout.get_meta(&"content_version", "")) != CONTENT_VERSION:
+		return _failure(["Beach layout data does not match %s; run tools/bake_beach_layout.gd." % CONTENT_VERSION])
+
 	var seed_text := str(normalized.seed)
-	var content_hash := compute_content_hash(definitions, beach, quotas, anchors)
+	var content_hash := compute_content_hash(definitions, beach, quotas, anchors, layout)
 	var rows: Array[Dictionary] = []
 	var rows_by_section := {}
 	var section_quotas := quotas.get_meta(&"sections") as Dictionary
 	var packs := anchors.get_meta(&"packs") as Dictionary
+	var territories := anchors.get_meta(&"territories", {}) as Dictionary
 	var columns := int(anchors.get_meta(&"grid_columns"))
 	var spacing := int(anchors.get_meta(&"grid_spacing_mm"))
 	var family_queues := _build_family_queues(beach, quotas)
+	var litter := LitterLayout.new(layout, func(position: Array) -> bool:
+		var typed: Array[int] = []
+		typed.assign(position)
+		return _in_fixed_exclusion(typed, beach)
+	)
+	var prop_routes := _prop_routes(beach)
 
 	for section_id in beach.ordered_sections:
 		var quota := section_quotas[section_id] as Dictionary
@@ -64,6 +78,36 @@ func generate(
 		var zone_id := StringName(str((beach.section_budgets[section_id] as Dictionary).zone))
 		var litter_rng := stream_rng(seed_text, str(section_id), "litter", content_hash)
 		var props_rng := stream_rng(seed_text, str(section_id), "props", content_hash)
+		if territories.has(section_id):
+			# Dry sand and the pier deck: litter gathers where it has a cause (LitterLayout).
+			var families: Array = []
+			var family_queue := family_queues[zone_id] as Array
+			for _index in range(int(quota.props)):
+				families.append(StringName(str(family_queue.pop_front())))
+			family_queues[zone_id] = family_queue
+			var waste_counts := {}
+			for category_key in CATEGORY_KEYS:
+				waste_counts[category_key] = int(quota[category_key])
+			var placed := litter.place_section(content_hash, section_id, territories[section_id] as Dictionary, pack, waste_counts, families, definitions, litter_rng, props_rng, prop_routes)
+			if not bool(placed.ok):
+				return _failure([str(placed.error)])
+			var placed_rows: Array[Dictionary] = []
+			var serial := 1
+			for entry_value in placed.waste:
+				var entry := entry_value as Dictionary
+				var row := _row_at("item:%s:%05d" % [section_id, serial], entry.definition as ItemDefinition, section_id, zone_id, pack, entry.position_mm as Array, int(entry.orientation))
+				row["category"] = str(entry.category)
+				placed_rows.append(row)
+				serial += 1
+			for entry_value in placed.props:
+				var entry := entry_value as Dictionary
+				var row := _row_at("item:%s:%05d" % [section_id, serial], _definition_for_family(definitions, StringName(str(entry.family))), section_id, zone_id, pack, entry.position_mm as Array, int(entry.orientation))
+				row["family"] = str(entry.family)
+				placed_rows.append(row)
+				serial += 1
+			rows_by_section[section_id] = placed_rows
+			rows.append_array(placed_rows)
+			continue
 		var sand_pack: bool = "sand" in pack.tags
 		var prop_cells: Array[int] = []
 		for cell in range(480 if sand_pack else 640, 740):
@@ -123,6 +167,7 @@ func generate(
 		_clear_walk_route(rows, [service + Vector3(0, 0, 5), service + Vector3(0, 0, -2)], anchors, definitions)
 	if not _clear_reef_structures(rows, packs, columns, int(anchors.get_meta(&"grid_rows")), spacing):
 		return _failure(["No clear reef anchor for required item."])
+	_settle_heights(rows, packs, anchors, definitions)
 	rows.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return str(a.id) < str(b.id))
 
 	var canonical_data := {
@@ -201,7 +246,9 @@ func load_catalog() -> Dictionary:
 	return result
 
 
-func compute_content_hash(definitions: Dictionary, beach: BeachDefinition, quotas: Resource, anchors: Resource) -> String:
+func compute_content_hash(definitions: Dictionary, beach: BeachDefinition, quotas: Resource, anchors: Resource, layout: Resource = null) -> String:
+	if layout == null:
+		layout = load(LAYOUT_PATH) as Resource
 	var definition_rows: Array[Dictionary] = []
 	var definition_ids := _sorted_string_keys(definitions)
 	for definition_id in definition_ids:
@@ -252,6 +299,13 @@ func compute_content_hash(definitions: Dictionary, beach: BeachDefinition, quota
 		BURIED_PIER_BOUNDS_MM,
 		SHALLOW_RESCUE_MIN_Z_MM,
 		WASTE_CLUSTER_BONUS,
+		ATTACHMENT_LIFT_MM,
+		anchors.get_meta(&"territories", {}),
+		LitterLayout.identity(layout),
+		BeachRelief.identity(),
+		[BeachGround.WATER_Y, BeachGround.PLANK_TOP, BeachGround.PLANK_THICKNESS, BeachGround.DECK, BeachGround.HEAD, BeachGround.APPROACH, BeachGround.DECK_INNER],
+		# Reef litter keeps clear of the rocks and seagrass beds (FIN-02: reef exclusions are content).
+		REEF_DRESSING.STRUCTURES, REEF_DRESSING.REAR_SHELF_ROCKS, REEF_DRESSING.SEAGRASS_ROCKS, REEF_DRESSING.SEAGRASS_CLEARANCE,
 	]).sha256_text()
 
 
@@ -283,6 +337,69 @@ func _order_waste_cells(cells: Array[int], columns: int, rng: RandomNumberGenera
 			nearest = maxf(nearest, exp(-0.5 * (pow(distance.x / 4.0, 2.0) + pow(distance.y / 7.0, 2.0))))
 		scores[cell] = rng.randf() + nearest * WASTE_CLUSTER_BONUS
 	cells.sort_custom(func(a: int, b: int) -> bool: return a < b if is_equal_approx(float(scores[a]), float(scores[b])) else float(scores[a]) < float(scores[b]))
+
+
+## The walking lanes large props and bundled scrap keep clear of: the beach route, the pier carry
+## route and each service point's approach (the same lanes `_clear_walk_route` enforces).
+func _prop_routes(beach: BeachDefinition) -> Array:
+	var routes: Array = [beach.starting_state.get("walk_route", []), beach.starting_state.get("pier_carry_route", [])]
+	for service_value in (beach.starting_state.get("service_points", {}) as Dictionary).values():
+		var service := service_value as Vector3
+		routes.append([service + Vector3(0, 0, 5), service + Vector3(0, 0, -2)])
+	return routes
+
+
+## Authors every item's height from the ground under it (BeachGround): the sand with its relief or
+## the seabed, the pier planks, or the water plane for floating items. Pile members stand on the
+## ground plus their layer, rescue attachments float a little above the seabed, and buried items
+## lie their depth below the sand their dig spot is on.
+func _settle_heights(rows: Array[Dictionary], packs: Dictionary, anchors: Resource, definitions: Dictionary) -> void:
+	var patterns := anchors.get_meta(&"pile_patterns") as Dictionary
+	var poses := {}
+	for row in rows:
+		var pack := packs[StringName(str(row.section_id))] as Dictionary
+		var definition := definitions[StringName(str(row.definition_id))] as ItemDefinition
+		var buried := str(row.location) == "BURIED"
+		var prop_on_pier := str(row.kind) == "prop" and pack.has("prop_origin_mm")
+		if prop_on_pier:
+			# Mooring props lie on the approach and deck planks: their grid's width is scaled to the
+			# span inside the railings, so neighbouring cells stay apart.
+			var grid_min := float((pack.prop_origin_mm as PackedInt32Array)[0])
+			var grid_max := grid_min + float((int(anchors.get_meta(&"grid_columns")) - 1) * int(anchors.get_meta(&"grid_spacing_mm")))
+			var fraction := clampf((float(row.position_mm[0]) - grid_min) / (grid_max - grid_min), 0.0, 1.0)
+			row.position_mm[0] = roundi(lerpf(float(BeachGround.DECK_INNER[0]), float(BeachGround.DECK_INNER[1]), fraction) * 1000.0)
+		var surface := (row.reveal_position_mm if buried else row.position_mm) as Array
+		var ground := _rest_ground(float(surface[0]) / 1000.0, float(surface[2]) / 1000.0, pack, definition, prop_on_pier, str(row.location))
+		var lift_mm := 0
+		if str(row.spawn_mode) == "pile":
+			lift_mm = int(((patterns[StringName(str(row.pile_pattern_id))] as Array)[int(row.pile_pattern_index)])[1])
+		if str(row.location) == "ATTACHED":
+			lift_mm = ATTACHMENT_LIFT_MM
+		var y := roundi(ground * 1000.0) + lift_mm
+		if buried:
+			row.reveal_position_mm[1] = y
+			row.position_mm[1] = y - int(row.buried_depth_mm)
+		else:
+			row.position_mm[1] = y
+		# Two rows never share an exact pose: a coincidence moves the later one 11 mm aside.
+		while poses.has(_pose_key(row.position_mm as Array)):
+			row.position_mm[0] = int(row.position_mm[0]) + 11
+			if buried:
+				row.reveal_position_mm[0] = int(row.position_mm[0])
+		poses[_pose_key(row.position_mm as Array)] = true
+
+
+func _rest_ground(x: float, z: float, pack: Dictionary, definition: ItemDefinition, prop_on_pier: bool, location: String) -> float:
+	if "deck" in pack.tags and ("water_surface" not in pack.tags or prop_on_pier):
+		var top := BeachGround.pier_top(x, z)
+		if not is_nan(top):
+			return top
+	if "water_surface" in pack.tags and not prop_on_pier and location == "WORLD":
+		if definition.float_mode == ItemDefinition.FloatMode.FLOAT:
+			return BeachGround.WATER_Y
+		if definition.float_mode == ItemDefinition.FloatMode.NEUTRAL:
+			return float(pack.origin_mm[1]) / 1000.0
+	return Coastline.surface_y(x, z)
 
 
 func _clear_walk_route(rows: Array[Dictionary], route: Array, anchors: Resource, definitions: Dictionary) -> void:
@@ -407,7 +524,7 @@ func _clear_reef_structures(rows: Array[Dictionary], packs: Dictionary, columns:
 		for row_value in group:
 			var row := row_value as Dictionary
 			var position := row.reveal_position_mm as Array if not (row.reveal_position_mm as Array).is_empty() else row.position_mm as Array
-			if REEF_DRESSING.blocks_point(position):
+			if REEF_DRESSING.blocks_point(position) or REEF_DRESSING.near_seagrass(position):
 				blocked = true
 				break
 		if not blocked:
@@ -434,7 +551,7 @@ func _clear_reef_structures(rows: Array[Dictionary], packs: Dictionary, columns:
 				var row := row_value as Dictionary
 				var position := row.reveal_position_mm as Array if not (row.reveal_position_mm as Array).is_empty() else row.position_mm as Array
 				var moved := [int(position[0]) + offset.x, int(position[1]), int(position[2]) + offset.y]
-				if REEF_DRESSING.blocks_point(moved) or occupied.has(_pose_key(moved)):
+				if REEF_DRESSING.blocks_point(moved) or REEF_DRESSING.near_seagrass(moved) or occupied.has(_pose_key(moved)):
 					clear = false
 					break
 			if clear:
@@ -464,6 +581,9 @@ func create_run_state(generation: Dictionary, run_id: String) -> RunState:
 	state.initial_manifest = (generation.rows as Array).duplicate(true)
 	state.initial_manifest_hash = str(generation.manifest_hash)
 	state.add_player()
+	var definitions := generation.get("definitions", {}) as Dictionary
+	if definitions.is_empty():
+		definitions = load_catalog()
 	for row_value in generation.rows:
 		var row := row_value as Dictionary
 		var record := ItemRecord.new()
@@ -475,7 +595,13 @@ func create_run_state(generation: Dictionary, run_id: String) -> RunState:
 		record.location = ItemRecord.location_from_name(StringName(str(row.location)))
 		record.attachment_id = StringName(str(row.attachment_id))
 		var position := row.position_mm as Array
-		var basis := Basis(Vector3.UP, float(row.orientation_index) * TAU / 16.0)
+		var yaw := Basis(Vector3.UP, float(row.orientation_index) * TAU / 16.0)
+		var rests_at := Vector3(float(position[0]), float(position[1]), float(position[2])) / 1000.0
+		if str(row.location) == "BURIED":
+			var surface_mm := row.reveal_position_mm as Array
+			rests_at = Vector3(float(surface_mm[0]), float(surface_mm[1]), float(surface_mm[2])) / 1000.0
+		# Loose items lean with the sand under them and tumble a little (ItemRestPose).
+		var basis := ItemRestPose.rest_basis(definitions.get(record.definition_id) as ItemDefinition, record.item_id, rests_at) * yaw if str(row.location) != "ATTACHED" else yaw
 		record.last_world_transform = Transform3D(basis, Vector3(float(position[0]), float(position[1]), float(position[2])) / 1000.0)
 		record.buried = record.location == ItemRecord.Location.BURIED
 		record.revealed = not record.buried
@@ -514,6 +640,18 @@ func _new_row(
 		position[2] += rng.randi_range(-SMALL_ITEM_JITTER_MM, SMALL_ITEM_JITTER_MM)
 	if "water_surface" in pack.tags and definition.float_mode == ItemDefinition.FloatMode.FLOAT and not (use_prop_origin and pack.has("prop_origin_mm")):
 		position[1] = 80
+	return _row_at(item_id, definition, section_id, zone_id, pack, position, rng.randi_range(0, 15))
+
+
+func _row_at(
+	item_id: String,
+	definition: ItemDefinition,
+	section_id: StringName,
+	zone_id: StringName,
+	pack: Dictionary,
+	position: Array,
+	orientation_index: int
+) -> Dictionary:
 	return {
 		"anchor_id": str(pack.anchor_id),
 		"attachment_id": "",
@@ -525,7 +663,7 @@ func _new_row(
 		"id": item_id,
 		"kind": _kind_name(definition.kind),
 		"location": "WORLD",
-		"orientation_index": rng.randi_range(0, 15),
+		"orientation_index": orientation_index,
 		"pile_id": "",
 		"pile_pattern_id": "",
 		"pile_pattern_index": -1,
@@ -624,6 +762,7 @@ func _assign_buried(
 	content_hash: String
 ) -> void:
 	var packs := anchors.get_meta(&"packs") as Dictionary
+	var territories := anchors.get_meta(&"territories", {}) as Dictionary
 	for category_data in [["pmd", 200, &"waste_buried_metal"], ["general", 100, &"waste_buried_scrap"]]:
 		var selected := _select_round_robin(rows_by_section, packs, str(category_data[0]), int(category_data[1]), seed_text, content_hash, "buried")
 		var rng_by_section := {}
@@ -638,8 +777,10 @@ func _assign_buried(
 			var depth := rng.randi_range(120, mini(450, max_bury))
 			var spacing := int(anchors.get_meta(&"grid_spacing_mm"))
 			var origin := pack.origin_mm as PackedInt32Array
-			row.position_mm[0] = origin[0] + roundi(float(int(row.position_mm[0]) - origin[0]) / spacing) * spacing
-			row.position_mm[2] = origin[2] + roundi(float(int(row.position_mm[2]) - origin[2]) / spacing) * spacing
+			if not territories.has(section_id):
+				# Grid packs snap finds to their cells; sand and deck finds stay where the litter lay.
+				row.position_mm[0] = origin[0] + roundi(float(int(row.position_mm[0]) - origin[0]) / spacing) * spacing
+				row.position_mm[2] = origin[2] + roundi(float(int(row.position_mm[2]) - origin[2]) / spacing) * spacing
 			row.definition_id = str((definitions[category_data[2]] as ItemDefinition).definition_id)
 			row.location = "BURIED"
 			row.buried_depth_mm = depth
@@ -661,7 +802,8 @@ func _assign_dirty_props(rows_by_section: Dictionary, seed_text: String, content
 		var candidates: Array = []
 		for row_value in rows_by_section[StringName(section_text)]:
 			var row := row_value as Dictionary
-			if row.family in ["beach_chair", "lounger"]:
+			# The starter section's props start clean: cleaning needs a tool bought later.
+			if row.family in ["beach_chair", "lounger"] and section_text != "arrival:start":
 				candidates.append(row)
 		var rng := stream_rng(seed_text, section_text, "dirt", content_hash)
 		_shuffle(candidates, rng)
@@ -677,6 +819,12 @@ func _assign_piles(rows_by_section: Dictionary, anchors: Resource, definitions: 
 	var patterns := anchors.get_meta(&"pile_patterns") as Dictionary
 	var packs := anchors.get_meta(&"packs") as Dictionary
 	var pattern_ids := _sorted_string_keys(patterns)
+	# Heap members must not land exactly on another item: every row's ground spot, beach-wide.
+	var spots := {}
+	for section_rows in rows_by_section.values():
+		for row_value in section_rows:
+			var position := (row_value as Dictionary).position_mm as Array
+			spots[Vector2i(int(position[0]), int(position[2]))] = true
 	for section_text in _sorted_string_keys(rows_by_section):
 		if "water_surface" in (packs[StringName(section_text)] as Dictionary).tags:
 			continue
@@ -695,13 +843,18 @@ func _assign_piles(rows_by_section: Dictionary, anchors: Resource, definitions: 
 			var pattern_id := pattern_ids[rng.randi_range(0, pattern_ids.size() - 1)]
 			var offsets := patterns[StringName(pattern_id)] as Array
 			if offsets.size() > remaining:
-				pattern_id = "scatter_4"
-				offsets = patterns[&"scatter_4"] as Array
+				pattern_id = "heap_4"
+				offsets = patterns[&"heap_4"] as Array
 			var base_position := (candidates[cursor] as Dictionary).position_mm as Array
 			for pattern_index in range(offsets.size()):
 				var row := candidates[cursor + pattern_index] as Dictionary
 				var offset: Variant = offsets[pattern_index]
-				row.position_mm = [int(base_position[0]) + int(offset[0]), int(base_position[1]) + int(offset[1]), int(base_position[2]) + int(offset[2])]
+				var spot := Vector2i(int(base_position[0]) + int(offset[0]), int(base_position[2]) + int(offset[2]))
+				if pattern_index > 0:
+					while spots.has(spot):
+						spot.x += 11
+					spots[spot] = true
+				row.position_mm = [spot.x, int(base_position[1]) + int(offset[1]), spot.y]
 				row.spawn_mode = "pile"
 				row.pile_id = "pile:%s:%03d" % [section_text, pile_serial]
 				row.pile_pattern_id = pattern_id

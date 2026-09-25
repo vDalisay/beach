@@ -19,11 +19,15 @@ static func shore_slope(x: float) -> float:
 	return (shore_z(x + 0.25) - shore_z(x - 0.25)) / 0.5
 
 
+## Height of the flat dry sand before relief.
+const DRY_SAND := 0.012
+
+
 static func surface_y(x: float, z: float) -> float:
-	# The existing five-row sand/collision cross-section, unchanged.
+	# The five-row sand/collision cross-section, with natural relief on the dry beach.
 	var distance := z - shore_z(x)
 	if distance <= -2.0:
-		return 0.012
+		return DRY_SAND + BeachRelief.height(x, z)
 	if distance <= 28.0:
 		return lerpf(0.012, -2.5, (distance + 2.0) / 30.0)
 	if distance <= 55.0:

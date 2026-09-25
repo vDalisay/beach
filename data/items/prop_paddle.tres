@@ -15,3 +15,4 @@ collision_profile = 2
 hand_cost = 2
 float_mode = 0
 eligible_spawn_tags = Array[StringName]([&"sand", &"deck", &"water_surface"])
+lying_chance = 1.0

@@ -15,3 +15,4 @@ float_mode = 0
 base_sale_value = 1
 eligible_spawn_tags = Array[StringName]([&"sand", &"deck", &"water_surface", &"seabed"])
 spawn_weight = 3
+lying_chance = 0.5

@@ -144,6 +144,36 @@ func run() -> void:
 		route_length += (route[index] as Vector3).distance_to(route[index - 1] as Vector3)
 	var walk_seconds := route_length / 3.5
 	check(route_length >= 140.0 and route_length <= 160.0, "compact route spans roughly one quarter of the original beach")
+
+	# Beach terrain pass: the baked layout still matches the scene, level places are level, the
+	# playable relief stays walkable and generated loose items rest on the sand, not above it.
+	var stale := BeachLayoutBaker.compare(beach, load(BeachLayoutBaker.LAYOUT_PATH))
+	check(stale.is_empty(), "beach layout data matches the scene (re-run tools/bake_beach_layout.gd): %s" % stale)
+	var steepest := 0.0
+	for x in range(-79, 80):
+		var z := -31.0
+		while z < Coastline.shore_z(float(x)) - 2.0:
+			steepest = maxf(steepest, rad_to_deg(Vector3.UP.angle_to(BeachRelief.land_normal(float(x), z))))
+			z += 1.0
+	check(steepest <= 20.0, "playable sand relief stays walkable (steepest %.1f°)" % steepest)
+	var level_pads := 0
+	for pad in (load(BeachLayoutBaker.LAYOUT_PATH) as Resource).get_meta(&"pads", []) as Array:
+		if str(pad.mode) != "zero":
+			continue
+		var centre := Vector2(pad.center[0], pad.center[1]) if str(pad.shape) == "circle" else (Vector2(pad.min[0], pad.min[1]) + Vector2(pad.max[0], pad.max[1])) * 0.5
+		check(absf(BeachRelief.height(centre.x, centre.y)) < 0.005, "level pad stays level: %s" % pad.id)
+		level_pads += 1
+	var generation := ManifestGenerator.new().generate("first-shore")
+	var grounded := 0
+	for row_value in generation.get("rows", []):
+		var row := row_value as Dictionary
+		var at := Vector3(row.position_mm[0], row.position_mm[1], row.position_mm[2]) / 1000.0
+		if str(row.location) != "WORLD" or str(row.spawn_mode) == "pile" or at.z >= Coastline.shore_z(at.x) - 2.0 or not is_nan(BeachGround.pier_top(at.x, at.z)):
+			continue
+		check(absf(at.y - Coastline.surface_y(at.x, at.z)) <= 0.02, "loose land item rests on the sand: %s" % row.id)
+		grounded += 1
+	check(grounded > 2000, "most dry-sand litter is checked for resting on the sand (%d)" % grounded)
+	print("B_TERRAIN steepest=%.1f level_pads=%d grounded=%d" % [steepest, level_pads, grounded])
 	print("P05_WORLD sections=%d anchors=%d pools=%d slots=%d route=%.1fm walk=%.1fs failures=%d" % [section_ids.size(), anchor_ids.size(), pool_ids.size(), total_capacity, route_length, walk_seconds, failures])
 	quit(failures)
 

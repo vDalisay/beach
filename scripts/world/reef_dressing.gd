@@ -23,6 +23,18 @@ const REAR_SHELF_ROCKS := [6, 7, 8, 17]
 const GARDEN_AREA := 0.42
 
 
+## Rocks the provisional seagrass beds grow beside, per reef section (RestorationSection draws
+## them); reef litter keeps clear of the beds as it does of the rocks.
+const SEAGRASS_ROCKS := {
+	&"reef_west:outer": [0, 1, 3, 4],
+	&"reef_west:coral": [2, 5, 6, 7, 8],
+	&"reef_east:outer": [9, 12, 16],
+	&"reef_east:coral": [11, 13, 14, 17],
+}
+## Litter keeps this far (m) from a seagrass bed centre.
+const SEAGRASS_CLEARANCE := 1.0
+
+
 static func structure_scale(index: int) -> float:
 	return 1.4 if index in REAR_SHELF_ROCKS else 1.0
 
@@ -164,3 +176,36 @@ func _garden_points(mesh: Mesh, pose: Transform3D, seed_value: int) -> Array[Vec
 			var point := a + (b - a) * u + (c - a) * v
 			result.append(Vector4(point.x, point.y, point.z, normal.y))
 	return result
+
+
+## Where the seagrass bed beside `rock_index` grows (x, z): off the rock's side facing away from
+## the swim channel, beyond the ridge visual.
+static func seagrass_spot(section_id: StringName, rock_index: int) -> Vector2:
+	var rock := STRUCTURES[rock_index] as Vector4
+	# The Synty ridge visual extends farther than its pickup-safe collider.
+	var clearance := 4.5 * (0.52 + float(rock_index % 3) * 0.04) * structure_scale(rock_index) + 0.5
+	var channel_x := 2.5 if str(section_id).begins_with("reef_west") else 40.0
+	var side := -1.0 if rock.x > channel_x else 1.0
+	var local_direction := Vector3(side, 0, 0)
+	# These two beds turn toward open seabed.
+	if rock_index == 0:
+		local_direction = Vector3.BACK
+	elif rock_index == 1:
+		local_direction = Vector3.FORWARD
+	var offset := Basis(Vector3.UP, rock.z) * local_direction * clearance
+	return Vector2(rock.x + offset.x, rock.y + offset.z)
+
+
+static var _seagrass_spots: PackedVector2Array = PackedVector2Array()
+
+
+static func near_seagrass(position_mm: Array) -> bool:
+	if _seagrass_spots.is_empty():
+		for section_id in SEAGRASS_ROCKS:
+			for rock_index in SEAGRASS_ROCKS[section_id]:
+				_seagrass_spots.append(seagrass_spot(section_id, int(rock_index)))
+	var point := Vector2(float(position_mm[0]), float(position_mm[2])) / 1000.0
+	for spot in _seagrass_spots:
+		if point.distance_to(spot) < SEAGRASS_CLEARANCE:
+			return true
+	return false

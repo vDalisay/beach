@@ -1,0 +1,1884 @@
+[gd_resource type="Resource" format=3]
+
+[resource]
+resource_name = "beach_01_layout"
+metadata/content_version = "beach-content-9"
+metadata/pads = [{
+"center": [-57.0, -13.0],
+"falloff": 3.0,
+"id": "activity:ArrivalShade",
+"mode": "zero",
+"radius": 5.0,
+"shape": "circle"
+}, {
+"center": [-41.0, 35.0],
+"falloff": 2.0,
+"id": "activity:BoardParking01",
+"mode": "terrace",
+"radius": 2.2,
+"shape": "circle"
+}, {
+"center": [4.0, 29.0],
+"falloff": 2.0,
+"id": "activity:BoardParking02",
+"mode": "terrace",
+"radius": 2.2,
+"shape": "circle"
+}, {
+"center": [27.5, 0.0],
+"falloff": 3.0,
+"id": "activity:LifeguardEast",
+"mode": "zero",
+"radius": 2.79,
+"shape": "circle"
+}, {
+"center": [-37.5, 0.0],
+"falloff": 3.0,
+"id": "activity:LifeguardWest",
+"mode": "zero",
+"radius": 2.79,
+"shape": "circle"
+}, {
+"center": [-18.75, 11.0],
+"falloff": 3.0,
+"id": "activity:LoungerShade",
+"mode": "zero",
+"radius": 5.0,
+"shape": "circle"
+}, {
+"center": [-12.75, -29.0],
+"falloff": 5.5,
+"id": "activity:LoungesCafeSetEast",
+"mode": "terrace",
+"radius": 2.8000000000000003,
+"shape": "circle"
+}, {
+"center": [-23.75, -30.0],
+"falloff": 5.5,
+"id": "activity:LoungesCafeSetWest",
+"mode": "terrace",
+"radius": 2.8000000000000003,
+"shape": "circle"
+}, {
+"center": [43.25, -14.0],
+"falloff": 3.0,
+"id": "activity:PierShade",
+"mode": "zero",
+"radius": 5.0,
+"shape": "circle"
+}, {
+"center": [22.5, -27.0],
+"falloff": 5.5,
+"id": "activity:SandplayCafeSet",
+"mode": "terrace",
+"radius": 2.8000000000000003,
+"shape": "circle"
+}, {
+"center": [19.75, -9.0],
+"falloff": 3.0,
+"id": "activity:SandplayShade",
+"mode": "zero",
+"radius": 5.0,
+"shape": "circle"
+}, {
+"center": [-47.0, -30.0],
+"falloff": 5.5,
+"id": "activity:SportsCafeSet",
+"mode": "terrace",
+"radius": 2.8000000000000003,
+"shape": "circle"
+}, {
+"center": [-29.5, -11.0],
+"falloff": 3.0,
+"id": "activity:SportsShade",
+"mode": "zero",
+"radius": 5.0,
+"shape": "circle"
+}, {
+"center": [-43.75, 12.0],
+"falloff": 4.0,
+"id": "activity:VolleyballNet",
+"mode": "zero",
+"radius": 7.0,
+"shape": "circle"
+}, {
+"falloff": 4.0,
+"id": "pier:approach",
+"max": [68.5, 37.99],
+"min": [56.5, 8.01],
+"mode": "zero",
+"shape": "rect"
+}, {
+"center": [-67.5, -2.0],
+"falloff": 3.0,
+"id": "recovery:RecoveryArrival",
+"mode": "zero",
+"radius": 2.2,
+"shape": "circle"
+}, {
+"center": [-18.75, -2.0],
+"falloff": 3.0,
+"id": "recovery:RecoveryLounges",
+"mode": "zero",
+"radius": 2.2,
+"shape": "circle"
+}, {
+"center": [52.5, 2.0],
+"falloff": 3.0,
+"id": "recovery:RecoveryPier",
+"mode": "zero",
+"radius": 2.2,
+"shape": "circle"
+}, {
+"center": [11.25, -2.0],
+"falloff": 3.0,
+"id": "recovery:RecoverySandplay",
+"mode": "zero",
+"radius": 2.2,
+"shape": "circle"
+}, {
+"center": [28.75, 20.0],
+"falloff": 3.0,
+"id": "recovery:RecoveryShallows",
+"mode": "zero",
+"radius": 2.2,
+"shape": "circle"
+}, {
+"center": [-43.75, -2.0],
+"falloff": 3.0,
+"id": "recovery:RecoverySports",
+"mode": "zero",
+"radius": 2.2,
+"shape": "circle"
+}, {
+"falloff": 3.0,
+"id": "route:lounges_turtle",
+"max": [-1.0, 35.0],
+"min": [-4.0, 17.0],
+"mode": "zero",
+"shape": "rect"
+}, {
+"falloff": 4.0,
+"id": "service:S1",
+"max": [-61.89, 1.07],
+"min": [-74.01, -12.26],
+"mode": "zero",
+"shape": "rect"
+}, {
+"falloff": 4.0,
+"id": "service:S2",
+"max": [13.11, 1.07],
+"min": [-0.93, -12.26],
+"mode": "zero",
+"shape": "rect"
+}, {
+"falloff": 4.0,
+"id": "service:S3",
+"max": [65.61, 4.07],
+"min": [53.49, -9.26],
+"mode": "zero",
+"shape": "rect"
+}, {
+"falloff": 4.0,
+"id": "shop:EquipmentShop",
+"max": [15.71, -2.14],
+"min": [7.24, -12.66],
+"mode": "zero",
+"shape": "rect"
+}, {
+"center": [-73.0, 7.0],
+"falloff": 3.0,
+"id": "spawn",
+"mode": "zero",
+"radius": 2.5,
+"shape": "circle"
+}]
+metadata/obstacles = [{
+"id": "activity:ArrivalShade/PoleNE",
+"max": [-53.46, -16.0],
+"min": [-55.47, -18.01]
+}, {
+"id": "activity:ArrivalShade/PoleNW",
+"max": [-60.0, -14.530000000000001],
+"min": [-62.01, -16.54]
+}, {
+"id": "activity:ArrivalShade/PoleSE",
+"max": [-51.99, -9.46],
+"min": [-54.0, -11.47]
+}, {
+"id": "activity:ArrivalShade/PoleSW",
+"max": [-58.53, -7.99],
+"min": [-60.54, -10.0]
+}, {
+"id": "activity:BoardParking01",
+"max": [-39.550000000000004, 36.92],
+"min": [-42.34, 33.03]
+}, {
+"id": "activity:BoardParking02",
+"max": [5.72, 30.78],
+"min": [2.37, 27.14]
+}, {
+"id": "activity:LifeguardEast",
+"max": [29.35, 1.85],
+"min": [25.650000000000002, -1.85]
+}, {
+"id": "activity:LifeguardWest",
+"max": [-35.65, 1.85],
+"min": [-39.35, -1.85]
+}, {
+"id": "activity:LoungerShade/PoleNE",
+"max": [-14.52, 8.53],
+"min": [-16.28, 6.7700000000000005]
+}, {
+"id": "activity:LoungerShade/PoleNW",
+"max": [-21.22, 8.53],
+"min": [-22.98, 6.7700000000000005]
+}, {
+"id": "activity:LoungerShade/PoleSE",
+"max": [-14.52, 15.23],
+"min": [-16.28, 13.47]
+}, {
+"id": "activity:LoungerShade/PoleSW",
+"max": [-21.22, 15.23],
+"min": [-22.98, 13.47]
+}, {
+"id": "activity:LoungesCafeSetEast",
+"max": [-10.69, -26.79],
+"min": [-14.81, -31.21]
+}, {
+"id": "activity:LoungesCafeSetWest",
+"max": [-21.7, -27.810000000000002],
+"min": [-25.8, -32.19]
+}, {
+"id": "activity:PierShade/PoleNE",
+"max": [48.4, -15.31],
+"min": [46.34, -17.36]
+}, {
+"id": "activity:PierShade/PoleNW",
+"max": [41.94, -17.09],
+"min": [39.89, -19.150000000000002]
+}, {
+"id": "activity:PierShade/PoleSE",
+"max": [46.61, -8.85],
+"min": [44.56, -10.91]
+}, {
+"id": "activity:PierShade/PoleSW",
+"max": [40.160000000000004, -10.64],
+"min": [38.1, -12.69]
+}, {
+"id": "activity:Sandcastle01",
+"max": [10.02, 18.13],
+"min": [7.98, 15.870000000000001]
+}, {
+"id": "activity:Sandcastle02",
+"max": [14.65, 14.35],
+"min": [11.85, 11.65]
+}, {
+"id": "activity:SandplayCafeSet",
+"max": [24.55, -24.8],
+"min": [20.45, -29.2]
+}, {
+"id": "activity:SandplayShade/PoleNE",
+"max": [22.81, -12.23],
+"min": [20.69, -14.36]
+}, {
+"id": "activity:SandplayShade/PoleNW",
+"max": [16.52, -9.94],
+"min": [14.39, -12.06]
+}, {
+"id": "activity:SandplayShade/PoleSE",
+"max": [25.11, -5.94],
+"min": [22.98, -8.06]
+}, {
+"id": "activity:SandplayShade/PoleSW",
+"max": [18.81, -3.64],
+"min": [16.69, -5.7700000000000005]
+}, {
+"id": "activity:SportsCafeSet",
+"max": [-44.95, -27.8],
+"min": [-49.050000000000004, -32.2]
+}, {
+"id": "activity:SportsShade/PoleNE",
+"max": [-24.62, -12.71],
+"min": [-26.59, -14.68]
+}, {
+"id": "activity:SportsShade/PoleNW",
+"max": [-31.21, -13.91],
+"min": [-33.18, -15.88]
+}, {
+"id": "activity:SportsShade/PoleSE",
+"max": [-25.82, -6.12],
+"min": [-27.79, -8.09]
+}, {
+"id": "activity:SportsShade/PoleSW",
+"max": [-32.410000000000004, -7.32],
+"min": [-34.38, -9.290000000000001]
+}, {
+"id": "activity:VolleyballNet",
+"max": [-39.63, 12.36],
+"min": [-47.870000000000005, 11.64]
+}, {
+"id": "palm:EastHeadlandPalm01",
+"max": [91.55, 5.55],
+"min": [90.45, 4.45]
+}, {
+"id": "palm:EastHeadlandPalm02",
+"max": [103.55, 19.55],
+"min": [102.45, 18.45]
+}, {
+"id": "palm:EastHeadlandPalm03",
+"max": [115.55, 9.55],
+"min": [114.45, 8.45]
+}, {
+"id": "palm:Palm01",
+"max": [-60.7, -21.45],
+"min": [-61.800000000000004, -22.55]
+}, {
+"id": "palm:Palm02",
+"max": [-48.2, -24.45],
+"min": [-49.300000000000004, -25.55]
+}, {
+"id": "palm:Palm03",
+"max": [-29.45, -23.45],
+"min": [-30.55, -24.55]
+}, {
+"id": "palm:Palm04",
+"max": [-10.700000000000001, -24.45],
+"min": [-11.8, -25.55]
+}, {
+"id": "palm:Palm05",
+"max": [9.3, -23.45],
+"min": [8.2, -24.55]
+}, {
+"id": "palm:Palm06",
+"max": [26.8, -21.45],
+"min": [25.7, -22.55]
+}, {
+"id": "palm:Palm07",
+"max": [45.550000000000004, -19.45],
+"min": [44.45, -20.55]
+}, {
+"id": "palm:Palm08",
+"max": [68.05, -17.45],
+"min": [66.95, -18.55]
+}, {
+"id": "palm:Palm09",
+"max": [-70.7, -29.45],
+"min": [-71.8, -30.55]
+}, {
+"id": "palm:Palm10",
+"max": [-55.7, -33.45],
+"min": [-56.800000000000004, -34.550000000000004]
+}, {
+"id": "palm:Palm11",
+"max": [-38.45, -31.45],
+"min": [-39.550000000000004, -32.55]
+}, {
+"id": "palm:Palm12",
+"max": [-20.7, -32.45],
+"min": [-21.8, -33.55]
+}, {
+"id": "palm:Palm13",
+"max": [-3.2, -28.45],
+"min": [-4.3, -29.55]
+}, {
+"id": "palm:Palm14",
+"max": [18.05, -30.45],
+"min": [16.95, -31.55]
+}, {
+"id": "palm:Palm15",
+"max": [36.800000000000004, -32.45],
+"min": [35.7, -33.55]
+}, {
+"id": "palm:Palm16",
+"max": [55.550000000000004, -31.45],
+"min": [54.45, -32.55]
+}, {
+"id": "palm:Palm17",
+"max": [75.55, -29.45],
+"min": [74.45, -30.55]
+}, {
+"id": "palm:Palm18",
+"max": [-63.7, 7.55],
+"min": [-64.8, 6.45]
+}, {
+"id": "palm:Palm19",
+"max": [-54.45, 1.55],
+"min": [-55.550000000000004, 0.45]
+}, {
+"id": "palm:Palm20",
+"max": [-45.7, -4.45],
+"min": [-46.800000000000004, -5.55]
+}, {
+"id": "palm:Palm21",
+"max": [-33.2, -2.45],
+"min": [-34.300000000000004, -3.5500000000000003]
+}, {
+"id": "palm:Palm22",
+"max": [-23.2, -1.45],
+"min": [-24.3, -2.5500000000000003]
+}, {
+"id": "palm:Palm23",
+"max": [-6.2, 4.55],
+"min": [-7.3, 3.45]
+}, {
+"id": "palm:Palm24",
+"max": [5.8, 4.55],
+"min": [4.7, 3.45]
+}, {
+"id": "palm:Palm25",
+"max": [16.05, -0.45],
+"min": [14.950000000000001, -1.55]
+}, {
+"id": "palm:Palm26",
+"max": [31.8, -3.45],
+"min": [30.7, -4.55]
+}, {
+"id": "palm:Palm27",
+"max": [41.800000000000004, 4.55],
+"min": [40.7, 3.45]
+}, {
+"id": "palm:Palm28",
+"max": [54.300000000000004, -2.45],
+"min": [53.2, -3.5500000000000003]
+}, {
+"id": "palm:Palm29",
+"max": [70.55, -7.45],
+"min": [69.45, -8.55]
+}, {
+"id": "palm:WestHeadlandPalm01",
+"max": [-91.45, 4.55],
+"min": [-92.55, 3.45]
+}, {
+"id": "palm:WestHeadlandPalm02",
+"max": [-102.45, 18.55],
+"min": [-103.55, 17.45]
+}, {
+"id": "palm:WestHeadlandPalm03",
+"max": [-115.45, 8.55],
+"min": [-116.55, 7.45]
+}, {
+"id": "pier:approach",
+"max": [67.9, 37.39],
+"min": [57.1, 12.61]
+}, {
+"id": "recovery:RecoveryArrival",
+"max": [-66.2, -0.7000000000000001],
+"min": [-68.8, -3.3000000000000003]
+}, {
+"id": "recovery:RecoveryLounges",
+"max": [-17.45, -0.7000000000000001],
+"min": [-20.05, -3.3000000000000003]
+}, {
+"id": "recovery:RecoveryPier",
+"max": [53.800000000000004, 3.3000000000000003],
+"min": [51.2, 0.7000000000000001]
+}, {
+"id": "recovery:RecoverySandplay",
+"max": [12.55, -0.7000000000000001],
+"min": [9.950000000000001, -3.3000000000000003]
+}, {
+"id": "recovery:RecoveryShallows",
+"max": [30.05, 21.3],
+"min": [27.45, 18.7]
+}, {
+"id": "recovery:RecoverySports",
+"max": [-42.45, -0.7000000000000001],
+"min": [-45.050000000000004, -3.3000000000000003]
+}, {
+"id": "shop:EquipmentShop",
+"max": [15.11, -2.74],
+"min": [7.84, -12.06]
+}, {
+"id": "slot:mooring:shallows:rowboats:0",
+"max": [41.25, 46.5],
+"min": [40.25, 45.5]
+}, {
+"id": "slot:mooring:shallows:rowboats:1",
+"max": [44.45, 46.5],
+"min": [43.45, 45.5]
+}, {
+"id": "slot:mooring:shallows:rowboats:2",
+"max": [47.65, 46.5],
+"min": [46.65, 45.5]
+}, {
+"id": "slot:mooring:shallows:rowboats:3",
+"max": [50.85, 46.5],
+"min": [49.85, 45.5]
+}, {
+"id": "slot:mooring:shallows:rowboats:4",
+"max": [54.050000000000004, 46.5],
+"min": [53.050000000000004, 45.5]
+}, {
+"id": "slot:mooring:shallows:rowboats:5",
+"max": [57.25, 46.5],
+"min": [56.25, 45.5]
+}, {
+"id": "slot:row:arrival:chairs:01:0",
+"max": [-73.2, 14.57],
+"min": [-74.2, 13.57]
+}, {
+"id": "slot:row:arrival:chairs:01:1",
+"max": [-71.8, 14.43],
+"min": [-72.8, 13.43]
+}, {
+"id": "slot:row:arrival:chairs:02:0",
+"max": [-64.2, 14.43],
+"min": [-65.2, 13.43]
+}, {
+"id": "slot:row:arrival:chairs:02:1",
+"max": [-62.800000000000004, 14.57],
+"min": [-63.800000000000004, 13.57]
+}, {
+"id": "slot:row:arrival:chairs:03:0",
+"max": [-72.2, 22.57],
+"min": [-73.2, 21.57]
+}, {
+"id": "slot:row:arrival:chairs:03:1",
+"max": [-70.8, 22.43],
+"min": [-71.8, 21.43]
+}, {
+"id": "slot:row:arrival:chairs:04:0",
+"max": [-60.160000000000004, 30.28],
+"min": [-61.160000000000004, 29.28]
+}, {
+"id": "slot:row:arrival:chairs:04:1",
+"max": [-58.84, 30.72],
+"min": [-59.84, 29.72]
+}, {
+"id": "slot:row:arrival:coolers:0",
+"max": [-70.75, -20.5],
+"min": [-71.75, -21.5]
+}, {
+"id": "slot:row:arrival:coolers:1",
+"max": [-69.25, -20.5],
+"min": [-70.25, -21.5]
+}, {
+"id": "slot:row:arrival:coolers:2",
+"max": [-67.75, -20.5],
+"min": [-68.75, -21.5]
+}, {
+"id": "slot:row:arrival:coolers:3",
+"max": [-66.25, -20.5],
+"min": [-67.25, -21.5]
+}, {
+"id": "slot:row:arrival:loungers:01:0",
+"max": [-73.4, 17.5],
+"min": [-74.4, 16.5]
+}, {
+"id": "slot:row:arrival:loungers:01:1",
+"max": [-71.60000000000001, 17.5],
+"min": [-72.60000000000001, 16.5]
+}, {
+"id": "slot:row:arrival:loungers:02:0",
+"max": [-60.38, 33.8],
+"min": [-61.38, 32.8]
+}, {
+"id": "slot:row:arrival:loungers:02:1",
+"max": [-58.620000000000005, 34.2],
+"min": [-59.620000000000005, 33.2]
+}, {
+"id": "slot:row:arrival:parasols:01:0",
+"max": [-69.8, 16.0],
+"min": [-70.8, 15.0]
+}, {
+"id": "slot:row:arrival:parasols:02:0",
+"max": [-60.800000000000004, 16.0],
+"min": [-61.800000000000004, 15.0]
+}, {
+"id": "slot:row:arrival:parasols:03:0",
+"max": [-68.8, 24.0],
+"min": [-69.8, 23.0]
+}, {
+"id": "slot:row:arrival:parasols:04:0",
+"max": [-56.5, 32.0],
+"min": [-57.5, 31.0]
+}, {
+"id": "slot:row:arrival:tents:0",
+"max": [-42.2, 15.5],
+"min": [-43.2, 14.5]
+}, {
+"id": "slot:row:arrival:tents:1",
+"max": [-38.800000000000004, 15.5],
+"min": [-39.800000000000004, 14.5]
+}, {
+"id": "slot:row:lounges:chairs:01:0",
+"max": [-33.9, 10.76],
+"min": [-34.9, 9.76]
+}, {
+"id": "slot:row:lounges:chairs:01:1",
+"max": [-32.6, 10.24],
+"min": [-33.6, 9.24]
+}, {
+"id": "slot:row:lounges:chairs:02:0",
+"max": [-29.900000000000002, 10.24],
+"min": [-30.900000000000002, 9.24]
+}, {
+"id": "slot:row:lounges:chairs:02:1",
+"max": [-28.6, 10.76],
+"min": [-29.6, 9.76]
+}, {
+"id": "slot:row:lounges:chairs:03:0",
+"max": [-23.900000000000002, 13.76],
+"min": [-24.900000000000002, 12.76]
+}, {
+"id": "slot:row:lounges:chairs:03:1",
+"max": [-22.6, 13.24],
+"min": [-23.6, 12.24]
+}, {
+"id": "slot:row:lounges:chairs:04:0",
+"max": [-19.900000000000002, 13.24],
+"min": [-20.900000000000002, 12.24]
+}, {
+"id": "slot:row:lounges:chairs:04:1",
+"max": [-18.6, 13.76],
+"min": [-19.6, 12.76]
+}, {
+"id": "slot:row:lounges:chairs:05:0",
+"max": [-13.9, 10.26],
+"min": [-14.9, 9.26]
+}, {
+"id": "slot:row:lounges:chairs:05:1",
+"max": [-12.6, 9.74],
+"min": [-13.6, 8.74]
+}, {
+"id": "slot:row:lounges:chairs:06:0",
+"max": [-9.9, 9.74],
+"min": [-10.9, 8.74]
+}, {
+"id": "slot:row:lounges:chairs:06:1",
+"max": [-8.6, 10.26],
+"min": [-9.6, 9.26]
+}, {
+"id": "slot:row:lounges:chairs:07:0",
+"max": [-2.9, 12.76],
+"min": [-3.9, 11.76]
+}, {
+"id": "slot:row:lounges:chairs:07:1",
+"max": [-1.6, 12.24],
+"min": [-2.6, 11.24]
+}, {
+"id": "slot:row:lounges:chairs:08:0",
+"max": [1.1, 12.24],
+"min": [0.1, 11.24]
+}, {
+"id": "slot:row:lounges:chairs:08:1",
+"max": [2.4, 12.76],
+"min": [1.4000000000000001, 11.76]
+}, {
+"id": "slot:row:lounges:chairs:09:0",
+"max": [-29.900000000000002, 19.76],
+"min": [-30.900000000000002, 18.76]
+}, {
+"id": "slot:row:lounges:chairs:09:1",
+"max": [-28.6, 19.240000000000002],
+"min": [-29.6, 18.240000000000002]
+}, {
+"id": "slot:row:lounges:chairs:10:0",
+"max": [-25.900000000000002, 19.240000000000002],
+"min": [-26.900000000000002, 18.240000000000002]
+}, {
+"id": "slot:row:lounges:chairs:10:1",
+"max": [-24.6, 19.76],
+"min": [-25.6, 18.76]
+}, {
+"id": "slot:row:lounges:chairs:11:0",
+"max": [-19.900000000000002, 21.76],
+"min": [-20.900000000000002, 20.76]
+}, {
+"id": "slot:row:lounges:chairs:11:1",
+"max": [-18.6, 21.240000000000002],
+"min": [-19.6, 20.240000000000002]
+}, {
+"id": "slot:row:lounges:chairs:12:0",
+"max": [-15.9, 21.240000000000002],
+"min": [-16.9, 20.240000000000002]
+}, {
+"id": "slot:row:lounges:chairs:12:1",
+"max": [-14.6, 21.76],
+"min": [-15.6, 20.76]
+}, {
+"id": "slot:row:lounges:chairs:13:0",
+"max": [-9.9, 19.76],
+"min": [-10.9, 18.76]
+}, {
+"id": "slot:row:lounges:chairs:13:1",
+"max": [-8.6, 19.240000000000002],
+"min": [-9.6, 18.240000000000002]
+}, {
+"id": "slot:row:lounges:chairs:14:0",
+"max": [-5.9, 19.240000000000002],
+"min": [-6.9, 18.240000000000002]
+}, {
+"id": "slot:row:lounges:chairs:14:1",
+"max": [-4.6000000000000005, 19.76],
+"min": [-5.6000000000000005, 18.76]
+}, {
+"id": "slot:row:lounges:chairs:15:0",
+"max": [0.1, 21.76],
+"min": [-0.9, 20.76]
+}, {
+"id": "slot:row:lounges:chairs:15:1",
+"max": [1.4000000000000001, 21.240000000000002],
+"min": [0.4, 20.240000000000002]
+}, {
+"id": "slot:row:lounges:chairs:16:0",
+"max": [4.1, 21.240000000000002],
+"min": [3.1, 20.240000000000002]
+}, {
+"id": "slot:row:lounges:chairs:16:1",
+"max": [5.4, 21.76],
+"min": [4.4, 20.76]
+}, {
+"id": "slot:row:lounges:chairs:17:0",
+"max": [-33.9, 28.76],
+"min": [-34.9, 27.76]
+}, {
+"id": "slot:row:lounges:chairs:17:1",
+"max": [-32.6, 28.240000000000002],
+"min": [-33.6, 27.240000000000002]
+}, {
+"id": "slot:row:lounges:chairs:18:0",
+"max": [-29.900000000000002, 28.240000000000002],
+"min": [-30.900000000000002, 27.240000000000002]
+}, {
+"id": "slot:row:lounges:chairs:18:1",
+"max": [-28.6, 28.76],
+"min": [-29.6, 27.76]
+}, {
+"id": "slot:row:lounges:chairs:19:0",
+"max": [-23.900000000000002, 28.76],
+"min": [-24.900000000000002, 27.76]
+}, {
+"id": "slot:row:lounges:chairs:19:1",
+"max": [-22.6, 28.240000000000002],
+"min": [-23.6, 27.240000000000002]
+}, {
+"id": "slot:row:lounges:chairs:20:0",
+"max": [-19.900000000000002, 28.240000000000002],
+"min": [-20.900000000000002, 27.240000000000002]
+}, {
+"id": "slot:row:lounges:chairs:20:1",
+"max": [-18.6, 28.76],
+"min": [-19.6, 27.76]
+}, {
+"id": "slot:row:lounges:chairs:21:0",
+"max": [-13.9, 28.26],
+"min": [-14.9, 27.26]
+}, {
+"id": "slot:row:lounges:chairs:21:1",
+"max": [-12.6, 27.740000000000002],
+"min": [-13.6, 26.740000000000002]
+}, {
+"id": "slot:row:lounges:chairs:22:0",
+"max": [-9.9, 27.740000000000002],
+"min": [-10.9, 26.740000000000002]
+}, {
+"id": "slot:row:lounges:chairs:22:1",
+"max": [-8.6, 28.26],
+"min": [-9.6, 27.26]
+}, {
+"id": "slot:row:lounges:loungers:01:0",
+"max": [-34.14, 14.16],
+"min": [-35.14, 13.16]
+}, {
+"id": "slot:row:lounges:loungers:01:1",
+"max": [-32.36, 13.84],
+"min": [-33.36, 12.84]
+}, {
+"id": "slot:row:lounges:loungers:02:0",
+"max": [-30.14, 13.84],
+"min": [-31.14, 12.84]
+}, {
+"id": "slot:row:lounges:loungers:02:1",
+"max": [-28.36, 14.16],
+"min": [-29.36, 13.16]
+}, {
+"id": "slot:row:lounges:loungers:03:0",
+"max": [-24.14, 17.16],
+"min": [-25.14, 16.16]
+}, {
+"id": "slot:row:lounges:loungers:03:1",
+"max": [-22.36, 16.84],
+"min": [-23.36, 15.84]
+}, {
+"id": "slot:row:lounges:loungers:04:0",
+"max": [-20.14, 16.84],
+"min": [-21.14, 15.84]
+}, {
+"id": "slot:row:lounges:loungers:04:1",
+"max": [-18.36, 17.16],
+"min": [-19.36, 16.16]
+}, {
+"id": "slot:row:lounges:loungers:05:0",
+"max": [-14.14, 13.66],
+"min": [-15.14, 12.66]
+}, {
+"id": "slot:row:lounges:loungers:05:1",
+"max": [-12.36, 13.34],
+"min": [-13.36, 12.34]
+}, {
+"id": "slot:row:lounges:loungers:06:0",
+"max": [-10.14, 13.34],
+"min": [-11.14, 12.34]
+}, {
+"id": "slot:row:lounges:loungers:06:1",
+"max": [-8.36, 13.66],
+"min": [-9.36, 12.66]
+}, {
+"id": "slot:row:lounges:loungers:07:0",
+"max": [-3.14, 16.16],
+"min": [-4.14, 15.16]
+}, {
+"id": "slot:row:lounges:loungers:07:1",
+"max": [-1.36, 15.84],
+"min": [-2.36, 14.84]
+}, {
+"id": "slot:row:lounges:loungers:08:0",
+"max": [0.86, 15.84],
+"min": [-0.14, 14.84]
+}, {
+"id": "slot:row:lounges:loungers:08:1",
+"max": [2.64, 16.16],
+"min": [1.6400000000000001, 15.16]
+}, {
+"id": "slot:row:lounges:loungers:09:0",
+"max": [-30.14, 23.16],
+"min": [-31.14, 22.16]
+}, {
+"id": "slot:row:lounges:loungers:09:1",
+"max": [-28.36, 22.84],
+"min": [-29.36, 21.84]
+}, {
+"id": "slot:row:lounges:loungers:10:0",
+"max": [-26.14, 22.84],
+"min": [-27.14, 21.84]
+}, {
+"id": "slot:row:lounges:loungers:10:1",
+"max": [-24.36, 23.16],
+"min": [-25.36, 22.16]
+}, {
+"id": "slot:row:lounges:loungers:11:0",
+"max": [-20.14, 25.16],
+"min": [-21.14, 24.16]
+}, {
+"id": "slot:row:lounges:loungers:11:1",
+"max": [-18.36, 24.84],
+"min": [-19.36, 23.84]
+}, {
+"id": "slot:row:lounges:loungers:12:0",
+"max": [-16.14, 24.84],
+"min": [-17.14, 23.84]
+}, {
+"id": "slot:row:lounges:loungers:12:1",
+"max": [-14.36, 25.16],
+"min": [-15.36, 24.16]
+}, {
+"id": "slot:row:lounges:loungers:13:0",
+"max": [-10.14, 23.16],
+"min": [-11.14, 22.16]
+}, {
+"id": "slot:row:lounges:loungers:13:1",
+"max": [-8.36, 22.84],
+"min": [-9.36, 21.84]
+}, {
+"id": "slot:row:lounges:loungers:14:0",
+"max": [-6.140000000000001, 22.84],
+"min": [-7.140000000000001, 21.84]
+}, {
+"id": "slot:row:lounges:loungers:14:1",
+"max": [-4.36, 23.16],
+"min": [-5.36, 22.16]
+}, {
+"id": "slot:row:lounges:loungers:15:0",
+"max": [-0.14, 25.16],
+"min": [-1.1400000000000001, 24.16]
+}, {
+"id": "slot:row:lounges:loungers:15:1",
+"max": [1.6400000000000001, 24.84],
+"min": [0.64, 23.84]
+}, {
+"id": "slot:row:lounges:loungers:16:0",
+"max": [3.86, 24.84],
+"min": [2.86, 23.84]
+}, {
+"id": "slot:row:lounges:loungers:16:1",
+"max": [5.64, 25.16],
+"min": [4.64, 24.16]
+}, {
+"id": "slot:row:lounges:loungers:17:0",
+"max": [-34.14, 32.160000000000004],
+"min": [-35.14, 31.16]
+}, {
+"id": "slot:row:lounges:loungers:17:1",
+"max": [-32.36, 31.84],
+"min": [-33.36, 30.84]
+}, {
+"id": "slot:row:lounges:loungers:18:0",
+"max": [-30.14, 31.84],
+"min": [-31.14, 30.84]
+}, {
+"id": "slot:row:lounges:loungers:18:1",
+"max": [-28.36, 32.160000000000004],
+"min": [-29.36, 31.16]
+}, {
+"id": "slot:row:lounges:loungers:19:0",
+"max": [-24.14, 32.160000000000004],
+"min": [-25.14, 31.16]
+}, {
+"id": "slot:row:lounges:loungers:19:1",
+"max": [-22.36, 31.84],
+"min": [-23.36, 30.84]
+}, {
+"id": "slot:row:lounges:loungers:20:0",
+"max": [-20.14, 31.84],
+"min": [-21.14, 30.84]
+}, {
+"id": "slot:row:lounges:loungers:20:1",
+"max": [-18.36, 32.160000000000004],
+"min": [-19.36, 31.16]
+}, {
+"id": "slot:row:lounges:parasols:01:0",
+"max": [-31.25, 12.5],
+"min": [-32.25, 11.5]
+}, {
+"id": "slot:row:lounges:parasols:02:0",
+"max": [-21.25, 15.5],
+"min": [-22.25, 14.5]
+}, {
+"id": "slot:row:lounges:parasols:03:0",
+"max": [-11.25, 12.0],
+"min": [-12.25, 11.0]
+}, {
+"id": "slot:row:lounges:parasols:04:0",
+"max": [-0.25, 14.5],
+"min": [-1.25, 13.5]
+}, {
+"id": "slot:row:lounges:parasols:05:0",
+"max": [-27.25, 21.5],
+"min": [-28.25, 20.5]
+}, {
+"id": "slot:row:lounges:parasols:06:0",
+"max": [-17.25, 23.5],
+"min": [-18.25, 22.5]
+}, {
+"id": "slot:row:lounges:parasols:07:0",
+"max": [-7.25, 21.5],
+"min": [-8.25, 20.5]
+}, {
+"id": "slot:row:lounges:parasols:08:0",
+"max": [2.75, 23.5],
+"min": [1.75, 22.5]
+}, {
+"id": "slot:row:lounges:parasols:09:0",
+"max": [-31.25, 30.5],
+"min": [-32.25, 29.5]
+}, {
+"id": "slot:row:lounges:parasols:10:0",
+"max": [-21.25, 30.5],
+"min": [-22.25, 29.5]
+}, {
+"id": "slot:row:lounges:parasols:11:0",
+"max": [-11.25, 30.0],
+"min": [-12.25, 29.0]
+}, {
+"id": "slot:row:lounges:parasols:12:0",
+"max": [-17.25, 15.5],
+"min": [-18.25, 14.5]
+}, {
+"id": "slot:row:lounges:parasols:13:0",
+"max": [-13.25, 23.5],
+"min": [-14.25, 22.5]
+}, {
+"id": "slot:row:lounges:parasols:14:0",
+"max": [-27.25, 30.5],
+"min": [-28.25, 29.5]
+}, {
+"id": "slot:row:lounges:tents:0",
+"max": [14.05, -11.5],
+"min": [13.05, -12.5]
+}, {
+"id": "slot:row:lounges:tents:1",
+"max": [17.45, -11.5],
+"min": [16.45, -12.5]
+}, {
+"id": "slot:row:pier:chairs:01:0",
+"max": [45.300000000000004, 17.57],
+"min": [44.300000000000004, 16.57]
+}, {
+"id": "slot:row:pier:chairs:01:1",
+"max": [46.7, 17.43],
+"min": [45.7, 16.43]
+}, {
+"id": "slot:row:pier:chairs:02:0",
+"max": [52.300000000000004, 17.57],
+"min": [51.300000000000004, 16.57]
+}, {
+"id": "slot:row:pier:chairs:02:1",
+"max": [53.7, 17.43],
+"min": [52.7, 16.43]
+}, {
+"id": "slot:row:pier:chairs:03:0",
+"max": [71.3, 17.43],
+"min": [70.3, 16.43]
+}, {
+"id": "slot:row:pier:chairs:03:1",
+"max": [72.7, 17.57],
+"min": [71.7, 16.57]
+}, {
+"id": "slot:row:pier:chairs:04:0",
+"max": [77.3, 17.43],
+"min": [76.3, 16.43]
+}, {
+"id": "slot:row:pier:chairs:04:1",
+"max": [78.7, 17.57],
+"min": [77.7, 16.57]
+}, {
+"id": "slot:row:pier:chairs:05:0",
+"max": [46.300000000000004, 26.57],
+"min": [45.300000000000004, 25.57]
+}, {
+"id": "slot:row:pier:chairs:05:1",
+"max": [47.7, 26.43],
+"min": [46.7, 25.43]
+}, {
+"id": "slot:row:pier:chairs:06:0",
+"max": [72.3, 26.43],
+"min": [71.3, 25.43]
+}, {
+"id": "slot:row:pier:chairs:06:1",
+"max": [73.7, 26.57],
+"min": [72.7, 25.57]
+}, {
+"id": "slot:row:pier:lifebuoys:0",
+"max": [69.8, 42.5],
+"min": [68.8, 41.5]
+}, {
+"id": "slot:row:pier:lifebuoys:1",
+"max": [70.60000000000001, 42.5],
+"min": [69.60000000000001, 41.5]
+}, {
+"id": "slot:row:pier:lifebuoys:2",
+"max": [71.4, 42.5],
+"min": [70.4, 41.5]
+}, {
+"id": "slot:row:pier:lifebuoys:3",
+"max": [72.2, 42.5],
+"min": [71.2, 41.5]
+}, {
+"id": "slot:row:pier:loungers:01:0",
+"max": [45.1, 20.5],
+"min": [44.1, 19.5]
+}, {
+"id": "slot:row:pier:loungers:01:1",
+"max": [46.9, 20.5],
+"min": [45.9, 19.5]
+}, {
+"id": "slot:row:pier:loungers:02:0",
+"max": [52.1, 20.5],
+"min": [51.1, 19.5]
+}, {
+"id": "slot:row:pier:loungers:02:1",
+"max": [53.9, 20.5],
+"min": [52.9, 19.5]
+}, {
+"id": "slot:row:pier:loungers:03:0",
+"max": [71.10000000000001, 20.5],
+"min": [70.10000000000001, 19.5]
+}, {
+"id": "slot:row:pier:loungers:03:1",
+"max": [72.9, 20.5],
+"min": [71.9, 19.5]
+}, {
+"id": "slot:row:pier:loungers:04:0",
+"max": [46.1, 29.5],
+"min": [45.1, 28.5]
+}, {
+"id": "slot:row:pier:loungers:04:1",
+"max": [47.9, 29.5],
+"min": [46.9, 28.5]
+}, {
+"id": "slot:row:pier:loungers:05:0",
+"max": [72.10000000000001, 29.5],
+"min": [71.10000000000001, 28.5]
+}, {
+"id": "slot:row:pier:loungers:05:1",
+"max": [73.9, 29.5],
+"min": [72.9, 28.5]
+}, {
+"id": "slot:row:sandplay:coolers:0",
+"max": [28.0, -12.5],
+"min": [27.0, -13.5]
+}, {
+"id": "slot:row:sandplay:coolers:1",
+"max": [29.5, -12.5],
+"min": [28.5, -13.5]
+}, {
+"id": "slot:row:sandplay:coolers:2",
+"max": [31.0, -12.5],
+"min": [30.0, -13.5]
+}, {
+"id": "slot:row:sandplay:coolers:3",
+"max": [32.5, -12.5],
+"min": [31.5, -13.5]
+}, {
+"id": "slot:row:sandplay:coolers:4",
+"max": [34.0, -12.5],
+"min": [33.0, -13.5]
+}, {
+"id": "slot:row:sandplay:coolers:5",
+"max": [35.5, -12.5],
+"min": [34.5, -13.5]
+}, {
+"id": "slot:row:sandplay:inflatables:0",
+"max": [27.5, 16.5],
+"min": [26.5, 15.5]
+}, {
+"id": "slot:row:sandplay:inflatables:1",
+"max": [29.0, 16.5],
+"min": [28.0, 15.5]
+}, {
+"id": "slot:row:sandplay:inflatables:2",
+"max": [30.5, 16.5],
+"min": [29.5, 15.5]
+}, {
+"id": "slot:row:sandplay:inflatables:3",
+"max": [32.0, 16.5],
+"min": [31.0, 15.5]
+}, {
+"id": "slot:row:sandplay:parasols:01:0",
+"max": [8.75, 27.5],
+"min": [7.75, 26.5]
+}, {
+"id": "slot:row:sandplay:parasols:02:0",
+"max": [20.75, 25.5],
+"min": [19.75, 24.5]
+}, {
+"id": "slot:row:shallows:inflatables:0",
+"max": [30.5, 35.5],
+"min": [29.5, 34.5]
+}, {
+"id": "slot:row:shallows:inflatables:1",
+"max": [32.0, 35.5],
+"min": [31.0, 34.5]
+}, {
+"id": "slot:row:shallows:inflatables:2",
+"max": [33.5, 35.5],
+"min": [32.5, 34.5]
+}, {
+"id": "slot:row:shallows:inflatables:3",
+"max": [35.0, 35.5],
+"min": [34.0, 34.5]
+}, {
+"id": "slot:row:shallows:inflatables:4",
+"max": [36.5, 35.5],
+"min": [35.5, 34.5]
+}, {
+"id": "slot:row:shallows:inflatables:5",
+"max": [38.0, 35.5],
+"min": [37.0, 34.5]
+}, {
+"id": "slot:row:shallows:inflatables:6",
+"max": [39.5, 35.5],
+"min": [38.5, 34.5]
+}, {
+"id": "slot:row:shallows:inflatables:7",
+"max": [41.0, 35.5],
+"min": [40.0, 34.5]
+}, {
+"id": "slot:row:shallows:inflatables:8",
+"max": [42.5, 35.5],
+"min": [41.5, 34.5]
+}, {
+"id": "slot:row:shallows:inflatables:9",
+"max": [44.0, 35.5],
+"min": [43.0, 34.5]
+}, {
+"id": "slot:row:shallows:lifebuoys:0",
+"max": [47.25, 23.0],
+"min": [46.25, 22.0]
+}, {
+"id": "slot:row:shallows:lifebuoys:1",
+"max": [48.050000000000004, 23.0],
+"min": [47.050000000000004, 22.0]
+}, {
+"id": "slot:row:shallows:lifebuoys:2",
+"max": [48.85, 23.0],
+"min": [47.85, 22.0]
+}, {
+"id": "slot:row:shallows:lifebuoys:3",
+"max": [49.65, 23.0],
+"min": [48.65, 22.0]
+}, {
+"id": "slot:row:shallows:lifebuoys:4",
+"max": [50.45, 23.0],
+"min": [49.45, 22.0]
+}, {
+"id": "slot:row:shallows:lifebuoys:5",
+"max": [51.25, 23.0],
+"min": [50.25, 22.0]
+}, {
+"id": "slot:row:sports:chairs:01:0",
+"max": [-51.94, 33.58],
+"min": [-52.94, 32.58]
+}, {
+"id": "slot:row:sports:chairs:01:1",
+"max": [-50.56, 33.42],
+"min": [-51.56, 32.42]
+}, {
+"id": "slot:row:sports:chairs:02:0",
+"max": [-35.94, 30.42],
+"min": [-36.94, 29.42]
+}, {
+"id": "slot:row:sports:chairs:02:1",
+"max": [-34.56, 30.580000000000002],
+"min": [-35.56, 29.580000000000002]
+}, {
+"id": "slot:row:sports:chairs:03:0",
+"max": [-52.94, 18.580000000000002],
+"min": [-53.94, 17.580000000000002]
+}, {
+"id": "slot:row:sports:chairs:03:1",
+"max": [-51.56, 18.42],
+"min": [-52.56, 17.42]
+}, {
+"id": "slot:row:sports:chairs:04:0",
+"max": [-34.94, 18.42],
+"min": [-35.94, 17.42]
+}, {
+"id": "slot:row:sports:chairs:04:1",
+"max": [-33.56, 18.580000000000002],
+"min": [-34.56, 17.580000000000002]
+}, {
+"id": "slot:row:sports:coolers:0",
+"max": [-38.5, -13.5],
+"min": [-39.5, -14.5]
+}, {
+"id": "slot:row:sports:coolers:1",
+"max": [-37.0, -13.5],
+"min": [-38.0, -14.5]
+}, {
+"id": "slot:row:sports:coolers:2",
+"max": [-35.5, -13.5],
+"min": [-36.5, -14.5]
+}, {
+"id": "slot:row:sports:coolers:3",
+"max": [-34.0, -13.5],
+"min": [-35.0, -14.5]
+}, {
+"id": "slot:row:sports:coolers:4",
+"max": [-32.5, -13.5],
+"min": [-33.5, -14.5]
+}, {
+"id": "slot:row:sports:coolers:5",
+"max": [-31.0, -13.5],
+"min": [-32.0, -14.5]
+}, {
+"id": "slot:row:sports:coolers:6",
+"max": [-29.5, -13.5],
+"min": [-30.5, -14.5]
+}, {
+"id": "slot:row:sports:coolers:7",
+"max": [-28.0, -13.5],
+"min": [-29.0, -14.5]
+}, {
+"id": "slot:row:sports:paddles:0",
+"max": [-25.75, 15.5],
+"min": [-26.75, 14.5]
+}, {
+"id": "slot:row:sports:paddles:1",
+"max": [-24.75, 15.5],
+"min": [-25.75, 14.5]
+}, {
+"id": "slot:row:sports:parasols:01:0",
+"max": [-50.45, 35.5],
+"min": [-51.45, 34.5]
+}, {
+"id": "slot:row:sports:parasols:02:0",
+"max": [-34.45, 33.0],
+"min": [-35.45, 32.0]
+}, {
+"id": "slot:row:sports:parasols:03:0",
+"max": [-49.550000000000004, 20.0],
+"min": [-50.550000000000004, 19.0]
+}, {
+"id": "slot:row:sports:parasols:04:0",
+"max": [-31.55, 20.0],
+"min": [-32.55, 19.0]
+}, {
+"id": "slot:row:sports:tents:0",
+"max": [-22.75, -12.5],
+"min": [-23.75, -13.5]
+}, {
+"id": "slot:row:sports:tents:1",
+"max": [-19.75, -12.5],
+"min": [-20.75, -13.5]
+}, {
+"id": "slot:shelf:arrival:01",
+"max": [-76.3, -14.3],
+"min": [-81.7, -15.700000000000001]
+}, {
+"id": "slot:shelf:arrival:02",
+"max": [-69.7, -14.200000000000001],
+"min": [-76.3, -15.8]
+}, {
+"id": "slot:shelf:arrival:03",
+"max": [-64.3, -14.3],
+"min": [-69.7, -15.700000000000001]
+}, {
+"id": "slot:shelf:lounges:01",
+"max": [-24.05, -14.3],
+"min": [-29.45, -15.700000000000001]
+}, {
+"id": "slot:shelf:lounges:02",
+"max": [-36.050000000000004, -14.3],
+"min": [-41.45, -15.700000000000001]
+}, {
+"id": "slot:shelf:lounges:03",
+"max": [-30.05, -14.3],
+"min": [-35.45, -15.700000000000001]
+}, {
+"id": "slot:shelf:pier:01",
+"max": [47.2, -14.3],
+"min": [41.800000000000004, -15.700000000000001]
+}, {
+"id": "slot:shelf:pier:02",
+"max": [53.2, -14.3],
+"min": [47.800000000000004, -15.700000000000001]
+}, {
+"id": "slot:shelf:sandplay:01",
+"max": [-4.05, -14.3],
+"min": [-9.450000000000001, -15.700000000000001]
+}, {
+"id": "slot:shelf:sandplay:02",
+"max": [1.95, -14.3],
+"min": [-3.45, -15.700000000000001]
+}, {
+"id": "slot:shelf:sandplay:03",
+"max": [7.95, -14.3],
+"min": [2.5500000000000003, -15.700000000000001]
+}, {
+"id": "slot:shelf:sandplay:04",
+"max": [13.950000000000001, -14.3],
+"min": [8.55, -15.700000000000001]
+}, {
+"id": "slot:shelf:sandplay:05",
+"max": [19.95, -14.3],
+"min": [14.55, -15.700000000000001]
+}, {
+"id": "slot:shelf:sandplay:06",
+"max": [25.95, -14.3],
+"min": [20.55, -15.700000000000001]
+}, {
+"id": "slot:shelf:shallows:01",
+"max": [13.450000000000001, 18.7],
+"min": [8.05, 17.3]
+}, {
+"id": "slot:shelf:shallows:02",
+"max": [19.45, 18.7],
+"min": [14.05, 17.3]
+}, {
+"id": "slot:shelf:sports:01",
+"max": [-59.050000000000004, -14.3],
+"min": [-64.45, -15.700000000000001]
+}, {
+"id": "slot:shelf:sports:02",
+"max": [-53.050000000000004, -14.3],
+"min": [-58.45, -15.700000000000001]
+}, {
+"id": "slot:shelf:sports:03",
+"max": [-47.050000000000004, -14.3],
+"min": [-52.45, -15.700000000000001]
+}, {
+"id": "slot:shelf:sports:04",
+"max": [-41.050000000000004, -14.3],
+"min": [-46.45, -15.700000000000001]
+}, {
+"id": "slot:upright:pier:paddles:0",
+"max": [61.2, 42.5],
+"min": [60.2, 41.5]
+}, {
+"id": "slot:upright:pier:paddles:1",
+"max": [60.4, 42.5],
+"min": [59.4, 41.5]
+}, {
+"id": "slot:upright:pier:paddles:2",
+"max": [59.6, 42.5],
+"min": [58.6, 41.5]
+}, {
+"id": "slot:upright:pier:paddles:3",
+"max": [58.800000000000004, 42.5],
+"min": [57.800000000000004, 41.5]
+}, {
+"id": "slot:upright:pier:surfboards:0",
+"max": [51.85, 14.9],
+"min": [50.85, 13.9]
+}, {
+"id": "slot:upright:pier:surfboards:1",
+"max": [52.75, 14.9],
+"min": [51.75, 13.9]
+}, {
+"id": "slot:upright:pier:surfboards:2",
+"max": [53.65, 14.9],
+"min": [52.65, 13.9]
+}, {
+"id": "slot:upright:pier:surfboards:3",
+"max": [54.550000000000004, 14.9],
+"min": [53.550000000000004, 13.9]
+}, {
+"id": "slot:upright:pier:surfboards:4",
+"max": [55.45, 14.9],
+"min": [54.45, 13.9]
+}, {
+"id": "slot:upright:pier:surfboards:5",
+"max": [56.35, 14.9],
+"min": [55.35, 13.9]
+}, {
+"id": "slot:upright:pier:surfboards:6",
+"max": [57.25, 14.9],
+"min": [56.25, 13.9]
+}, {
+"id": "slot:upright:pier:surfboards:7",
+"max": [58.15, 14.9],
+"min": [57.15, 13.9]
+}, {
+"id": "slot:upright:shallows:surfboards:0",
+"max": [17.2, 22.5],
+"min": [16.2, 21.5]
+}, {
+"id": "slot:upright:shallows:surfboards:1",
+"max": [18.1, 22.5],
+"min": [17.1, 21.5]
+}, {
+"id": "slot:upright:shallows:surfboards:2",
+"max": [19.0, 22.5],
+"min": [18.0, 21.5]
+}, {
+"id": "slot:upright:shallows:surfboards:3",
+"max": [19.900000000000002, 22.5],
+"min": [18.900000000000002, 21.5]
+}, {
+"id": "slot:upright:shallows:surfboards:4",
+"max": [20.8, 22.5],
+"min": [19.8, 21.5]
+}, {
+"id": "slot:upright:shallows:surfboards:5",
+"max": [21.7, 22.5],
+"min": [20.7, 21.5]
+}, {
+"id": "slot:upright:shallows:surfboards:6",
+"max": [22.6, 22.5],
+"min": [21.6, 21.5]
+}, {
+"id": "slot:upright:shallows:surfboards:7",
+"max": [23.5, 22.5],
+"min": [22.5, 21.5]
+}, {
+"id": "slot:upright:shallows:surfboards:8",
+"max": [24.400000000000002, 22.5],
+"min": [23.400000000000002, 21.5]
+}, {
+"id": "slot:upright:shallows:surfboards:9",
+"max": [25.3, 22.5],
+"min": [24.3, 21.5]
+}, {
+"id": "spawn",
+"max": [-71.7, 8.3],
+"min": [-74.3, 5.7]
+}]
+metadata/sources = [{
+"center": [-57.0, -13.0],
+"id": "activity:ArrivalShade",
+"kind": "shade",
+"radius": 4.0
+}, {
+"center": [-41.0, 35.0],
+"id": "activity:BoardParking01",
+"kind": "board",
+"radius": 3.0
+}, {
+"center": [4.0, 29.0],
+"id": "activity:BoardParking02",
+"kind": "board",
+"radius": 3.0
+}, {
+"center": [27.5, 0.0],
+"id": "activity:LifeguardEast",
+"kind": "lookout",
+"radius": 3.5
+}, {
+"center": [-37.5, 0.0],
+"id": "activity:LifeguardWest",
+"kind": "lookout",
+"radius": 3.5
+}, {
+"center": [-18.75, 11.0],
+"id": "activity:LoungerShade",
+"kind": "shade",
+"radius": 4.0
+}, {
+"center": [-12.75, -29.0],
+"id": "activity:LoungesCafeSetEast",
+"kind": "cafe",
+"radius": 3.5
+}, {
+"center": [-23.75, -30.0],
+"id": "activity:LoungesCafeSetWest",
+"kind": "cafe",
+"radius": 3.5
+}, {
+"center": [43.25, -14.0],
+"id": "activity:PierShade",
+"kind": "shade",
+"radius": 4.0
+}, {
+"center": [9.0, 17.0],
+"id": "activity:Sandcastle01",
+"kind": "castle",
+"radius": 3.5
+}, {
+"center": [13.25, 13.0],
+"id": "activity:Sandcastle02",
+"kind": "castle",
+"radius": 3.5
+}, {
+"center": [22.5, -27.0],
+"id": "activity:SandplayCafeSet",
+"kind": "cafe",
+"radius": 3.5
+}, {
+"center": [19.75, -9.0],
+"id": "activity:SandplayShade",
+"kind": "shade",
+"radius": 4.0
+}, {
+"center": [-47.0, -30.0],
+"id": "activity:SportsCafeSet",
+"kind": "cafe",
+"radius": 3.5
+}, {
+"center": [-29.5, -11.0],
+"id": "activity:SportsShade",
+"kind": "shade",
+"radius": 4.0
+}, {
+"center": [-43.75, 12.0],
+"id": "activity:VolleyballNet",
+"kind": "court",
+"radius": 8.0
+}, {
+"center": [-73.0, 14.0],
+"id": "slot:row:arrival:chairs:01",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-64.0, 14.0],
+"id": "slot:row:arrival:chairs:02",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-72.0, 22.0],
+"id": "slot:row:arrival:chairs:03",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-60.0, 30.0],
+"id": "slot:row:arrival:chairs:04",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-73.0, 17.0],
+"id": "slot:row:arrival:loungers:01",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-60.0, 33.5],
+"id": "slot:row:arrival:loungers:02",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-33.75, 10.0],
+"id": "slot:row:lounges:chairs:01",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-29.75, 10.0],
+"id": "slot:row:lounges:chairs:02",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-23.75, 13.0],
+"id": "slot:row:lounges:chairs:03",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-19.75, 13.0],
+"id": "slot:row:lounges:chairs:04",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-13.75, 9.5],
+"id": "slot:row:lounges:chairs:05",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-9.75, 9.5],
+"id": "slot:row:lounges:chairs:06",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-2.75, 12.0],
+"id": "slot:row:lounges:chairs:07",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [1.25, 12.0],
+"id": "slot:row:lounges:chairs:08",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-29.75, 19.0],
+"id": "slot:row:lounges:chairs:09",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-25.75, 19.0],
+"id": "slot:row:lounges:chairs:10",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-19.75, 21.0],
+"id": "slot:row:lounges:chairs:11",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-15.75, 21.0],
+"id": "slot:row:lounges:chairs:12",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-9.75, 19.0],
+"id": "slot:row:lounges:chairs:13",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-5.75, 19.0],
+"id": "slot:row:lounges:chairs:14",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [0.25, 21.0],
+"id": "slot:row:lounges:chairs:15",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [4.25, 21.0],
+"id": "slot:row:lounges:chairs:16",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-33.75, 28.0],
+"id": "slot:row:lounges:chairs:17",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-29.75, 28.0],
+"id": "slot:row:lounges:chairs:18",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-23.75, 28.0],
+"id": "slot:row:lounges:chairs:19",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-19.75, 28.0],
+"id": "slot:row:lounges:chairs:20",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-13.75, 27.5],
+"id": "slot:row:lounges:chairs:21",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-9.75, 27.5],
+"id": "slot:row:lounges:chairs:22",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-33.75, 13.5],
+"id": "slot:row:lounges:loungers:01",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-29.75, 13.5],
+"id": "slot:row:lounges:loungers:02",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-23.75, 16.5],
+"id": "slot:row:lounges:loungers:03",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-19.75, 16.5],
+"id": "slot:row:lounges:loungers:04",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-13.75, 13.0],
+"id": "slot:row:lounges:loungers:05",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-9.75, 13.0],
+"id": "slot:row:lounges:loungers:06",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-2.75, 15.5],
+"id": "slot:row:lounges:loungers:07",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [1.25, 15.5],
+"id": "slot:row:lounges:loungers:08",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-29.75, 22.5],
+"id": "slot:row:lounges:loungers:09",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-25.75, 22.5],
+"id": "slot:row:lounges:loungers:10",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-19.75, 24.5],
+"id": "slot:row:lounges:loungers:11",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-15.75, 24.5],
+"id": "slot:row:lounges:loungers:12",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-9.75, 22.5],
+"id": "slot:row:lounges:loungers:13",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-5.75, 22.5],
+"id": "slot:row:lounges:loungers:14",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [0.25, 24.5],
+"id": "slot:row:lounges:loungers:15",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [4.25, 24.5],
+"id": "slot:row:lounges:loungers:16",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-33.75, 31.5],
+"id": "slot:row:lounges:loungers:17",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-29.75, 31.5],
+"id": "slot:row:lounges:loungers:18",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-23.75, 31.5],
+"id": "slot:row:lounges:loungers:19",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-19.75, 31.5],
+"id": "slot:row:lounges:loungers:20",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [45.5, 17.0],
+"id": "slot:row:pier:chairs:01",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [52.5, 17.0],
+"id": "slot:row:pier:chairs:02",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [71.5, 17.0],
+"id": "slot:row:pier:chairs:03",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [77.5, 17.0],
+"id": "slot:row:pier:chairs:04",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [46.5, 26.0],
+"id": "slot:row:pier:chairs:05",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [72.5, 26.0],
+"id": "slot:row:pier:chairs:06",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [45.5, 20.0],
+"id": "slot:row:pier:loungers:01",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [52.5, 20.0],
+"id": "slot:row:pier:loungers:02",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [71.5, 20.0],
+"id": "slot:row:pier:loungers:03",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [46.5, 29.0],
+"id": "slot:row:pier:loungers:04",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [72.5, 29.0],
+"id": "slot:row:pier:loungers:05",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-51.75, 33.0],
+"id": "slot:row:sports:chairs:01",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-35.75, 30.0],
+"id": "slot:row:sports:chairs:02",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-52.75, 18.0],
+"id": "slot:row:sports:chairs:03",
+"kind": "lounge",
+"radius": 2.6
+}, {
+"center": [-34.75, 18.0],
+"id": "slot:row:sports:chairs:04",
+"kind": "lounge",
+"radius": 2.6
+}]

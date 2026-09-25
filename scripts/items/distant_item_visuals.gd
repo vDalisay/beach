@@ -47,10 +47,11 @@ func build() -> void:
 		add_child(visual)
 		for index in records.size():
 			var record := records[index] as ItemRecord
-			var pose := record.last_world_transform * (source.offset as Transform3D)
+			var rest := ItemRestPose.visual_transform(definitions.get(record.definition_id) as ItemDefinition, record.item_id) * (source.offset as Transform3D)
+			var pose := record.last_world_transform * rest
 			instances.set_instance_transform(index, pose)
 			instances.set_instance_color(index, Color.WHITE)
-			_entries[record.item_id] = {"mesh": instances, "index": index, "offset": source.offset}
+			_entries[record.item_id] = {"mesh": instances, "index": index, "offset": rest}
 
 
 func has_item(item_id: StringName) -> bool:

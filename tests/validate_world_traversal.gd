@@ -156,14 +156,21 @@ func run() -> void:
 		check(str(aimed.get("id", "")) == str(pickup_can.item_id), "normal pickup ray reaches a reef can near the former rock overlap")
 		if str(aimed.get("id", "")) == str(pickup_can.item_id):
 			player.set_physics_process(true)
+			# Cans now rest on the seabed, so the player placed beside one settles a little once
+			# physics resumes; aim again from where it settled before the normal click.
+			await _physics_frames(10)
+			player.camera.look_at(pickup_can.last_world_transform.origin)
+			await physics_frame
 			var press := InputEventMouseButton.new()
 			press.button_index = MOUSE_BUTTON_LEFT
 			press.pressed = true
 			Input.parse_input_event(press)
+			await process_frame
 			await _physics_frames(3)
 			var release := press.duplicate() as InputEventMouseButton
 			release.pressed = false
 			Input.parse_input_event(release)
+			await process_frame
 			await physics_frame
 			check(pickup_can.location == ItemRecord.Location.BAG, "normal primary input collects reef can into the original bag")
 		player.set_physics_process(true)

@@ -26,7 +26,8 @@ func configure(run_session: RunSession, player_body: BeachPlayer) -> void:
 			record.dig_surface_position = hit.position
 		else:
 			missing_surfaces.append(str(record.item_id))
-		record.reveal_transform = Transform3D(record.reveal_transform.basis, record.dig_surface_position + Vector3.UP * 0.035)
+		# A lifted find rests on the sand; its model is laid on the ground by ItemRestPose.
+		record.reveal_transform = Transform3D(record.reveal_transform.basis, record.dig_surface_position + Vector3.UP * 0.005)
 		var clear_pose := _clear_reveal_pose(record)
 		if clear_pose == Transform3D.IDENTITY:
 			blocked_reveals.append(str(record.item_id))

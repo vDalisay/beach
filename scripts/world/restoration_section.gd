@@ -12,12 +12,7 @@ const FEEL := preload("res://data/feel/feel_tuning.tres")
 const GARDEN_FRONT_CLEAR := 100000.0
 const GARDEN_WAVE_FEATHER := 4.0
 const REEF_DRESSING := preload("res://scripts/world/reef_dressing.gd")
-const REEF_PLANT_ROCKS := {
-	&"reef_west:outer": [0, 1, 3, 4],
-	&"reef_west:coral": [2, 5, 6, 7, 8],
-	&"reef_east:outer": [9, 12, 16],
-	&"reef_east:coral": [11, 13, 14, 17],
-}
+const REEF_PLANT_ROCKS := REEF_DRESSING.SEAGRASS_ROCKS
 const CORAL_MODELS := [
 	"res://art/models/coral_branching.glb",
 	"res://art/models/coral_tube.glb",
@@ -200,7 +195,7 @@ func _build_section(section: BeachSection) -> void:
 		var palm := FoliageVariants.instance_palm(section.section_id.hash())
 		palm.name = "FoliagePalm"
 		section.restoration_visual_root.add_child(palm)
-		palm.global_position = origin + Vector3(2.4, -0.15, -3.0)
+		palm.global_position = _on_sand(origin + Vector3(2.4, -0.15, -3.0))
 
 
 func _build_zone(zone_id: StringName, root: Node3D) -> void:
@@ -239,7 +234,7 @@ func _build_zone(zone_id: StringName, root: Node3D) -> void:
 		var palm := FoliageVariants.instance_palm(zone_id.hash())
 		palm.name = "FoliagePalm"
 		root.add_child(palm)
-		palm.global_position = origin + Vector3(-2.8, -0.15, -4.0)
+		palm.global_position = _on_sand(origin + Vector3(-2.8, -0.15, -4.0))
 	if kind in ["palm", "buoy"]:
 		_add_shore_birds(zone_id, root, origin)
 	if zone_id == &"lounges":
@@ -297,22 +292,10 @@ func _coral_cluster(index: int) -> Node3D:
 
 func _build_reef_plants(section: BeachSection) -> void:
 	for rock_index in REEF_PLANT_ROCKS.get(section.section_id, []):
-		var rock := REEF_DRESSING.STRUCTURES[rock_index] as Vector4
-		# The Synty ridge visual extends farther than its pickup-safe collider.
-		var clearance := 4.5 * (0.52 + float(rock_index % 3) * 0.04) * REEF_DRESSING.structure_scale(rock_index) + 0.5
-		var channel_x := 2.5 if str(section.zone_id) == "reef_west" else 40.0
-		var side := -1.0 if rock.x > channel_x else 1.0
-		var local_direction := Vector3(side, 0, 0)
-		# These two sides contain generated litter on the wildlife fixture seed.
-		if rock_index == 0:
-			local_direction = Vector3.BACK
-		elif rock_index == 1:
-			local_direction = Vector3.FORWARD
-		var offset := Basis(Vector3.UP, rock.z) * local_direction * clearance
+		var spot := REEF_DRESSING.seagrass_spot(section.section_id, int(rock_index))
 		var plant := _seagrass_bed(rock_index)
 		section.add_child(plant)
-		plant.global_position = Vector3(rock.x, -2.95, rock.y) + offset
-		plant.global_position.y = Coastline.surface_y(plant.global_position.x, plant.global_position.z) - 0.015
+		plant.global_position = Vector3(spot.x, Coastline.surface_y(spot.x, spot.y) - 0.015, spot.y)
 		plant.rotation.y = float(rock_index) * 0.73
 		plant.scale = Vector3(0.9, [0.60, 1.00, 1.42][rock_index % 3], 0.9)
 
@@ -603,7 +586,7 @@ func _add_shore_birds(zone_id: StringName, root: Node3D, origin: Vector3) -> voi
 		bird.name = "ShoreBird%02d" % index
 		root.add_child(bird)
 		var angle := float(index) * 2.1 + float(absi(str(zone_id).hash()) % 7)
-		bird.global_position = Vector3(origin.x + 1.8 + cos(angle) * 1.4, ground, origin.z + 1.5 + sin(angle) * 1.1)
+		bird.global_position = _on_sand(Vector3(origin.x + 1.8 + cos(angle) * 1.4, ground, origin.z + 1.5 + sin(angle) * 1.1))
 		bird.rotation.y = angle * 1.7
 	var circle := PathAnimal.new()
 	circle.name = "ShoreBirdCircle"
@@ -833,3 +816,10 @@ func _beacon_if_unseen(parent: Node3D, origin: Vector3, reef: bool) -> void:
 	var camera := get_viewport().get_camera_3d()
 	if camera == null or camera.global_position.distance_to(origin) > FEEL.pointer_far_distance or not camera.is_position_in_frustum(origin):
 		RestorationWave.spawn_beacon(parent, origin, FEEL.wave_color_reef if reef else FEEL.wave_color_shore)
+
+
+## A point on the dry beach moved onto the sand relief; anything in or over the water is unchanged.
+func _on_sand(at: Vector3) -> Vector3:
+	if at.z < Coastline.shore_z(at.x) - 2.0 and at.y > -0.5 and at.y < 0.5:
+		at.y = Coastline.surface_y(at.x, at.z)
+	return at

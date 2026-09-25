@@ -166,10 +166,15 @@ func _click_collect_with_stick(session: RunSession, player: BeachPlayer, item: I
 	click.button_index = MOUSE_BUTTON_LEFT
 	click.pressed = true
 	Input.parse_input_event(click)
+	# Input is read once per process frame: after a slow frame, several physics steps can run
+	# before the next one, so the release must wait for a process frame to be seen as separate.
+	await process_frame
 	for _index in range(3):
 		await physics_frame
-	click.pressed = false
-	Input.parse_input_event(click)
+	var release := click.duplicate() as InputEventMouseButton
+	release.pressed = false
+	Input.parse_input_event(release)
+	await process_frame
 	await physics_frame
 	var collected := item.location == ItemRecord.Location.BAG
 	check(session.progression.try_switch_tool(&"local").ok, "detector can be reselected after pickup")

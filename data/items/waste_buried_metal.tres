@@ -15,3 +15,4 @@ float_mode = 1
 required_tool = &"detector"
 base_sale_value = 1
 eligible_spawn_tags = Array[StringName]([&"buried"])
+lying_chance = 0.5

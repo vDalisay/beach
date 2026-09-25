@@ -383,6 +383,7 @@ func _configure_visual() -> void:
 	var key := "%s|%d" % [definition.visual_scene_path, definition.collision_profile] if modelled else ""
 	if not key.is_empty() and key == _visual_key:
 		# A pooled view already shows this model; only the dirt, pose and current draw range change.
+		_apply_rest_pose()
 		apply_detail_range()
 		return
 	for child in visual_root.get_children():
@@ -394,6 +395,7 @@ func _configure_visual() -> void:
 	if modelled:
 		fallback_mesh.hide()
 		visual_root.add_child(visual_scene.instantiate())
+		_apply_rest_pose()
 	else:
 		var profile := int(definition.collision_profile)
 		var size := profile_size(profile)
@@ -407,6 +409,14 @@ func _configure_visual() -> void:
 	for geometry in visual_root.find_children("*", "GeometryInstance3D", true, false):
 		if (geometry as GeometryInstance3D).cast_shadow != GeometryInstance3D.SHADOW_CASTING_SETTING_OFF:
 			_shadow_meshes.append(geometry as GeometryInstance3D)
+
+
+## Lays the model in its body the way this item rests (lifted onto the ground, maybe on its side).
+func _apply_rest_pose() -> void:
+	for child in visual_root.get_children():
+		if child != fallback_mesh and child is Node3D:
+			(child as Node3D).transform = ItemRestPose.visual_transform(definition, item_id)
+			return
 
 
 func _rebuild_dirt_visuals() -> void:

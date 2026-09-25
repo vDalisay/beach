@@ -1,8 +1,8 @@
 [gd_resource type="Resource" format=3]
 
 [resource]
-resource_name = "beach_01_spawn_packs_v2"
-metadata/content_version = "beach-content-8"
+resource_name = "beach_01_spawn_packs_v3"
+metadata/content_version = "beach-content-9"
 metadata/grid_columns = 16
 metadata/grid_rows = 48
 metadata/grid_spacing_mm = 700
@@ -27,7 +27,20 @@ metadata/packs = {
 &"reef_east:coral": {"anchor_id": &"pack:reef_east:coral", "origin_mm": PackedInt32Array(25000, -2800, 135000), "tags": PackedStringArray("seabed", "single", "pile", "attachment", "buried"), "min_depth_mm": 1800, "max_depth_mm": 6000}
 }
 metadata/pile_patterns = {
-&"fan_5": [PackedInt32Array(0, 0, 0), PackedInt32Array(280, 60, 0), PackedInt32Array(-280, 60, 0), PackedInt32Array(140, 120, 240), PackedInt32Array(-140, 120, 240)],
-&"ridge_6": [PackedInt32Array(-360, 0, 0), PackedInt32Array(0, 0, 0), PackedInt32Array(360, 0, 0), PackedInt32Array(-180, 120, 260), PackedInt32Array(180, 120, 260), PackedInt32Array(0, 240, 520)],
-&"scatter_4": [PackedInt32Array(-320, 0, -180), PackedInt32Array(260, 0, -220), PackedInt32Array(-180, 70, 260), PackedInt32Array(300, 50, 240)]
+&"heap_4": [PackedInt32Array(0, 0, 0), PackedInt32Array(230, 0, 90), PackedInt32Array(-190, 0, 170), PackedInt32Array(30, 60, 100)],
+&"heap_5": [PackedInt32Array(0, 0, 0), PackedInt32Array(260, 0, -60), PackedInt32Array(-240, 0, 40), PackedInt32Array(60, 0, 250), PackedInt32Array(20, 70, 80)],
+&"heap_6": [PackedInt32Array(0, 0, 0), PackedInt32Array(270, 0, 40), PackedInt32Array(-250, 0, -30), PackedInt32Array(80, 0, 260), PackedInt32Array(-120, 0, -240), PackedInt32Array(40, 80, 40)]
+}
+metadata/territories = {
+&"arrival:start": {"x_mm": PackedInt32Array(-79300, -65400), "z_min_mm": -19000, "shore_margin_mm": 3200, "ground": "sand"},
+&"arrival:dunes": {"x_mm": PackedInt32Array(-65400, -54100), "z_min_mm": -19000, "shore_margin_mm": 3200, "ground": "sand"},
+&"sports:courts": {"x_mm": PackedInt32Array(-54100, -42900), "z_min_mm": -19000, "shore_margin_mm": 3200, "ground": "sand"},
+&"sports:snack_edge": {"x_mm": PackedInt32Array(-42900, -31600), "z_min_mm": -19000, "shore_margin_mm": 3200, "ground": "sand"},
+&"lounges:west": {"x_mm": PackedInt32Array(-31600, -20400), "z_min_mm": -19000, "shore_margin_mm": 3200, "ground": "sand"},
+&"lounges:central": {"x_mm": PackedInt32Array(-20400, -9100), "z_min_mm": -19000, "shore_margin_mm": 3200, "ground": "sand"},
+&"lounges:east": {"x_mm": PackedInt32Array(-9100, 2100), "z_min_mm": -19000, "shore_margin_mm": 3200, "ground": "sand"},
+&"sandplay:cove": {"x_mm": PackedInt32Array(2100, 13400), "z_min_mm": -19000, "shore_margin_mm": 3200, "ground": "sand"},
+&"sandplay:hut": {"x_mm": PackedInt32Array(13400, 30000), "z_min_mm": -19000, "shore_margin_mm": 3200, "ground": "sand"},
+&"pier:approach": {"x_mm": PackedInt32Array(30000, 56000), "z_min_mm": -19000, "shore_margin_mm": 3200, "ground": "sand"},
+&"pier:deck": {"x_mm": PackedInt32Array(58400, 66600), "z_min_mm": 44500, "z_max_mm": 78000, "ground": "pier"}
 }
