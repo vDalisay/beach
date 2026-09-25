@@ -119,11 +119,17 @@ func synchronize_record() -> void:
 ## removes the body and its dirt areas), hidden, and detached from its record.
 func release_to_pool() -> void:
 	set_highlighted(false)
-	# No hover pose carries over to the next record, and its outlines are rebuilt on its first
-	# highlight (the next record may show another model).
+	# No presentation carries over to the next record: hover, pop and impact animations stop, the
+	# pose and any shine band reset, pending hover holds and throw impacts are dropped, and outlines
+	# are rebuilt on its first highlight (the next record may show another model).
 	FeelMotion.replace(visual_root, &"hover", null)
+	FeelMotion.replace(visual_root, &"scale", null)
 	visual_root.transform = Transform3D.IDENTITY
+	FeelShine.clear(visual_root)
 	HoverHighlight.discard(visual_root)
+	_hover_held_until = 0
+	_impact_armed_until = 0
+	_last_speed = 0.0
 	set_physics_process(false)
 	freeze = true
 	record = null

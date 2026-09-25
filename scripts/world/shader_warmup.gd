@@ -14,7 +14,6 @@ const CELL := 1.25
 const FRAMES := 3
 const HOVER_SHADER := preload("res://shaders/hover_outline.gdshader")
 const GHOST_SHADER := preload("res://shaders/placement_ghost.gdshader")
-const GROUP_SWEEP_SHADER := preload("res://shaders/group_sweep.gdshader")
 
 var proxy_count := 0
 var _frames_left := FRAMES
@@ -38,13 +37,14 @@ func start(source_root: Node, extra_scenes: Array[PackedScene] = []) -> void:
 		for node in instance.find_children("*", "GeometryInstance3D", true, false):
 			_add_proxy(node as GeometryInstance3D, seen, proxies)
 		instance.free()
-	# Materials that scripts create on demand: hover outline, placement ghost and group sweep.
-	for shader in [HOVER_SHADER, GHOST_SHADER]:
+	# Materials that scripts create on demand: the hover outline and rim, the placement ghost, the
+	# restoration wave and ring pulses, and the shine band (drawn as an overlay).
+	for shader in [HOVER_SHADER, HoverHighlight.RIM_SHADER, GHOST_SHADER, RestorationWave.SHADER, FeelRing.SHADER]:
 		var material := ShaderMaterial.new()
 		material.shader = shader
 		proxies.append(_box_proxy(material, null))
 	var sweep := ShaderMaterial.new()
-	sweep.shader = GROUP_SWEEP_SHADER
+	sweep.shader = FeelShine.SHADER
 	proxies.append(_box_proxy(StandardMaterial3D.new(), sweep))
 	proxy_count = proxies.size()
 	var columns := ceili(sqrt(float(proxies.size())))

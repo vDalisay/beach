@@ -48,3 +48,12 @@ static func play(owner: Node, meshes: Array[MeshInstance3D], seconds: float) -> 
 				mesh.material_overlay = null
 	)
 	return {"material": material, "origin": start, "direction": direction, "distance": distance}
+
+
+## Removes shine overlays under `root` at once: a pooled item view parked mid-gleam must not show
+## the band on the next record (its own tween pauses with the view).
+static func clear(root: Node) -> void:
+	for node in root.find_children("*", "GeometryInstance3D", true, false):
+		var overlay := (node as GeometryInstance3D).material_overlay as ShaderMaterial
+		if overlay != null and overlay.shader == SHADER:
+			(node as GeometryInstance3D).material_overlay = null
