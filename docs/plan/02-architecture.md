@@ -131,6 +131,14 @@ The guarantee is the initial manifest for a fixed seed + game/content/generator 
 
 Generation should be based on curated anchor packs for each family/zone; use a small authoring utility only where hand-authoring hundreds of equivalent litter anchors is wasteful. Its output becomes versioned authored data. Cosmetic fish motion and water waves use separate timing and cannot consume gameplay RNG streams.
 
+Since the [beach terrain pass](15-beach-terrain-pass.md), the dry-sand and pier-deck sections are laid out as follows.
+
+- **Candidates.** `LitterLayout` places their litter and props on candidate points it derives from versioned authored data. Each section's territory is in `spawn_anchors.tres`. The obstacles and mess sources are in `data/world/beach_layout.tres`, baked from the scene and checked against it by `validate_world`.
+- **Seeded choices.** Only the jitter, the picnic spots, which lounge rows are messy and the weighted draws come from the section streams.
+- **Heights.** Every row's height is authored from the ground under it (`BeachGround`, `BeachRelief`). The relief uses integer-hash noise and polynomials only.
+- **Content hash.** The hash covers all of these inputs.
+- **Presentation.** The resting lean and side-lying model pose are derived from the item ID and the ground when the run state is created; the physics box is unchanged.
+
 ## Input and context
 
 Godot [InputMap](https://docs.godotengine.org/en/4.6/classes/class_inputmap.html) supplies shared actions, and [controller support](https://docs.godotengine.org/en/4.6/tutorials/inputs/controllers_gamepads_joysticks.html) provides device mappings. A remapping UI, persisted overrides, changing prompts, focus navigation and table interaction still require implementation. Mouse delta and stick look need distinct sensitivity handling.

@@ -66,8 +66,9 @@ Hitches mattered as much as averages:
 | SSAO | off | off | on | on |
 | Glow | off | on | on | on |
 | Detail view distance | 70% | 85% | 100% | 120% |
+| Beach detail ([B06](15-beach-terrain-pass.md#b06--sand-detail-and-the-swash)) | Low: waves, one grain layer | Medium: + ripples, relief, shells | High: + glints | High |
 
-VSync and the frame-rate cap sit outside the presets. [High against Ultra](../handoffs/images/PERF-performance-pass/ultra_vs_high.jpg) differs only in the smallest distant shadows. [Low](../handoffs/images/PERF-performance-pass/high_vs_low.jpg) drops small-litter shadows, SSAO and glow and renders 3D at 75%. [The Graphics tab](../handoffs/images/PERF-performance-pass/graphics_tab.jpg).
+VSync and the frame-rate cap sit outside the presets. Beach detail can also be set to Off (plain sand, a still wet strip, no waves on the sand). [High against Ultra](../handoffs/images/PERF-performance-pass/ultra_vs_high.jpg) differs only in the smallest distant shadows. [Low](../handoffs/images/PERF-performance-pass/high_vs_low.jpg) drops small-litter shadows, SSAO and glow and renders 3D at 75%. [The Graphics tab](../handoffs/images/PERF-performance-pass/graphics_tab.jpg).
 
 ## 3. Measured and not adopted
 
