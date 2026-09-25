@@ -44,6 +44,8 @@ func try_clean(player_id: StringName, item_id: StringName, patch_id: StringName,
 	var done := record.dirty_patches_remaining.is_empty()
 	if player != null:
 		player.play_cue(&"clean_done" if done else &"clean", {"item_id": str(item_id)})
+		if done and view != null:
+			view.play_gleam(FeelMotion.reduced(player.settings_store))
 	interactor.clear_target()
 	return ActionResult.accepted(PackedStringArray([str(item_id)]), {
 		"item_id": str(item_id),

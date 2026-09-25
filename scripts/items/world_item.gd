@@ -292,6 +292,28 @@ func clean_dirt_patch(patch_id: StringName) -> void:
 		(patch as DirtVisual).clean(reduced)
 
 
+## The object-clean "done" gleam: the shine band (0.6 s), sparkles and a "Clean!" floater.
+func play_gleam(reduced: bool) -> void:
+	var top := global_position + Vector3.UP * profile_size(definition.collision_profile).y
+	if effects != null:
+		FeelFloater.spawn(effects, top + Vector3.UP * 0.25, "Clean!", FEEL.shine_core_color, reduced)
+		effects.feel_sparkles(top, FEEL.clean_sparkles / (2 if reduced else 1))
+	if reduced:
+		return
+	var meshes: Array[MeshInstance3D] = []
+	_collect_gleam_meshes(visual_root, meshes)
+	FeelShine.play(self, meshes, FEEL.clean_gleam_seconds)
+
+
+func _collect_gleam_meshes(node: Node, result: Array[MeshInstance3D]) -> void:
+	for child in node.get_children():
+		if child is DirtVisual or child.has_meta(HoverHighlight.MARK):
+			continue
+		if child is MeshInstance3D and (child as MeshInstance3D).mesh != null and (child as MeshInstance3D).visible:
+			result.append(child as MeshInstance3D)
+		_collect_gleam_meshes(child, result)
+
+
 func set_dirt_interactive(value: bool) -> void:
 	for patch_value in _dirt_visuals.values():
 		var patch := patch_value as DirtVisual

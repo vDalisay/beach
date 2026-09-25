@@ -7,7 +7,6 @@ signal group_completed(payload: Dictionary)
 const SLOT_SCENE := preload("res://scenes/items/placement_slot.tscn")
 const WORLD_ITEM_SCENE := preload("res://scenes/items/world_item.tscn")
 const GHOST_SHADER := preload("res://shaders/placement_ghost.gdshader")
-const GROUP_SWEEP_SHADER := preload("res://shaders/group_sweep.gdshader")
 const PLAYER_ID := &"local"
 const CLEARANCE_MASK := 1 | 4 | 8
 const FEEL := preload("res://data/feel/feel_tuning.tres")
@@ -26,6 +25,7 @@ var dust: ParticlePool
 var _preview_slot_id: StringName
 var _group_sweep_serials: Dictionary = {}
 var _pending_group_sweeps: Dictionary = {}
+var _group_rewards: Dictionary = {}
 # The one live placement ghost: it glides between slots and fades when the aim leaves.
 var _ghost_visual: Node3D
 var _ghost_item_id: StringName
@@ -765,6 +765,7 @@ func _wobble_neighbors(slot_id: StringName, strength: float) -> void:
 func _on_group_completed(payload: Dictionary) -> void:
 	group_completed.emit(payload)
 	var group_id := StringName(str(payload.get("group_id", "")))
+	_group_rewards[group_id] = int(payload.get("reward", 0))
 	_group_sweep_serials[group_id] = int(_group_sweep_serials.get(group_id, 0)) + 1
 	_pending_group_sweeps[group_id] = int(_group_sweep_serials[group_id])
 	call_deferred("_try_start_pending_sweeps")
@@ -786,43 +787,43 @@ func _try_start_pending_sweeps() -> void:
 			_show_group_sweep(group_id, serial)
 
 
+## The set's "done" gleam: a floater rises (+$ on the first completion, "Tidy!" on replays)
+## and a warm band sweeps across every prop in the set with sparkles popping as it passes.
 func _show_group_sweep(group_id: StringName, serial: int) -> void:
-	if not is_inside_tree() or _reduced_motion() or int(_group_sweep_serials.get(group_id, 0)) != serial:
+	if not is_inside_tree() or int(_group_sweep_serials.get(group_id, 0)) != serial:
 		return
 	if not session.state.group_states.has(group_id) or not bool((session.state.group_states[group_id] as Dictionary).complete):
 		return
 	var meshes: Array[MeshInstance3D] = []
-	var positions: Array[Vector3] = []
+	var tops: Array[Vector3] = []
 	for item_id in session.progress_service.group_items.get(group_id, []):
-		if not slotted_views.has(item_id):
+		var root := slotted_visual_root(item_id)
+		if root == null:
 			continue
-		var root := (slotted_views[item_id] as Node3D).get_node("VisualRoot") as Node3D
-		positions.append(root.global_position)
 		_collect_sweep_meshes(root, meshes)
-	if meshes.is_empty():
+		tops.append(root.global_position + Vector3.UP * WorldItem.profile_size(_definition_for_item(item_id).collision_profile).y)
+	if tops.is_empty():
 		return
-	var origin := positions[0]
-	var direction := Vector3.RIGHT
-	var minimum := 0.0
-	var maximum := 0.0
-	for position in positions:
-		var offset := (position - origin).dot(direction)
-		minimum = minf(minimum, offset)
-		maximum = maxf(maximum, offset)
-	var material := ShaderMaterial.new()
-	material.shader = GROUP_SWEEP_SHADER
-	material.set_shader_parameter("sweep_origin", origin + direction * (minimum - 0.5))
-	material.set_shader_parameter("sweep_direction", direction)
-	material.set_shader_parameter("sweep_distance", maximum - minimum + 1.0)
-	for mesh in meshes:
-		mesh.material_overlay = material
-	var tween := create_tween()
-	tween.tween_method(func(value: float) -> void: material.set_shader_parameter("sweep_progress", value), 0.0, 1.0, 0.7)
-	tween.finished.connect(func() -> void:
-		for mesh in meshes:
-			if is_instance_valid(mesh) and mesh.material_overlay == material:
-				mesh.material_overlay = null
-	)
+	var reduced := _reduced_motion()
+	var reward := int(_group_rewards.get(group_id, 0))
+	var center := Vector3.ZERO
+	var highest := -INF
+	for top in tops:
+		center += top
+		highest = maxf(highest, top.y)
+	center /= float(tops.size())
+	FeelFloater.spawn(self, Vector3(center.x, highest + 0.35, center.z), "+$%d" % reward if reward > 0 else "Tidy!", FEEL.money_color if reward > 0 else FEEL.shine_core_color, reduced)
+	if reduced:
+		return
+	var shine := FeelShine.play(self, meshes, FEEL.group_sweep_seconds)
+	if shine.is_empty():
+		return
+	for top in tops:
+		var along := clampf((top - (shine.origin as Vector3)).dot(shine.direction as Vector3) / float(shine.distance), 0.0, 1.0)
+		get_tree().create_timer(along * FEEL.group_sweep_seconds).timeout.connect(func() -> void:
+			if is_instance_valid(sparkles):
+				sparkles.burst(top, Vector3.UP, FEEL.set_sparkles_per_item, 0.4, 0.3, Vector2(0.05, 0.09), 0.6)
+		)
 
 
 func _collect_sweep_meshes(node: Node, result: Array[MeshInstance3D]) -> void:

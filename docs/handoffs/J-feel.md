@@ -13,7 +13,7 @@ Evidence record for the [game-feel plan](../plan/12-game-feel.md), packets J00�
 | J04 Pickup and throw | Done | [J04](#j04--pickup-and-throw) |
 | J05 Placement | Done | [J05](#j05--placement) |
 | J06 Tools | Done | [J06](#j06--tools) |
-| J07 Completion shine | Open | — |
+| J07 Completion shine | Done | [J07](#j07--completion-shine) |
 | J08 Sorting table | Open | — |
 | J09 HUD | Open | — |
 | J10 Collection and money | Open | — |
@@ -212,6 +212,28 @@ Observed before any change: the can hover is a thin white hull; the placed chair
   - Scanner markers pop on the pulse's first refresh: `_pop_markers` is set before `_refresh(result)`, where the packet set it after `pulse_succeeded`.
   - The sand cleaner's other failure branches (not aimed at sand, bag full) also send the reject cue and tint the ring amber. The detector's "no signal" click also sends the reject cue.
   - Cloth glints halve under reduced motion, like every other sparkle.
+- **Retained tuning:** none.
+- **Open issues:** none.
+
+## J07 — Completion shine
+
+- **Build:** J06 commit + J07 working tree.
+- **Scene / seed:** `tests/scenes/placement_lab.tscn` (P10 fixture: red and blue buckets, and a beach ball as the unrelated neighbour); `scenes/main.tscn`, `feedback-sequence`, for a chair row; `scenes/main.tscn`, `first-shore`, for a two-stain lounger.
+- **Setup:**
+  - Lab: the ball goes on shelf B. The red bucket goes on shelf A and the blue one completes the set; then red is taken off and put back for the replay.
+  - Main, chair row: the `arrival:dunes/beach_chair` group has one chair committed to `row:arrival:chairs:04` directly (staging). The last chair is held and placed through `try_place`, seen from the front; it is then removed and placed again, seen from the side.
+  - Main, lounger: the cloth is staged as in J06 and both stains are wiped through `request_primary`.
+  - All runs at `--fixed-fps 60`.
+- **Observed:** [shine sheet](images/J-feel/j07-shine.png) and [shine clip](images/J-feel/j07-shine.mp4) (lab 0:00, chair row 0:04, lounger 0:09):
+  - Set, first completion: "+$15" rises from the set in the money colour and the reward is paid once (money 15 → 30). The warm-white band with its turquoise fringe crosses the set left to right on screen: the left bucket lights at 0.18 s and the right one at 0.55 s. Sparkles pop above each prop as the band reaches it. The overlay lasts 48 frames (0.8 s) and clears.
+  - Replay: "Tidy!" in warm white, with no payment (30 → 30) and the same band.
+  - The unrelated ball on the next shelf never carried the band in either sweep, since the overlay goes only on the set's own meshes.
+  - Chair row: from the front, "+$15" and the band run from the left chair to the right one. From the side, the replay's band still reads left to right across the visible chair, because the direction is camera-relative (screen right tilted 20° up), and the notice reads "restored again".
+  - Clean gleam: wiping the lounger's last stain gives "Clean!", eight extra glints (10 in all with the wipe's two) and a 0.6 s band (35 frames) across the lounger. The lounger stays `WORLD`, so completion is unaffected.
+  - Readability: the band reads on bright sand and on the lab's pale floor. Its core crosses the environment's glow threshold (0.95, intensity 0.12) and picks up a slight bloom, with no halo on neighbours. No placement slot sits in hut shade in this build: the storage shelves are outdoors.
+- **Reduced motion:** no band on sets or on the cleaned lounger, and no sparkle line. "+$15", "Tidy!" and "Clean!" appear in place and fade, and the gleam keeps half its sparkles.
+- **Checks run:** `validate_placement.gd` (the band only on the completed group, the ball not sharing it, cleared within 0.9 s, none under reduced motion), `validate_completion.gd` and `validate_dirt.gd`, all exit 0.
+- **Departures from the packet:** none in code. `P27-group-sweep.png` is not tracked on this branch, so the new look is recorded here rather than by replacing it. `shaders/group_sweep.gdshader` and its `.uid` are deleted; nothing references them.
 - **Retained tuning:** none.
 - **Open issues:** none.
 
