@@ -2,7 +2,7 @@
 
 Evidence record for the [game-feel plan](../plan/12-game-feel.md), packets J00–J14. One section per packet, newest entries at the top of each section. Follow [AGENTS.md](../../AGENTS.md): record what was shown working in the real game or an existing lab. A tween existing in code is not evidence.
 
-**Status: J00–J14 done.** J13's physical-controller check is blocked on hardware, and FIN-08 stays open under its own "Done when" ([J14](#j14--acceptance)). The plan was written 24 September 2026 on `claude/game-feel-juice-plan` from `main` at `b190cea`. On 25 September 2026 the branch was rebased onto `main` at `e3883f4` before implementation, because `main` had replaced the hand rig (per-socket FOV `View` nodes and IK-driven Synty arms), the tool scenes and `restoration_section.gd`. Packets that touch those files follow the plan's intent on the current code; each entry states where the code departs from a packet listing and why.
+**Status: J00–J14 done.** J13's physical-controller check is blocked on hardware, and FIN-08 stays open under its own "Done when" ([J14](#j14--acceptance)). The plan was written 24 September 2026 on `claude/game-feel-juice-plan` from `main` at `b190cea`. On 25 September 2026 the branch was rebased onto `main` at `e3883f4` before implementation, because `main` had replaced the hand rig (per-socket FOV `View` nodes and IK-driven Synty arms), the tool scenes and `restoration_section.gd`. Packets that touch those files follow the plan's intent on the current code; each entry states where the code departs from a packet listing and why. After J14 the branch was rebased again, onto the performance pass at `0b4502e`, and merged ([Merge into main](#merge-into-main)).
 
 | Packet | Status | Evidence |
 |---|---|---|
@@ -653,14 +653,36 @@ In their owning packets' files:
   - The truck collection's restoration raises draws by about 390 for a moment even with every feel effect off. This is worth a look in FIN-08's cost record.
   - J13's physical controller validation is blocked on hardware.
   - Pre-existing, flagged in earlier entries:
-    - The autosave on a group reward stalls the main thread 2.4–6.5 s on the full beach.
-    - Aiming at an empty, unclaimed shared shelf costs about 30 ms per frame (`_shared_claim_is_safe`).
+    - The autosave on a group reward stalls the main thread 2.4–6.5 s on the full beach. Fixed; see [Merge into main](#merge-into-main).
+    - Aiming at an empty, unclaimed shared shelf costs about 30 ms per frame (`_shared_claim_is_safe`). Fixed; see [Merge into main](#merge-into-main).
     - A 200-item unload spends about 535 ms building proxies.
     - `validate_interaction.gd -- --capture` fails its input-edge check because the PNG save stalls a frame; it fails the same way on J00.
   - Pre-existing, found in the final check run: the save checks never clear their save roots, and `user://test_runs/` is shared by every checkout of the project.
     - `test_runs` now holds 7.7 GB. `test_runs/p24`, shared by `validate_save.gd` and `validate_save_physics.gd`, has 200 runs in 2.1 GB. `test_runs/c02`, used by `validate_sorting.gd`, has 40 runs in 751 MB.
     - A Save and quit returns to the title, where `SaveService.list_slots()` reads and parses every generation of every run, 7.5 MB each on the full beach. That is why `validate_save.gd` now takes minutes; `validate_sorting.gd` lists its folder three times.
     - Clearing those folders restores the checks. The title menu lists players' saves the same way, so many saved runs would stall it too.
+
+## Merge into main
+
+On 25 September 2026 the branch was rebased onto `main` at `0b4502e` and merged. That commit ends the performance pass, which streams item views through a pool, adds graphics quality settings, warms up shaders when a run loads, batches repeated scenery into MultiMeshes, throttles off-screen wildlife and writes autosaves on a worker thread.
+
+- **Conflicts resolved:**
+  - J01 hover and pooled views. `release_to_pool()` now resets the hover tween and pose instead of the old outline overlays and `pulse()`, which had no callers. `HoverHighlight.discard()` frees a view's cached overlays when it changes model or is parked, because the cache never rebuilds on its own.
+  - J03 arms. The smoothed palm goals and clip motion are applied under `main`'s skip-if-unchanged IK write, and tools load through `main`'s cached `ToolDefinition.scene()`.
+  - J04 view signals. `impacted` and `effects` are connected once, when a pooled view is created.
+  - J11. The `_restoration` reference sits beside `main`'s scenery batching. The batcher skips hidden nodes, so restored dressing that is still hidden is never batched.
+  - J13. The vibration toggle moved into `main`'s Controls tab and its focus chain.
+  - Save. `main`'s worker-thread autosave is kept. The branch's save commit ports only the cheaper capture: the main thread copies each record's values and the worker builds the snapshot.
+- **Follow-up commit** ("Keep the feel presentation working with pooled views and warm-up"):
+  - A parked view stops its hover, pop and impact animations, resets its pose, clears any shine band and drops pending hover holds and throw impacts.
+  - The shader warm-up drew the removed group-sweep shader. It now draws the shine band, hover rim, restoration wave and ring pulse.
+- **Open issues fixed:**
+  - Autosave. An autosave now costs 7.4–8.9 ms on the main thread; building the snapshot there took 74–84 ms. Around a group reward no frame exceeds 19.4 ms. A later autosave can still show one frame of about 43 ms while the worker validates.
+  - Shared shelves. `_shared_claim_is_safe` takes 0.028 ms instead of 30–43 ms. Aiming at an empty shared shelf runs at 166 fps, as in the control without a shelf; before, physics catch-up held it at 4 fps.
+- **Checks on the merged tree:**
+  - All 28 `tests/validate_*.gd` checks and `run_checks.gd` exit 0 with `failures=0`.
+  - `record_feedback.gd` at a fixed 30 fps plays every beat with `failures=0`.
+  - Throwaway probes confirmed three things. A pooled view carries nothing to its next record (14 checks). `to_snapshot()` output is byte-identical. 16,560 shelf decisions match the old check.
 
 ## Retained tuning
 
