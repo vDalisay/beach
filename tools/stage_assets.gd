@@ -7,6 +7,7 @@ const SOURCE_PREFIXES := {
 }
 const STAGED_PREFIX := "res://art/synty/"
 const TEXT_EXTENSIONS := ["tscn", "tres", "gdshader"]
+const TEXTURE_EXTENSIONS := ["png", "tga", "jpg", "jpeg", "webp", "bmp"]
 const PROJECT_SHADERS := {
 	"res://shaders/polygon.gdshader": "res://shaders/beach_polygon.gdshader",
 	"res://shaders/foliage.gdshader": "res://shaders/beach_foliage.gdshader",
@@ -19,6 +20,12 @@ var _staged_paths: PackedStringArray = []
 
 func _init() -> void:
 	_reference_regex.compile('path="(res://[^"]+)"')
+	if "--imports-only" in OS.get_cmdline_user_args():
+		# Reconfigure the textures of an existing staging without the licensed source; run the
+		# editor import afterwards to recompress them.
+		_configure_staged_texture_imports(STAGED_PREFIX)
+		_finish()
+		return
 	var manifest: Dictionary = _load_manifest()
 	if manifest.is_empty():
 		_finish()
@@ -116,18 +123,39 @@ func _stage_resource(source_path: String) -> PackedStringArray:
 			_errors.append("Cannot write staged resource: %s" % target_path)
 			return dependencies
 		output.store_buffer(bytes)
-		if source_path.get_file() in ["Sand_01.png", "Noise_Small.png", "WaterNormals_01.png", "caustic_height.png", "Fan_01.tga", "Fan_01_Normals.png", "PalmBark_02.png", "PalmBark_02_Normals.png"]:
-			# Sampler mipmap hints cannot create mip levels. Preserve these import settings on clean staging too.
-			var settings := ConfigFile.new()
-			settings.load(target_path + ".import")
-			settings.set_value("remap", "importer", "texture")
-			settings.set_value("remap", "type", "CompressedTexture2D")
-			settings.set_value("params", "mipmaps/generate", true)
-			if settings.save(target_path + ".import") != OK:
-				_errors.append("Cannot configure mipmaps: %s" % target_path)
+		if source_path.get_extension().to_lower() in TEXTURE_EXTENSIONS:
+			_configure_texture_import(target_path)
 
 	_staged_paths.append(target_path)
 	return dependencies
+
+
+## Every staged texture is sampled by 3D materials, so it imports VRAM-compressed (S3TC/BPTC on
+## desktop, RGTC for normal maps) with mipmaps. Lossless imports held about 1.3 GB of video memory
+## and shimmered at distance; sampler mipmap hints alone cannot create mip levels.
+func _configure_texture_import(path: String) -> void:
+	var settings := ConfigFile.new()
+	settings.load(path + ".import")
+	settings.set_value("remap", "importer", "texture")
+	settings.set_value("remap", "type", "CompressedTexture2D")
+	settings.set_value("params", "compress/mode", 2)
+	settings.set_value("params", "compress/normal_map", 1 if path.get_file().to_lower().contains("normals") else 2)
+	settings.set_value("params", "mipmaps/generate", true)
+	settings.set_value("params", "detect_3d/compress_to", 0)
+	if settings.save(path + ".import") != OK:
+		_errors.append("Cannot configure texture import: %s" % path)
+
+
+func _configure_staged_texture_imports(folder: String) -> void:
+	var directory := DirAccess.open(folder)
+	if directory == null:
+		_errors.append("Missing staged folder: %s" % folder)
+		return
+	for subfolder in directory.get_directories():
+		_configure_staged_texture_imports(folder.path_join(subfolder))
+	for file_name in directory.get_files():
+		if file_name.get_extension().to_lower() in TEXTURE_EXTENSIONS:
+			_configure_texture_import(folder.path_join(file_name))
 
 
 func _rewrite_resource_declarations(content: String) -> String:
