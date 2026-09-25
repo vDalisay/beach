@@ -112,6 +112,16 @@ func _open_run(initial_state: RunState, definitions: Dictionary, manifest_hash: 
 	restoration.name = "RestorationSection"
 	run_root.add_child(restoration)
 	restoration.configure(session, beach, settings_store)
+	# Repeated static scenery draws as one MultiMesh per cell instead of one call per copy.
+	var scenery_roots: Array[Node3D] = []
+	for path in ["Foliage", "ActivityAreas", "Skyline", "PierBlockout", "Terrain", "CityBackdrop"]:
+		scenery_roots.append(beach.get_node(path) as Node3D)
+	for hut in beach.get_node("ServicePoints").find_children("Hut", "Node3D", true, false):
+		scenery_roots.append(hut as Node3D)
+	for pool in get_tree().get_nodes_in_group(&"placement_pools"):
+		if beach.is_ancestor_of(pool):
+			scenery_roots.append(pool as Node3D)
+	SceneryBatcher.batch(scenery_roots)
 	var player := PLAYER_SCENE.instantiate() as BeachPlayer
 	player.name = "Player"
 	run_root.add_child(player)

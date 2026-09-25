@@ -28,7 +28,9 @@ func start(source_root: Node, extra_scenes: Array[PackedScene] = []) -> void:
 	var seen := {}
 	var proxies: Array[GeometryInstance3D] = []
 	for node in source_root.find_children("*", "GeometryInstance3D", true, false):
-		_add_proxy(node as GeometryInstance3D, seen, proxies)
+		# Scenery replaced by a batch never draws on its own.
+		if not node.has_meta(&"batched"):
+			_add_proxy(node as GeometryInstance3D, seen, proxies)
 	for scene in extra_scenes:
 		if scene == null:
 			continue

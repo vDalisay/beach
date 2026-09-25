@@ -68,7 +68,7 @@ scale = Vector3(1.2, 2, 1)
 position = Vector3(4, 0, 3)
 rotation = Vector3(0, 1.5708, 0)
 scale = Vector3(1.2, 2, 1)
-[node name="Roof" type="Node3D" parent="."]
+[node name="Roof" type="Node3D" parent="." groups=["unbatched"]]
 [node name="SyntyRoof" parent="Roof" instance=ExtResource("2_roof")]
 position = Vector3(-4, 3.2, -3)
 scale = Vector3(3.2, 1, 2.4)
