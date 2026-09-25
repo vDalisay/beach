@@ -30,6 +30,15 @@ var _group_rewards: Dictionary = {}
 var _ghost_visual: Node3D
 var _ghost_item_id: StringName
 var _ghost_blob: MeshInstance3D
+# The shared shelves (pools that accept several families), the families they accept, and each
+# family's required items. None of it changes during a run, so the claim check only has to read
+# those items' current locations instead of scanning every item.
+var _shared_pool_ids: Array[StringName] = []
+var _shared_families: Array[StringName] = []
+var _shared_section_capacity := 0
+var _family_items: Dictionary = {}
+var _family_items_state: RunState
+var _family_items_count := -1
 
 
 func configure(run_session: RunSession, beach_root: Node3D, player_body: BeachPlayer = null) -> void:
@@ -278,7 +287,25 @@ func _register_authored_pools() -> void:
 		_ensure_pool_record(pool)
 		for index in range(pool.capacity):
 			_register_slot(pool, index)
+	_index_shared_pools()
 	_reconcile_slotted_records()
+
+
+func _index_shared_pools() -> void:
+	_shared_pool_ids.clear()
+	_shared_families.clear()
+	_shared_section_capacity = 0
+	for pool_key in pools:
+		var pool := pools[pool_key] as PlacementSlot
+		if pool.accepted_families.size() <= 1:
+			continue
+		_shared_pool_ids.append(StringName(pool_key))
+		_shared_section_capacity = pool.capacity
+		for accepted_family in pool.accepted_families:
+			var accepted_name := StringName(accepted_family)
+			if accepted_name not in _shared_families:
+				_shared_families.append(accepted_name)
+	_family_items_state = null
 
 
 func _collect_pools(node: Node, result: Array[PlacementSlot]) -> void:
@@ -387,23 +414,13 @@ func _validate_placement(player_id: StringName, item_id: StringName, slot_id: St
 	})
 
 
+## Whether claiming this unclaimed shared section for `family` still leaves enough unclaimed
+## sections for every family's remaining required items. Runs every physics frame while the player
+## aims at such a slot, so it reads the indexed shelves and items instead of scanning every item.
 func _shared_claim_is_safe(candidate_pool_id: StringName, family: StringName, placing_item_id: StringName) -> bool:
-	var shared_pools: Array[StringName] = []
-	var families: Array[StringName] = []
-	var section_capacity := 0
-	for pool_key in pools:
-		var pool := pools[pool_key] as PlacementSlot
-		if pool.accepted_families.size() <= 1:
-			continue
-		shared_pools.append(StringName(pool_key))
-		section_capacity = pool.capacity
-		for accepted_family in pool.accepted_families:
-			var accepted_name := StringName(accepted_family)
-			if accepted_name not in families:
-				families.append(accepted_name)
 	var unclaimed := 0
 	var free_by_family: Dictionary = {}
-	for pool_id in shared_pools:
+	for pool_id in _shared_pool_ids:
 		var pool_record := session.state.container_records[pool_id] as Dictionary
 		var claim := StringName(str(pool_record.get("claim", "")))
 		var occupant_count := (pool_record["occupants"] as Dictionary).size()
@@ -414,19 +431,38 @@ func _shared_claim_is_safe(candidate_pool_id: StringName, family: StringName, pl
 			unclaimed += 1
 		else:
 			free_by_family[claim] = int(free_by_family.get(claim, 0)) + int(pool_record.capacity) - occupant_count
+	var family_items := _required_items_by_family()
 	var needed_sections := 0
-	for family_id in families:
+	for family_id in _shared_families:
 		var remaining := 0
-		for item_value in session.state.items.values():
-			var record := item_value as ItemRecord
-			var definition := _definition_for_item(record.item_id)
-			if record.required and definition != null and definition.sorting_family == family_id and record.location != ItemRecord.Location.SLOTTED:
+		for record: ItemRecord in family_items[family_id]:
+			if record.location != ItemRecord.Location.SLOTTED:
 				remaining += 1
 		if family_id == family and (session.state.items[placing_item_id] as ItemRecord).location != ItemRecord.Location.SLOTTED:
 			remaining -= 1
 		var deficit := maxi(0, remaining - int(free_by_family.get(family_id, 0)))
-		needed_sections += ceili(float(deficit) / float(section_capacity)) if deficit > 0 else 0
+		needed_sections += ceili(float(deficit) / float(_shared_section_capacity)) if deficit > 0 else 0
 	return needed_sections <= unclaimed
+
+
+## The required items of each shared-shelf family. A run's items, their definitions and their
+## required flags are fixed once it is created or loaded, so the lists are built once per run
+## state; each item's location is still read live.
+func _required_items_by_family() -> Dictionary:
+	if _family_items_state == session.state and _family_items_count == session.state.items.size():
+		return _family_items
+	_family_items = {}
+	for family_id in _shared_families:
+		var records: Array[ItemRecord] = []
+		_family_items[family_id] = records
+	for item_value in session.state.items.values():
+		var record := item_value as ItemRecord
+		var definition := _definition_for_item(record.item_id)
+		if record.required and definition != null and _family_items.has(definition.sorting_family):
+			(_family_items[definition.sorting_family] as Array).append(record)
+	_family_items_state = session.state
+	_family_items_count = session.state.items.size()
+	return _family_items
 
 
 func _slot_clear_for(item_id: StringName, slot_id: StringName, exclude_world_item: bool) -> bool:
